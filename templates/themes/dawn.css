@@ -1,0 +1,13 @@
+/* dawn.css — Warm cream/burgundy */
+:root {
+  --proj-bg:       #2B1A1A;
+  --proj-card:     #3D2626;
+  --proj-dark:     #1A0F0F;
+  --proj-gold:     #E8A87C;
+  --proj-gold-lt:  #F5C9A8;
+  --proj-white:    #FFF8F2;
+  --proj-off-white:#F5EDE4;
+  --proj-muted:    #A07868;
+  --font-heading:  'Palatino Linotype', Palatino, serif;
+  --font-body:     'Trebuchet MS', sans-serif;
+}

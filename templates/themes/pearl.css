@@ -1,0 +1,13 @@
+/* pearl.css — Soft grey/white/silver elegant */
+:root {
+  --proj-bg:       #18181C;
+  --proj-card:     #242428;
+  --proj-dark:     #0E0E10;
+  --proj-gold:     #C8C0B8;
+  --proj-gold-lt:  #E0DAD4;
+  --proj-white:    #FAFAFA;
+  --proj-off-white:#F0F0F0;
+  --proj-muted:    #808090;
+  --font-heading:  'Garamond', Georgia, serif;
+  --font-body:     'Optima', Calibri, sans-serif;
+}

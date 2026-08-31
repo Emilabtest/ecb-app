@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Announcements — {{ channel }}</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: #0a1628;
+      color: #ffffff;
+      font-family: 'Georgia', serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #proj-frame {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #000; overflow: hidden;
+    }
+    #proj-content {
+      width: 100vw; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      transform-origin: center center;
+    }
+
+    #content {
+      max-width: 85vw;
+      text-align: center;
+    }
+
+    #text {
+      font-size: clamp(2rem, 5.5vw, 7rem);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      transition: opacity 0.4s;
+    }
+
+    #text.blank {
+      font-size: clamp(1rem, 2vw, 2rem);
+      opacity: 0.25;
+      color: #c9a84c;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+
+<div id="proj-frame">
+<div id="proj-content">
+<div id="content">
+  {% if announcement %}
+    <div id="text">{{ announcement }}</div>
+  {% else %}
+    <div id="text" class="blank">Leiturgia</div>
+  {% endif %}
+</div>
+</div>
+</div>
+
+<script>
+  const CHANNEL = "{{ channel }}";
+  const socket  = io();
+
+  const textEl = document.getElementById('text');
+
+  const _FAM_MAP = {
+    default: undefined,
+    serif:   "'Georgia', 'Times New Roman', serif",
+    sans:    "'Segoe UI', Arial, sans-serif",
+    script:  "'Brush Script MT', 'Segoe Script', cursive",
+  };
+
+  function _applyFont(data) {
+    const ffVal = _FAM_MAP[data.font_family];
+    const fwVal = data.text_bold ? 'bold' : 'normal';
+    const fiVal = data.text_italic ? 'italic' : 'normal';
+    textEl.style.fontWeight = fwVal;
+    textEl.style.fontStyle = fiVal;
+    if (ffVal) textEl.style.fontFamily = ffVal;
+    else textEl.style.removeProperty('font-family');
+    if (data.text_color) textEl.style.color = data.text_color;
+    else textEl.style.removeProperty('color');
+  }
+
+  socket.on('connect', () => {
+    socket.emit('join', { channel: CHANNEL });
+  });
+
+  socket.on('announcement:update', (data) => {
+    textEl.textContent = data.text || '';
+    textEl.classList.remove('blank');
+    _applyFont(data);
+  });
+
+  socket.on('announcement:blank', () => {
+    textEl.textContent = 'Leiturgia';
+    textEl.classList.add('blank');
+    _applyFont({});
+  });
+
+  socket.on('roles:updated', (data) => {
+    const newRole = (data.assignments || {})[CHANNEL];
+    if (newRole && newRole !== '{{ role }}') { window.location.reload(); }
+  });
+
+  // ── Projection aspect ratio ──────────────────────────────────────────
+  var _projAspect = '{{ aspect }}';
+
+  function _projApplyAspect(aspect) {
+    if (aspect !== undefined) _projAspect = aspect;
+    var c = document.getElementById('proj-content');
+    if (!c) return;
+    c.style.width = '';
+    c.style.height = '';
+    if (!_projAspect || _projAspect === 'off' || _projAspect === 'auto') return;
+    var m = /(\d+)\s*[:xX]\s*(\d+)/.exec(String(_projAspect));
+    if (!m) return;
+    var w = +m[1], h = +m[2];
+    var W = Math.min(window.innerWidth, window.innerHeight * w / h);
+    var H = W * h / w;
+    c.style.width = W + 'px';
+    c.style.height = H + 'px';
+  }
+  _projApplyAspect();
+
+  socket.on('aspect:update', function (data) {
+    _projApplyAspect(data && data.aspect);
+  });
+
+  var _projResizeRaf;
+  window.addEventListener('resize', function () {
+    cancelAnimationFrame(_projResizeRaf);
+    _projResizeRaf = requestAnimationFrame(function () { _projApplyAspect(); });
+  });
+</script>
+<div id="output-close" style="display:none;position:fixed;top:10px;right:14px;z-index:99999;opacity:.55;transition:opacity .3s;">
+  <button onclick="outputClose()" title="Close output" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;">&#10005;</button>
+</div>
+<script>
+  (function(){
+    if (location.search.indexOf('output=1') === -1) return;
+    var el = document.getElementById('output-close');
+    el.style.display = 'block';
+    var hideTimer;
+    function hide(){ el.style.opacity = '0'; }
+    function show(){ el.style.opacity = '.55'; }
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('mouseleave', hide);
+    document.addEventListener('mousemove', function(){
+      show(); clearTimeout(hideTimer); hideTimer = setTimeout(hide, 4000);
+    });
+  })();
+  function outputClose(){
+    try {
+      fetch('/api/output/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: CHANNEL })
+      }).catch(function(){});
+    } catch(e){}
+    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+  }
+</script>
+</body>
+</html>

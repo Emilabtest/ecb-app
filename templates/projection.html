@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leiturgia — {{ channel }}</title>
+  <link id="themeLink" rel="stylesheet" href="/static/themes/default.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--proj-bg);
+      color: var(--proj-white);
+      font-family: var(--font-body);
+      overflow: hidden;
+    }
+
+    /* ── Projection aspect-ratio wrapper ── */
+    #proj-frame {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #000; overflow: hidden;
+    }
+    #proj-content {
+      width: 100vw; height: 100vh;
+      position: relative;
+      transform-origin: center center;
+    }
+
+    /* ── Fullscreen slide container ── */
+    #slide {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 4vw 6vw;
+      transition: opacity 0.25s ease;
+      position: relative;
+    }
+
+    /* ── Blank ── */
+    #slide.type-blank {
+      background: #000;
+    }
+
+    /* ── Text ── */
+    #slide.type-text {
+      background: var(--proj-bg);
+    }
+
+    .slide-header {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 2vw;
+      flex-wrap: wrap;
+      margin-bottom: 1.8rem;
+    }
+
+    .slide-part-label {
+      font-family: var(--font-body);
+      font-size: clamp(1.5rem, 5vw, 4rem);
+      font-weight: 700;
+      color: var(--proj-gold);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+.slide-part {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 10vw, 7.5rem);
+      font-weight: 700;
+      color: var(--proj-off-white);
+      text-align: center;
+      line-height: 1.15;
+    }
+
+    .slide-part--content {
+      color: var(--proj-gold);
+    }
+
+    .slide-hymn-number {
+      font-size: clamp(1.5rem, 6vw, 4.5rem);
+      font-style: italic;
+      color: var(--proj-gold);
+      letter-spacing: 0.08em;
+      margin-top: -1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .slide-stanza-label {
+      font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+      color: var(--proj-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.8rem;
+      text-align: center;
+    }
+
+    .slide-song-title {
+      font-family: var(--font-body);
+      font-size: clamp(0.8rem, 1.6vw, 1.3rem);
+      color: var(--proj-gold);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .slide-lines {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0.1em;
+      width: 100%;
+    }
+
+    .slide-line {
+      font-family: var(--font-heading);
+      font-size: 1em;
+      color: var(--proj-off-white);
+      text-align: center;
+      line-height: 1.35;
+      width: 100%;
+    }
+
+    /* Body text (non-song items) */
+    .slide-body {
+      font-size: clamp(2rem, 7vw, 5rem);
+      font-weight: 700;
+      color: var(--proj-off-white);
+      text-align: center;
+    }
+
+    .slide-participants {
+      margin-top: 0.6rem;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 1.2rem;
+    }
+
+    .slide-participant {
+      display: flex; flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* Scale name by participant count */
+    /* All counts share the same base — "Michaella Grace Palar" is the standard */
+    .slide-participant .name {
+      font-family: var(--font-heading);
+      font-size: clamp(3rem, 13vw, 9.5rem);
+      color: var(--proj-off-white);
+      font-weight: 700;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
+    /* ── Announcement ── */
+    #slide.type-announcement {
+      background: var(--proj-dark);
+    }
+
+    .announcement-label {
+      font-size: clamp(0.7rem, 1.3vw, 0.95rem);
+      color: var(--proj-gold);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .announcement-text {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 4vw, 3.2rem);
+      color: var(--proj-white);
+      text-align: center;
+      line-height: 1.4;
+      max-width: 80vw;
+    }
+
+    /* ── Timer ── */
+    #slide.type-timer {
+      background: var(--proj-dark);
+    }
+
+    .timer-digits {
+      font-family: var(--font-heading);
+      font-size: clamp(5rem, 18vw, 14rem);
+      font-weight: 700;
+      color: var(--proj-gold-lt);
+      letter-spacing: 0.05em;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .timer-digits.urgent {
+      color: #e05252;
+    }
+
+    .timer-label {
+      font-size: clamp(1rem, 2.5vw, 1.8rem);
+      color: var(--proj-muted);
+      text-align: center;
+      margin-top: 1.2rem;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Media ── */
+    #slide.type-image, #slide.type-video, #slide.type-live {
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* Blurred background layer for portrait/narrow images */
+    #slide.type-image .img-blur-bg {
+      position: absolute;
+      inset: -30px;          /* overshoot to hide blur fade at edges */
+      background-size: cover;
+      background-position: center;
+      filter: blur(28px);
+      transform: scale(1.05);
+      display: none;
+    }
+
+    #slide.type-image .img-main {
+      width: 100%; height: 100%;
+      position: relative;
+      z-index: 1;
+      object-fit: contain;   /* overridden to cover for landscape */
+    }
+
+    #slide.type-video video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+
+    #slide.type-video iframe {
+      width: 100%; height: 100%;
+      border: none;
+    }
+
+    #slide.type-live video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* ── YouTube blocked overlay ── */
+    .yt-blocked-overlay {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      width: 100%; height: 100%; gap: 1rem;
+      background: #080808;
+    }
+    .yt-blocked-icon { font-size: 3rem; }
+    .yt-blocked-msg  { font-size: 1.3rem; color: #e07070; text-align: center; padding: 0 2rem; }
+    .yt-blocked-hint { font-size: 0.85rem; color: #777; }
+
+    /* ── Waiting state ── */
+    #waiting {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0.6rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+
+    #waiting.visible {
+      opacity: 1;
+    }
+
+    .waiting-dot {
+      width: 8px; height: 8px;
+      background: var(--proj-muted);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .waiting-text {
+      font-size: 0.85rem;
+      color: var(--proj-muted);
+      letter-spacing: 0.08em;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50%       { opacity: 1;   transform: scale(1);   }
+    }
+
+    /* ── Channel badge (top-right corner) ── */
+    #channel-badge {
+      position: fixed;
+      top: 12px; right: 16px;
+      font-size: 0.65rem;
+      color: var(--proj-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* ── Custom theme background layer ── */
+    #custom-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 0;
+      pointer-events: none;
+    }
+    #custom-bg.visible { opacity: 1; }
+    #slide { z-index: 1; position: relative; }
+    #waiting { z-index: 2; }
+
+    /* When the custom background image is shown, let it show through by making
+       the slide container transparent (the image is a fixed layer behind #slide). */
+    #custom-bg.visible ~ #slide { background: transparent !important; }
+    #custom-bg.visible ~ #slide > .slide-header,
+    #custom-bg.visible ~ #slide > .slide-part,
+    #custom-bg.visible ~ #slide > .slide-part-label,
+    #custom-bg.visible ~ #slide > .slide-body,
+    #custom-bg.visible ~ #slide > .slide-lines,
+    #custom-bg.visible ~ #slide > .slide-participants {
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="proj-frame">
+<div id="proj-content">
+
+<div id="channel-badge">{{ channel }}</div>
+
+<div id="custom-bg" data-bg="{{ (custom_theme.slots[custom_theme.active] or '') }}" {% if custom_theme.slots and custom_theme.slots[custom_theme.active] %}data-hasbg="1"{% endif %}></div>
+
+<div id="slide" class="type-blank">
+  <!-- Content injected by JS -->
+</div>
+
+<div id="waiting" class="visible">
+  <div class="waiting-dot"></div>
+  <div class="waiting-text">Waiting for content…</div>
+</div>
+
+</div>
+</div>
+
+<script src="/static/socket.io.js"></script>
+<script>
+  const CHANNEL = '{{ channel }}';
+  const socket  = io({
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 300,
+    reconnectionDelayMax: 1000,
+    randomizationFactor: 0.5,
+    timeout: 4000,
+    pingInterval: 15000,
+    pingTimeout: 8000,
+  });
+
+  // ── Timer state ────────────────────────────────────────────────────────────
+  let _timerInterval = null;
+  let _timerSeconds  = 0;
+  let _timerLabel    = '';
+
+  // ── Socket events ──────────────────────────────────────────────────────────
+  socket.on('connect', function () {
+    socket.emit('join', { channel: CHANNEL });
+    socket.emit('state:restore', { channel: CHANNEL });
+  });
+
+  socket.on('slide:show',   function (data) { renderState(data); });
+  socket.on('slide:blank',  function (data) { renderState(data); });
+  socket.on('slide:edit',   function (data) { renderState(data); });
+  socket.on('announcement', function (data) { renderState(data); });
+
+  socket.on('media:image',  function (data) { renderState(data); });
+  socket.on('media:video',  function (data) { renderState(data); });
+  socket.on('media:live',   function (data) { renderState(data); });
+
+  socket.on('timer:show',   function (data) { renderTimer(data); });
+  socket.on('timer:start',  function (data) { startTimer(data); });
+  socket.on('timer:pause',  function ()     { pauseTimer(); });
+  socket.on('timer:reset',  function (data) { resetTimer(data); });
+
+  socket.on('roles:updated', function (data) {
+    var newRole = (data.assignments || {})[CHANNEL];
+    if (newRole && newRole !== '{{ role }}') { window.location.reload(); }
+  });
+
+  // ── Render dispatcher ──────────────────────────────────────────────────────
+  // ── Theme switching ──────────────────────────────────────────────────────
+  let _currentTheme = 'default';
+
+  function _applyCustomBg(themeId, bgUrl) {
+    const customBg = document.getElementById('custom-bg');
+    if (!customBg) return;
+    if (bgUrl !== undefined && bgUrl !== null) {
+      customBg.setAttribute('data-bg', bgUrl);
+    }
+    const cur = (bgUrl !== undefined && bgUrl !== null) ? bgUrl : (customBg.getAttribute('data-bg') || '');
+    customBg.style.backgroundImage = cur ? `url('${cur}')` : '';
+    const show = themeId === 'custom' && !!cur;
+    customBg.classList.toggle('visible', show);
+    if (customBg.hasAttribute('data-hasbg')) {
+      customBg.setAttribute('data-hasbg', show ? '1' : '0');
+    }
+  }
+
+  function applyTheme(themeId) {
+    if (!themeId || themeId === _currentTheme) return;
+    const link = document.getElementById('themeLink');
+    if (link) {
+      link.href = `/static/themes/${themeId}.css`;
+      _currentTheme = themeId;
+    }
+    _applyCustomBg(themeId);
+  }
+
+  // Operator changed the theme dropdown — apply immediately even without a slide.
+  socket.on('theme:apply', function (data) {
+    const themeId = data && data.theme_id;
+    if (!themeId) return;
+    if (themeId !== _currentTheme) {
+      const link = document.getElementById('themeLink');
+      if (link) { link.href = `/static/themes/${themeId}.css`; _currentTheme = themeId; }
+    }
+    _applyCustomBg(themeId, data && data.custom_bg);
+    // When the operator selects a custom background, show it right away by
+    // clearing any leftover slide content (no need to blank manually).
+    if (themeId === 'custom' && (data && data.custom_bg)) {
+      const slide = document.getElementById('slide');
+      slide.innerHTML = '';
+      slide.className = 'type-blank';
+    }
+  });
+
+  function renderState(state) {
+    const type = state.type || 'blank';
+    applyTheme(state.theme_id || (state.data && state.data.theme_id));
+    stopTimer();
+
+    switch (type) {
+      case 'text':         renderText(state.data || state);  break;
+      case 'blank':        renderBlank();                     break;
+      case 'announcement': renderAnnouncement(state.data || state); break;
+      case 'image':        renderImage(state.data || state);  break;
+      case 'video':        renderVideo(state.data || state);  break;
+      case 'live':         renderLive(state.data || state);   break;
+      case 'timer':        renderTimer(state.data || state);  break;
+      default:             renderBlank();
+    }
+  }
+
+  function setSlideType(type) {
+    const slide = document.getElementById('slide');
+    slide.className = 'type-' + type;
+    document.getElementById('waiting').classList.remove('visible');
+  }
+
+  // ── Text ───────────────────────────────────────────────────────────────────
+  function renderText(data) {
+    setSlideType('text');
+    const slide = document.getElementById('slide');
+    let html = '';
+
+    if (data.stanza) {
+      // Stanza slide: lyrics only
+      html += `<div class="slide-lines">`;
+      (data.stanza.lines || []).forEach(l => {
+        html += `<div class="slide-line">${esc(l)}</div>`;
+      });
+      html += `</div>`;
+      slide.innerHTML = html;
+      fitLyricsToSlide();
+      return;
+    } else if (data.is_content_para) {
+      // Content paragraph slide: song-style layout + auto-fit
+      // Part label on every paragraph slide
+      if (data.part) {
+        const pFsSizes = { sm: 'clamp(1rem,3vw,2.5rem)', md: 'clamp(1.5rem,5vw,4rem)',
+                           lg: 'clamp(2rem,7vw,5.5rem)', xl: 'clamp(2.5rem,9vw,7rem)' };
+        const pFsVal = pFsSizes[data.part_font_size] || pFsSizes.md;
+        html += `<div class="slide-header"><div class="slide-part-label" style="font-size:${pFsVal}">${esc(data.part)}</div></div>`;
+      }
+      html += `<div class="slide-lines">`;
+      (data.body || '').split('\n').forEach(l => {
+        html += `<div class="slide-line">${esc(l)}</div>`;
+      });
+      html += `</div>`;
+      slide.innerHTML = html;
+      fitLyricsToSlide();
+      return;
+    } else {
+      const hasParticipants = data.participants && data.participants.length;
+      const isContent = !!data.body;
+
+      if (data.part) {
+        const pFsSizes = { sm: 'clamp(1rem,3vw,2.5rem)', md: 'clamp(1.5rem,5vw,4rem)',
+                           lg: 'clamp(2rem,7vw,5.5rem)', xl: 'clamp(2.5rem,9vw,7rem)' };
+        const pFsVal = pFsSizes[data.part_font_size] || pFsSizes.md;
+        html += `<div class="slide-part-label" style="font-size:${pFsVal}">${esc(data.part)}</div>`;
+      }
+
+      // Centered title card content (title + hymn number)
+      if (!hasParticipants && !isContent && data.title) {
+        html += `<div class="slide-part">${esc(data.title)}</div>`;
+        if (data.hymn_number) {
+          html += `<div class="slide-hymn-number">#${esc(String(data.hymn_number))}</div>`;
+        }
+      }
+
+      if (data.body) {
+        const fsSizes = { sm: 'clamp(1.2rem,4vw,3rem)', md: 'clamp(2rem,7vw,5rem)',
+                          lg: 'clamp(2.5rem,9vw,6.5rem)', xl: 'clamp(3rem,11vw,8rem)' };
+        const famMap = {
+          default: undefined,
+          serif:   "'Georgia', 'Times New Roman', serif",
+          sans:    "'Segoe UI', Arial, sans-serif",
+          script:  "'Brush Script MT', 'Segoe Script', cursive",
+        };
+        const fsVal = fsSizes[data.font_size] || fsSizes.md;
+        const taVal = ['left','center','right'].includes(data.text_align) ? data.text_align : 'center';
+        const ffVal = famMap[data.font_family];
+        const fwVal = data.text_bold ? 'bold' : 'normal';
+        const fiVal = data.text_italic ? 'italic' : 'normal';
+        let cst = `font-size:${fsVal};text-align:${taVal};white-space:pre-wrap;font-weight:${fwVal};font-style:${fiVal};`;
+        if (ffVal) cst += `font-family:${ffVal};`;
+        if (data.text_color) cst += `color:${data.text_color};`;
+        html += `<div class="slide-body" style="${cst}">${esc(data.body)}</div>`;
+      }
+
+      if (hasParticipants) {
+        const count = Math.min(data.participants.length, 3);
+        html += `<div class="slide-participants count-${count}">`;
+        data.participants.forEach(p => {
+          html += `<div class="slide-participant">`;
+          html += `<span class="name">${esc(p.name || '')}</span>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+    }
+
+    slide.innerHTML = html;
+    if (data.participants && data.participants.length) fitParticipantNames();
+  }
+
+  function fitParticipantNames() {
+    const limit = document.getElementById('slide').clientWidth * 0.55;
+    const els = document.querySelectorAll('.slide-participant .name');
+    let minSize = Infinity;
+    els.forEach(el => {
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      while (el.scrollWidth > limit && size > 16) {
+        size -= 1;
+        el.style.fontSize = size + 'px';
+      }
+      minSize = Math.min(minSize, size);
+    });
+    els.forEach(el => el.style.fontSize = minSize + 'px');
+  }
+
+  // ── Blank ──────────────────────────────────────────────────────────────────
+  function renderBlank() {
+    setSlideType('blank');
+    document.getElementById('slide').innerHTML = '';
+  }
+
+  // ── Announcement ───────────────────────────────────────────────────────────
+  function renderAnnouncement(data) {
+    setSlideType('announcement');
+    const text = data.text || data.message || '';
+    const famMap = {
+      default: undefined,
+      serif:   "'Georgia', 'Times New Roman', serif",
+      sans:    "'Segoe UI', Arial, sans-serif",
+      script:  "'Brush Script MT', 'Segoe Script', cursive",
+    };
+    const ffVal = famMap[data.font_family];
+    const fwVal = data.text_bold ? 'bold' : 'normal';
+    const fiVal = data.text_italic ? 'italic' : 'normal';
+    let cst = `font-weight:${fwVal};font-style:${fiVal};`;
+    if (ffVal) cst += `font-family:${ffVal};`;
+    if (data.text_color) cst += `color:${data.text_color};`;
+    document.getElementById('slide').innerHTML =
+      `<div class="announcement-label">Announcement</div>
+       <div class="announcement-text" style="${cst}">${esc(text)}</div>`;
+  }
+
+  // ── Image ──────────────────────────────────────────────────────────────────
+  function renderImage(data) {
+    setSlideType('image');
+    const slide = document.getElementById('slide');
+    const url = esc(data.url || data.src || '');
+
+    slide.innerHTML =
+      `<div class="img-blur-bg" style="background-image:url('${url}')"></div>
+       <img class="img-main" src="${url}" alt="">`;
+
+    const img    = slide.querySelector('.img-main');
+    const blurBg = slide.querySelector('.img-blur-bg');
+
+    function applyFit() {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      if (ratio > 1) {
+        // Landscape: scale to cover, slight top/bottom crop if needed
+        img.style.objectFit = 'cover';
+        blurBg.style.display = 'none';
+      } else {
+        // Portrait or square: show full image, blur-pad fills the sides
+        img.style.objectFit = 'contain';
+        blurBg.style.display = 'block';
+      }
+    }
+
+    if (img.complete && img.naturalWidth) applyFit();
+    else img.addEventListener('load', applyFit);
+  }
+
+  // ── YouTube IFrame API loader ──────────────────────────────────────────────
+  const _YT_RE         = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
+  const _YT_ERR_MSG    = { 2: 'Invalid video ID', 100: 'Video not found or private',
+                            101: 'Embedding disabled by owner', 150: 'Embedding disabled by owner' };
+  let   _ytAPIReady    = false;
+  const _ytAPIQueue    = [];
+
+  window.onYouTubeIframeAPIReady = function () {
+    _ytAPIReady = true;
+    _ytAPIQueue.forEach(fn => fn());
+    _ytAPIQueue.length = 0;
+  };
+
+  function _loadYTAPI(cb) {
+    if (_ytAPIReady) { cb(); return; }
+    _ytAPIQueue.push(cb);
+    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const s = document.createElement('script');
+      s.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(s);
+    }
+  }
+
+  // ── Video ──────────────────────────────────────────────────────────────────
+  function renderVideo(data) {
+    setSlideType('video');
+    const slide = document.getElementById('slide');
+    slide.innerHTML = '';
+
+    const url     = data.url || data.src || '';
+    const ytMatch = url.match(_YT_RE);
+
+    if (ytMatch) {
+      const videoId  = ytMatch[1];
+      const wantAudio = (data.mute === true) ? false : true;  // unmute after play unless explicitly muted
+      const auto      = (data.autoplay !== false) ? 1 : 0;
+
+      const container = document.createElement('div');
+      slide.appendChild(container);
+
+      _loadYTAPI(function () {
+        new YT.Player(container, {
+          width: '100%', height: '100%',
+          videoId: videoId,
+          playerVars: {
+            autoplay:       auto,
+            mute:           1,   // always start muted so browser allows autoplay
+            loop:           data.loop ? 1 : 0,
+            playlist:       data.loop ? videoId : undefined,
+            controls:       0,
+            modestbranding: 1,
+            rel:            0,
+          },
+          events: {
+            onReady: function (e) {
+              if (auto) e.target.playVideo();
+            },
+            onStateChange: function (e) {
+              // Once playing, unmute if the item doesn't have mute checked
+              if (e.data === YT.PlayerState.PLAYING && wantAudio) {
+                e.target.unMute();
+                e.target.setVolume(100);
+                socket.emit('media:status', { channel: CHANNEL, audio: 'ok' });
+              }
+            },
+            onError: function (e) {
+              const msg = _YT_ERR_MSG[e.data] || `Playback error (code ${e.data})`;
+              slide.innerHTML =
+                `<div class="yt-blocked-overlay">
+                   <span class="yt-blocked-icon">⛔</span>
+                   <span class="yt-blocked-msg">${msg}</span>
+                   <span class="yt-blocked-hint">Download the video to play it locally</span>
+                 </div>`;
+              socket.emit('media:blocked', { channel: CHANNEL, video_id: videoId, code: e.data, message: msg });
+            },
+          },
+        });
+      });
+    } else {
+      const vid = document.createElement('video');
+      vid.src         = url;
+      vid.loop        = data.loop || false;
+      vid.muted       = true;   // always start muted — unmuted after play() resolves
+      vid.playsInline = true;
+      vid.preload     = 'auto';
+      vid.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+      slide.appendChild(vid);
+
+      vid.play()
+        .then(() => {
+          vid.muted = false;
+          socket.emit('media:status', { channel: CHANNEL, audio: 'ok' });
+        })
+        .catch(() => {
+          // Stay muted — video still plays silently (acceptable on Smart TVs)
+          socket.emit('media:status', { channel: CHANNEL, audio: 'muted' });
+        });
+    }
+  }
+
+  // ── Live input ─────────────────────────────────────────────────────────────
+  var _liveStreams = {};
+  function renderLive(data) {
+    setSlideType('live');
+    const slide = document.getElementById('slide');
+    slide.innerHTML = '';
+
+    const deviceId = data.device_id || '';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      slide.innerHTML = '<div class="slide-lines"><div class="slide-line">Live input not supported in this browser.</div></div>';
+      return;
+    }
+
+    const vid = document.createElement('video');
+    vid.autoplay    = true;
+    vid.playsInline = true;
+    vid.muted       = true;
+    vid.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
+    slide.appendChild(vid);
+
+    if (_liveStreams[deviceId]) {
+      _liveStreams[deviceId].getTracks().forEach(function (t) { t.stop(); });
+    }
+    navigator.mediaDevices.getUserMedia({ video: deviceId ? { deviceId: { exact: deviceId } } : true, audio: false })
+      .then(function (stream) {
+        _liveStreams[deviceId] = stream;
+        vid.srcObject = stream;
+      })
+      .catch(function (err) {
+        slide.innerHTML = '<div class="slide-lines"><div class="slide-line">Unable to access live input.</div></div>';
+        socket.emit('media:status', { channel: CHANNEL, audio: 'err', message: String(err) });
+      });
+  }
+
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  function renderTimer(data) {
+    setSlideType('timer');
+    _timerSeconds = data.seconds || 0;
+    _timerLabel   = data.label   || '';
+    _updateTimerDisplay();
+    if (data.running) startTimer(data);
+  }
+
+  function startTimer(data) {
+    if (data && data.seconds !== undefined) _timerSeconds = data.seconds;
+    if (data && data.label   !== undefined) _timerLabel   = data.label;
+    setSlideType('timer');
+    stopTimer();
+    _timerInterval = setInterval(function () {
+      if (_timerSeconds > 0) {
+        _timerSeconds--;
+        _updateTimerDisplay();
+      } else {
+        stopTimer();
+      }
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    stopTimer();
+  }
+
+  function resetTimer(data) {
+    stopTimer();
+    _timerSeconds = (data && data.seconds) || 0;
+    _timerLabel   = (data && data.label)   || _timerLabel;
+    _updateTimerDisplay();
+  }
+
+  function stopTimer() {
+    if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+  }
+
+  function _updateTimerDisplay() {
+    const m = Math.floor(_timerSeconds / 60);
+    const s = _timerSeconds % 60;
+    const str = m + ':' + String(s).padStart(2, '0');
+    const urgent = _timerSeconds <= 60 && _timerSeconds > 0;
+    const slide = document.getElementById('slide');
+    slide.innerHTML =
+      `<div class="timer-digits${urgent ? ' urgent' : ''}">${str}</div>
+       <div class="timer-label">${esc(_timerLabel)}</div>`;
+  }
+
+  // ── Utility ────────────────────────────────────────────────────────────────
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Fit lyrics to fill the slide ───────────────────────────────────────────
+  function fitLyricsToSlide() {
+    const slide = document.getElementById('slide');
+    const lines = slide.querySelector('.slide-lines');
+    if (!lines) return;
+    const st     = getComputedStyle(slide);
+    const availH = slide.clientHeight - parseFloat(st.paddingTop)  - parseFloat(st.paddingBottom);
+    const availW = slide.clientWidth  - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight);
+    if (availH <= 0 || availW <= 0) return;
+    let lo = 28, hi = 400;
+    while (hi - lo > 2) {
+      const mid = (lo + hi) / 2;
+      lines.style.fontSize = mid + 'px';
+      if (lines.scrollHeight <= availH) lo = mid;
+      else hi = mid;
+    }
+    lines.style.fontSize = Math.max(28, Math.floor(lo)) + 'px';
+  }
+
+  let _lyricsFitRaf;
+  window.addEventListener('resize', function () {
+    if (!document.querySelector('#slide .slide-lines')) return;
+    cancelAnimationFrame(_lyricsFitRaf);
+    _lyricsFitRaf = requestAnimationFrame(fitLyricsToSlide);
+  });
+
+  // ── Projection aspect ratio ──────────────────────────────────────────
+  var _projAspect = '{{ aspect }}';
+
+  function _projApplyAspect(aspect) {
+    if (aspect !== undefined) _projAspect = aspect;
+    var c = document.getElementById('proj-content');
+    if (!c) return;
+    c.style.width = '';
+    c.style.height = '';
+    if (!_projAspect || _projAspect === 'off' || _projAspect === 'auto') return;
+    var m = /(\d+)\s*[:xX]\s*(\d+)/.exec(String(_projAspect));
+    if (!m) return;
+    var w = +m[1], h = +m[2];
+    var W = Math.min(window.innerWidth, window.innerHeight * w / h);
+    var H = W * h / w;
+    c.style.width = W + 'px';
+    c.style.height = H + 'px';
+  }
+  _projApplyAspect();
+
+  socket.on('aspect:update', function (data) {
+    _projApplyAspect(data && data.aspect);
+  });
+
+  var _projResizeRaf;
+  window.addEventListener('resize', function () {
+    cancelAnimationFrame(_projResizeRaf);
+    _projResizeRaf = requestAnimationFrame(function () { _projApplyAspect(); });
+  });
+</script>
+<div id="output-close" style="display:none;position:fixed;top:10px;right:14px;z-index:99999;opacity:.55;transition:opacity .3s;">
+  <button onclick="outputClose()" title="Close output" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;">&#10005;</button>
+</div>
+<script>
+  (function(){
+    if (location.search.indexOf('output=1') === -1) return;
+    var el = document.getElementById('output-close');
+    el.style.display = 'block';
+    var hideTimer;
+    function hide(){ el.style.opacity = '0'; }
+    function show(){ el.style.opacity = '.55'; }
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('mouseleave', hide);
+    document.addEventListener('mousemove', function(){
+      show(); clearTimeout(hideTimer); hideTimer = setTimeout(hide, 4000);
+    });
+  })();
+  function outputClose(){
+    try {
+      fetch('/api/output/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: CHANNEL })
+      }).catch(function(){});
+    } catch(e){}
+    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+  }
+</script>
+</body>
+</html>

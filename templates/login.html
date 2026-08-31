@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leiturgia — Operator Login</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      background: #0f1b2d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    .login-box {
+      background: #1a2a3a;
+      padding: 2.5rem;
+      border-radius: 12px;
+      text-align: center;
+      width: 320px;
+    }
+    h1 { color: #c9a84c; margin: 0 0 0.25rem; font-size: 1.8rem; }
+    p  { color: #8899aa; font-size: 0.9rem; margin: 0 0 1.5rem; }
+    input[type="password"] {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1.5rem;
+      text-align: center;
+      letter-spacing: 0.5rem;
+      border: 1px solid #2a3a4a;
+      border-radius: 8px;
+      background: #0f1b2d;
+      color: #fff;
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="password"]:focus { border-color: #c9a84c; }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #c9a84c;
+      color: #0f1b2d;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.88; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .error { color: #e05555; margin-top: 1rem; font-size: 0.9rem; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>Leiturgia</h1>
+    <p>Operator Console — Enter PIN to continue</p>
+    <input type="password" id="pin" maxlength="6"
+           placeholder="••••" autofocus
+           onkeydown="if(event.key==='Enter') login()">
+    <button id="btn" onclick="login()">Unlock</button>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    async function login() {
+      const pin = document.getElementById('pin').value.trim();
+      if (!pin) return;
+      const btn = document.getElementById('btn');
+      btn.disabled = true;
+      document.getElementById('error').textContent = '';
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        if (res.ok) {
+          const params = new URLSearchParams(window.location.search);
+          window.location.href = params.get('next') || '/';
+        } else if (res.status === 429) {
+          document.getElementById('error').textContent = 'Too many attempts. Wait a moment and try again.';
+        } else {
+          document.getElementById('error').textContent = 'Incorrect PIN. Try again.';
+          document.getElementById('pin').value = '';
+          document.getElementById('pin').focus();
+        }
+      } catch (_) {
+        document.getElementById('error').textContent = 'Connection error. Try again.';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+/* royal.css — Deep purple/gold */
+:root {
+  --proj-bg:       #130C24;
+  --proj-card:     #1E1438;
+  --proj-dark:     #090616;
+  --proj-gold:     #C8A040;
+  --proj-gold-lt:  #E0C060;
+  --proj-white:    #F8F4FF;
+  --proj-off-white:#EEE8FF;
+  --proj-muted:    #8070A8;
+  --font-heading:  'Garamond', Georgia, serif;
+  --font-body:     Calibri, 'DM Sans', sans-serif;
+}

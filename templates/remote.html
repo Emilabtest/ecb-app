@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Leiturgia Remote</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #0f1b2d;
+      --surface: #1a2a3a;
+      --card:    #223040;
+      --border:  #2a3a4a;
+      --gold:    #c9a84c;
+      --gold-lt: #e0c070;
+      --white:   #f0f4f8;
+      --muted:   #6b7f93;
+      --error:   #e05555;
+      --green:   #16a34a;
+      --blue:    #2563eb;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--navy);
+      color: var(--white);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      z-index: 10;
+    }
+    .nav-logo {
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+    .nav-tabs {
+      display: flex;
+      flex: 1;
+      height: 100%;
+    }
+    .nav-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      letter-spacing: .03em;
+    }
+    .nav-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    .nav-status {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-right: 14px;
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .nav-status.online { background: #4caf82; box-shadow: 0 0 6px #4caf82; }
+
+    /* ── Modes ── */
+    .mode { display: none; flex-direction: column; position: fixed;
+            top: 52px; left: 0; right: 0; bottom: 0; }
+    .mode.active { display: flex; }
+
+    /* ── Slide Control mode ── */
+    .slide-previews {
+      flex: 1;
+      display: flex;
+      gap: 10px;
+      padding: 14px;
+      min-height: 0;
+    }
+    .slide-box {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .slide-box-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: 8px 12px 4px;
+      flex-shrink: 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    /* Phone: vertical stack — 50/50 */
+    .slide-previews  { flex-direction: column; }
+    .slide-current   { flex: 1 1 0; min-height: 0; }
+    .slide-next      { display: flex; flex: 1 1 0; min-height: 0; background: #0a1628; }
+
+    /* Tablet+: side by side (restore defaults) */
+    @media (min-width: 768px) {
+      .slide-previews { flex-direction: row; }
+      .slide-current  { flex: 1; background: var(--card); }
+      .slide-next     { flex: 1; background: var(--card); }
+    }
+
+    /* ── Preview screen (current slide box) ── */
+    .slide-content {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
+      background: #0D1B3E;
+      user-select: none;
+    }
+
+    /* ── Control buttons ── */
+    .ctrl-buttons {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 14px 14px;
+    }
+    .btn-blank {
+      width: 100%;
+      min-height: 56px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-blank:active { background: var(--surface); color: var(--white); }
+
+    .btn-row { display: flex; gap: 8px; }
+    .btn-prev, .btn-next {
+      flex: 1;
+      min-height: 72px;
+      border: none;
+      border-radius: 10px;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-prev:active, .btn-next:active { opacity: .8; transform: scale(.97); }
+    .btn-prev { background: var(--card); color: var(--white); border: 1px solid var(--border); }
+    .btn-next { background: var(--gold); color: var(--navy); }
+
+    /* ── Channel Switch mode ── */
+    #mode-channels {
+      padding: 16px;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .ch-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .ch-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ch-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .ch-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 34px;
+      letter-spacing: .04em;
+    }
+    .ch-role-btns {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      flex: 1;
+    }
+    .btn-role {
+      min-height: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+      padding: 0 4px;
+    }
+    .btn-role.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+    .btn-role:active { opacity: .75; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">✦ Remote</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchMode('slides')">Slides</button>
+    <button class="nav-tab" onclick="switchMode('channels')">Channels</button>
+  </div>
+  <div class="nav-status" id="navStatus"></div>
+</nav>
+
+<!-- Slide Control mode -->
+<div class="mode active" id="mode-slides">
+  <div class="slide-previews" id="slidePreviewArea">
+    <div class="slide-box slide-current" id="boxCurrent">
+      <div class="slide-box-label">Current</div>
+      <div class="slide-content" id="slideCurrent">
+        <iframe id="remotePreviewFrame" src="/ch1" scrolling="no" tabindex="-1"
+                style="position:absolute;top:0;left:0;width:1920px;height:1080px;border:none;pointer-events:none;transform-origin:top left;"></iframe>
+      </div>
+    </div>
+    <div class="slide-box slide-next" id="boxNext">
+      <div class="slide-box-label">Next</div>
+      <div class="slide-content" id="slideNext">
+        <iframe id="remoteNextFrame" src="/ch1" scrolling="no" tabindex="-1"
+                style="position:absolute;top:0;left:0;width:1920px;height:1080px;border:none;pointer-events:none;transform-origin:top left;"></iframe>
+      </div>
+    </div>
+  </div>
+  <div class="ctrl-buttons">
+    <button class="btn-blank" id="btnBlank" onclick="doBlank()">BLANK</button>
+    <div class="btn-row">
+      <button class="btn-prev" id="btnPrev" onclick="doPrev()">‹ PREV</button>
+      <button class="btn-next" id="btnNext" onclick="doNext()">NEXT ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- Channel Switch mode -->
+<div class="mode" id="mode-channels">
+  <div class="ch-section-label">Channel Assignments</div>
+  <div class="ch-grid">
+    <div class="ch-row">
+      <span class="ch-label">CH 1</span>
+      <div class="ch-role-btns">
+        <button class="btn-role" data-ch="ch1" data-role="main"         onclick="assignRole(this)">MAIN</button>
+        <button class="btn-role" data-ch="ch1" data-role="order_of_service" onclick="assignRole(this)">ORDER</button>
+        <button class="btn-role" data-ch="ch1" data-role="timer"        onclick="assignRole(this)">TIMER</button>
+        <button class="btn-role" data-ch="ch1" data-role="announcement" onclick="assignRole(this)">ANNC</button>
+      </div>
+    </div>
+    <div class="ch-row">
+      <span class="ch-label">CH 2</span>
+      <div class="ch-role-btns">
+        <button class="btn-role" data-ch="ch2" data-role="main"         onclick="assignRole(this)">MAIN</button>
+        <button class="btn-role" data-ch="ch2" data-role="order_of_service" onclick="assignRole(this)">ORDER</button>
+        <button class="btn-role" data-ch="ch2" data-role="timer"        onclick="assignRole(this)">TIMER</button>
+        <button class="btn-role" data-ch="ch2" data-role="announcement" onclick="assignRole(this)">ANNC</button>
+      </div>
+    </div>
+    <div class="ch-row">
+      <span class="ch-label">CH 3</span>
+      <div class="ch-role-btns">
+        <button class="btn-role" data-ch="ch3" data-role="main"         onclick="assignRole(this)">MAIN</button>
+        <button class="btn-role" data-ch="ch3" data-role="order_of_service" onclick="assignRole(this)">ORDER</button>
+        <button class="btn-role" data-ch="ch3" data-role="timer"        onclick="assignRole(this)">TIMER</button>
+        <button class="btn-role" data-ch="ch3" data-role="announcement" onclick="assignRole(this)">ANNC</button>
+      </div>
+    </div>
+    <div class="ch-row">
+      <span class="ch-label">CH 4</span>
+      <div class="ch-role-btns">
+        <button class="btn-role" data-ch="ch4" data-role="main"         onclick="assignRole(this)">MAIN</button>
+        <button class="btn-role" data-ch="ch4" data-role="order_of_service" onclick="assignRole(this)">ORDER</button>
+        <button class="btn-role" data-ch="ch4" data-role="timer"        onclick="assignRole(this)">TIMER</button>
+        <button class="btn-role" data-ch="ch4" data-role="announcement" onclick="assignRole(this)">ANNC</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+  const socket = io();
+  let currentSync = null;
+
+  // ── Connection ───────────────────────────────────────────────────────────────
+  socket.on('connect', () => {
+    document.getElementById('navStatus').className = 'nav-status online';
+    socket.emit('remote:join');
+  });
+  socket.on('disconnect', () => {
+    document.getElementById('navStatus').className = 'nav-status';
+  });
+
+  // ── Mode switching ────────────────────────────────────────────────────────────
+  function switchMode(name) {
+    document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('mode-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── remote:sync ──────────────────────────────────────────────────────────────
+  socket.on('remote:sync', data => {
+    currentSync = data;
+    renderCurrentSlide(data);
+    renderNextSlide(data);
+    if (data.assignments) {
+      rebuildRoleGrid(data.assignments);
+    }
+  });
+
+  function _renderVideoIcon(slide, data) {
+    const url     = data.url || data.src || '';
+    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (ytMatch) {
+      slide.innerHTML = '<img src="https://img.youtube.com/vi/' + ytMatch[1] + '/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;display:block;">';
+    } else {
+      const name = (url.split('/').pop().replace(/%20/g, ' ') || 'Video').replace(/</g,'&lt;');
+      slide.innerHTML =
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+        'width:100%;height:100%;background:#000;color:#8C9AB5;gap:40px;">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 24 24" fill="#8C9AB5">' +
+        '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" opacity=".3"/>' +
+        '<path d="M18 4H6L4 6h16l-2-2zM4 18h16v-1H4v1zM20 7H4v9h16V7zM9 8h1v1H9V8zm-2 0h1v1H7V8zm-2 0h1v1H5V8zm14 0h1v1h-1V8zm-2 0h1v1h-1V8zm-2 0h1v1h-1V8zM5 16h1v1H5v-1zm2 0h1v1H7v-1zm2 0h1v1H9v-1zm8 0h1v1h-1v-1zm-2 0h1v1h-1v-1zm-2 0h1v1h-1v-1z"/>' +
+        '</svg>' +
+        '<span style="font-size:72px;font-family:sans-serif;">' + name + '</span>' +
+        '</div>';
+    }
+  }
+
+  function renderCurrentSlide(data) {
+    const frame     = document.getElementById('remotePreviewFrame');
+    if (!frame || !frame.contentWindow) return;
+    const slideData = data.slide_data || { type: 'blank' };
+    try {
+      if (slideData.type === 'video') {
+        const fw      = frame.contentWindow;
+        const slide   = fw.document.getElementById('slide');
+        const waiting = fw.document.getElementById('waiting');
+        if (waiting) waiting.classList.remove('visible');
+        if (slide) { slide.className = 'type-video'; _renderVideoIcon(slide, slideData.data || {}); }
+        return;
+      }
+      if (typeof frame.contentWindow.renderState === 'function') {
+        frame.contentWindow.renderState(slideData);
+      }
+    } catch(e) {}
+  }
+
+  function renderNextSlide(data) {
+    const frame = document.getElementById('remoteNextFrame');
+    if (!frame || !frame.contentWindow) return;
+    const nextData = (data || {}).next_slide_data;
+    try {
+      const fw      = frame.contentWindow;
+      const slide   = fw.document.getElementById('slide');
+      const waiting = fw.document.getElementById('waiting');
+      if (!slide) return;
+      if (waiting) waiting.classList.remove('visible');
+
+      if (!nextData) {
+        slide.className = 'type-text';
+        slide.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#4a5a7a;font-size:120px;font-family:Georgia,serif;">—</div>';
+        return;
+      }
+
+      const type   = nextData.type || 'blank';
+      const slData = nextData.data || {};
+
+      if (type === 'text' && typeof fw.renderText === 'function') {
+        // renderText calls fitLyricsToSlide so the font scales correctly
+        fw.renderText(slData);
+
+      } else if (type === 'image' && typeof fw.renderImage === 'function') {
+        fw.renderImage(slData);
+
+      } else if (type === 'video') {
+        // Render a static icon — do NOT call fw.renderVideo (it autoplays)
+        slide.className = 'type-video';
+        _renderVideoIcon(slide, slData);
+
+      } else {
+        slide.className = 'type-blank';
+        slide.innerHTML = '';
+      }
+    } catch(e) {}
+  }
+
+  // Cover-scale: fill the box in both axes, center the slide, clip overflow.
+  function _scaleFrame(boxEl, frameEl) {
+    if (!boxEl || !frameEl) return;
+    const sw    = boxEl.offsetWidth  / 1920;
+    const sh    = boxEl.offsetHeight / 1080;
+    const scale = Math.max(sw, sh);
+    const dx    = (boxEl.offsetWidth  - 1920 * scale) / 2;
+    const dy    = (boxEl.offsetHeight - 1080 * scale) / 2;
+    frameEl.style.transformOrigin = 'top left';
+    frameEl.style.transform = `translate(${dx}px,${dy}px) scale(${scale})`;
+  }
+  function _scaleRemoteFrame() {
+    _scaleFrame(
+      document.getElementById('slideCurrent'),
+      document.getElementById('remotePreviewFrame')
+    );
+  }
+  window.addEventListener('resize', _scaleRemoteFrame);
+  requestAnimationFrame(_scaleRemoteFrame);
+
+  function _patchRemoteFrameVideo() {
+    const frame = document.getElementById('remotePreviewFrame');
+    if (!frame || !frame.contentWindow) return;
+    try {
+      frame.contentWindow.renderVideo = function (data) {
+        const fw      = frame.contentWindow;
+        const slide   = fw.document.getElementById('slide');
+        const waiting = fw.document.getElementById('waiting');
+        if (!slide) return;
+        if (waiting) waiting.classList.remove('visible');
+        slide.className = 'type-video';
+        _renderVideoIcon(slide, data);
+      };
+    } catch(e) {}
+  }
+  document.getElementById('remotePreviewFrame').addEventListener('load', function() {
+    requestAnimationFrame(_scaleRemoteFrame);
+    _patchRemoteFrameVideo();
+    // Replay current slide so it shows even if remote:sync fired before this iframe loaded,
+    // and so the patched renderVideo is used instead of the original (which would play the video).
+    if (currentSync) renderCurrentSlide(currentSync);
+  });
+
+  function _scaleRemoteNextFrame() {
+    _scaleFrame(
+      document.getElementById('slideNext'),
+      document.getElementById('remoteNextFrame')
+    );
+  }
+  window.addEventListener('resize', _scaleRemoteNextFrame);
+  requestAnimationFrame(_scaleRemoteNextFrame);
+
+  document.getElementById('remoteNextFrame').addEventListener('load', function() {
+    requestAnimationFrame(_scaleRemoteNextFrame);
+    try {
+      const fw = this.contentWindow;
+      // Neutralise renderState so live socket events don't overwrite our next-slide content.
+      // projection.html uses const socket so we cannot disconnect it.
+      if (typeof fw.renderState === 'function') fw.renderState = function() {};
+    } catch(e) {}
+    renderNextSlide(currentSync || {});
+  });
+
+  // ── Slide controls ────────────────────────────────────────────────────────────
+  function doNext()  { socket.emit('remote:next'); }
+  function doPrev()  { socket.emit('remote:prev'); }
+  function doBlank() { socket.emit('remote:blank'); }
+
+  // ── Swipe gesture ─────────────────────────────────────────────────────────────
+  let touchStartX = 0;
+  const previewArea = document.getElementById('slidePreviewArea');
+  previewArea.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  previewArea.addEventListener('touchend', e => {
+    const delta = e.changedTouches[0].clientX - touchStartX;
+    if (delta < -50) doNext();
+    else if (delta > 50) doPrev();
+  });
+
+  // ── Channel assignment ────────────────────────────────────────────────────────
+  function assignRole(btn) {
+    socket.emit('roles:assign', { channels: [btn.dataset.ch], role: btn.dataset.role });
+  }
+
+  socket.on('roles:updated', data => {
+    rebuildRoleGrid(data.assignments || {});
+  });
+
+  function rebuildRoleGrid(assignments) {
+    document.querySelectorAll('.btn-role[data-ch]').forEach(btn => {
+      btn.classList.toggle('active', assignments[btn.dataset.ch] === btn.dataset.role);
+    });
+  }
+
+  // ── Util ──────────────────────────────────────────────────────────────────────
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>

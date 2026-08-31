@@ -1,0 +1,13 @@
+/* ivory.css — Light/bright for well-lit rooms */
+:root {
+  --proj-bg:       #F8F4EC;
+  --proj-card:     #EDE8DC;
+  --proj-dark:     #E0D8C8;
+  --proj-gold:     #7A5C28;
+  --proj-gold-lt:  #9A7840;
+  --proj-white:    #2A2010;
+  --proj-off-white:#3A2E1A;
+  --proj-muted:    #887858;
+  --font-heading:  'Book Antiqua', Palatino, serif;
+  --font-body:     'Gill Sans', Calibri, sans-serif;
+}

@@ -1,0 +1,13 @@
+/* ember.css — Dark/orange/amber fire tones */
+:root {
+  --proj-bg:       #1A0E06;
+  --proj-card:     #2A1810;
+  --proj-dark:     #0E0804;
+  --proj-gold:     #E87830;
+  --proj-gold-lt:  #F0A050;
+  --proj-white:    #FFF4EC;
+  --proj-off-white:#F8E8D8;
+  --proj-muted:    #A07050;
+  --font-heading:  Georgia, 'Times New Roman', serif;
+  --font-body:     Calibri, 'DM Sans', sans-serif;
+}

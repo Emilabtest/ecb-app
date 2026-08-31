@@ -1,0 +1,13 @@
+/* default.css — Navy/gold theme extracted from generator.py C dict */
+:root {
+  --proj-bg:       #0D1B3E;
+  --proj-card:     #1A2B5C;
+  --proj-dark:     #091428;
+  --proj-gold:     #D4A843;
+  --proj-gold-lt:  #F0C96A;
+  --proj-white:    #FFFFFF;
+  --proj-off-white:#E8EAF0;
+  --proj-muted:    #8C9AB5;
+  --font-heading:  Georgia, serif;
+  --font-body:     Calibri, 'DM Sans', sans-serif;
+}

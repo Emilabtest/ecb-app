@@ -1,0 +1,13 @@
+/* slate.css — Charcoal/silver/blue */
+:root {
+  --proj-bg:       #1A1E24;
+  --proj-card:     #252B34;
+  --proj-dark:     #0F1216;
+  --proj-gold:     #90A8C8;
+  --proj-gold-lt:  #B8CCDE;
+  --proj-white:    #F0F4F8;
+  --proj-off-white:#E0E8F0;
+  --proj-muted:    #6878A0;
+  --font-heading:  'Segoe UI', Arial, sans-serif;
+  --font-body:     'Segoe UI', Arial, sans-serif;
+}

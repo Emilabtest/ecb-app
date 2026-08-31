@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Order of Service — {{ channel }}</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0a1628;
+      --gold:   #c9a84c;
+      --white:  #ffffff;
+      --dim:    rgba(255,255,255,0.35);
+      --yellow: #f59e0b;
+      --red:    #ef4444;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--navy);
+      color: var(--white);
+      font-family: 'Georgia', serif;
+      overflow: hidden;
+    }
+
+    #proj-frame {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #000; overflow: hidden;
+    }
+    #proj-content {
+      width: 100vw; height: 100vh;
+      display: flex; flex-direction: column;
+      transform-origin: center center;
+    }
+
+    #header {
+      padding: 2vh 3vw 1.5vh;
+      border-bottom: 2px solid var(--gold);
+    }
+
+    #program-name {
+      font-size: clamp(1.4rem, 3vw, 2.8rem);
+      color: var(--gold);
+      letter-spacing: 0.05em;
+    }
+
+    #program-date {
+      font-size: clamp(0.9rem, 1.8vw, 1.6rem);
+      color: var(--dim);
+      margin-top: 0.3em;
+    }
+
+    #item-list {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 10vh);
+      padding: 1.5vh 0;
+      gap: 0;
+    }
+
+    .item-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 0 3vw;
+      flex: 1;
+      min-height: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      transition: background 0.4s, color 0.4s;
+    }
+
+    /* Progress bar lives as a ::before pseudo-element on the active row */
+    .item-row.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: var(--bar-pct, 0%);
+      background: rgba(255,255,255,0.12);
+      transition: width 1s linear;
+      pointer-events: none;
+    }
+
+    .item-row.active.color-yellow::before { background: rgba(245,158,11,0.18); }
+    .item-row.active.color-red::before    { background: rgba(239,68,68,0.20); }
+
+    .item-check {
+      font-size: clamp(0.8rem, 1.5vw, 1.4rem);
+      margin-right: 1.5vw;
+      opacity: 0.6;
+      min-width: 1.5em;
+    }
+
+    .item-title {
+      font-size: clamp(1.1rem, 2.5vw, 2.4rem);
+      font-weight: bold;
+      flex: 1;
+    }
+
+    .item-participant {
+      font-size: clamp(0.85rem, 1.8vw, 1.8rem);
+      color: rgba(255,255,255,0.7);
+      margin-left: 0.5em;
+    }
+
+    .item-time {
+      font-size: clamp(1rem, 2vw, 1.9rem);
+      font-variant-numeric: tabular-nums;
+      margin-left: 2vw;
+      min-width: 5ch;
+      text-align: right;
+    }
+
+    /* Status colours */
+    .item-row.done {
+      opacity: 0.35;
+      font-size: 0.85em;
+    }
+
+    .item-row.active .item-title,
+    .item-row.active .item-time { color: var(--white); }
+
+    .item-row.active.color-yellow .item-title,
+    .item-row.active.color-yellow .item-time { color: var(--yellow); }
+
+    .item-row.active.color-red .item-title,
+    .item-row.active.color-red .item-time { color: var(--red); }
+
+    .item-row.next.color-yellow .item-title { color: var(--yellow); }
+    .item-row.next.color-red    .item-title { color: var(--red); }
+  </style>
+</head>
+<body>
+
+<div id="proj-frame">
+<div id="proj-content">
+
+<div id="header">
+  <div id="program-name">{{ active_item.get('program_id', '') | replace('-', ' ') | title }}</div>
+  <div id="program-date"></div>
+</div>
+
+<div id="item-list">
+  <!-- Populated by JS on order_of_service:update -->
+  <div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:0.4;">
+    Waiting for program…
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+  const CHANNEL = "{{ channel }}";
+  const socket  = io();
+
+  let currentTimerState = 'normal';
+  let activeAllotted    = 0;   // total seconds for active item (for bar calc)
+  let activeRemaining   = 0;
+
+  socket.on('connect', () => {
+    socket.emit('join', { channel: CHANNEL });
+  });
+
+  // ── Order of Service update ─────────────────────────────────────────────────
+  socket.on('order_of_service:update', (data) => {
+    currentTimerState = data.timer_state || 'normal';
+    renderOrderOfService(data);
+  });
+
+  // ── Timer tick — update bar + colours ───────────────────────────────────────
+  socket.on('timer:tick', (data) => {
+    currentTimerState = data.state || 'normal';
+    activeRemaining   = data.remaining;
+    activeAllotted    = data.total || 1;
+    updateActiveRow(data);
+  });
+
+  socket.on('roles:updated', (data) => {
+    const newRole = (data.assignments || {})[CHANNEL];
+    if (newRole && newRole !== '{{ role }}') { window.location.reload(); }
+  });
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  function renderOrderOfService(data) {
+    const list = document.getElementById('item-list');
+    const date = document.getElementById('program-date');
+
+    date.textContent = data.date || '';
+    if (data.program_name) {
+      document.getElementById('program-name').textContent = data.program_name;
+    }
+
+    if (!data.items || data.items.length === 0) {
+      list.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:0.4;">No items</div>';
+      return;
+    }
+
+    list.innerHTML = data.items.map(item => buildRow(item)).join('');
+    refreshBarAndColour();
+  }
+
+  function buildRow(item) {
+    const colorClass = rowColorClass(item.status, currentTimerState);
+    const check      = item.status === 'done' ? '✓' : '';
+    const isTimed   = item.timed !== false && item.allotted_seconds > 0;
+    const timeLabel = item.status === 'active' ? formatSecs(activeRemaining)
+                    : isTimed                  ? formatSecs(item.allotted_seconds)
+                    : '';
+
+    let leftLabel, rightLabel;
+    const isVideo = item.type === 'video' || item.type === 'media';
+    if (item.type === 'song') {
+        leftLabel  = esc(item.part || item.title);
+        rightLabel = esc(item.title);
+    } else if (isVideo) {
+        leftLabel  = esc(item.title);
+        rightLabel = esc(item.media_filename || '');
+    } else {
+        leftLabel  = esc(item.title);
+        rightLabel = esc(item.participant || '');
+    }
+
+    return `<div class="item-row ${item.status} ${colorClass}"
+                 data-id="${item.item_id}"
+                 data-allotted="${item.allotted_seconds}"
+                 data-timed="${item.timed === false ? 'false' : 'true'}">
+      <span class="item-check">${check}</span>
+      <span class="item-title">${leftLabel}</span>
+      <span class="item-participant">${rightLabel}</span>
+      <span class="item-time">${timeLabel}</span>
+    </div>`;
+  }
+
+  function rowColorClass(status, timerState) {
+    if (status === 'done' || timerState === 'normal') return '';
+    if (timerState === 'warning') return 'color-yellow';
+    if (timerState === 'overtime') return 'color-red';
+    return '';
+  }
+
+  function updateActiveRow(tick) {
+    const row = document.querySelector('.item-row.active');
+    if (!row) return;
+
+    const colorClass = tick.state === 'warning' ? 'color-yellow'
+                     : tick.state === 'overtime' ? 'color-red' : '';
+
+    row.className = row.className
+      .replace(/color-\w+/g, '').trim()
+      + (colorClass ? ' ' + colorClass : '');
+
+    // Update next row color too
+    const nextRow = document.querySelector('.item-row.next');
+    if (nextRow) {
+      nextRow.className = nextRow.className.replace(/color-\w+/g, '').trim()
+        + (colorClass ? ' ' + colorClass : '');
+    }
+
+    refreshBarAndColour(tick.remaining, tick.total);
+
+    const timeEl = row.querySelector('.item-time');
+    if (timeEl) timeEl.textContent = formatSecs(tick.remaining);
+  }
+
+  function refreshBarAndColour(remaining, total) {
+    const row = document.querySelector('.item-row.active');
+    if (!row) return;
+    if (row.dataset.timed === 'false') {
+      row.style.setProperty('--bar-pct', '0%');
+      return;
+    }
+    const rem = remaining !== undefined ? remaining : activeRemaining;
+    const tot = total     !== undefined ? total     : activeAllotted;
+    const pct = tot > 0 ? Math.min(100, Math.max(0, (1 - rem / tot) * 100)) : 0;
+    row.style.setProperty('--bar-pct', pct + '%');
+  }
+
+  function formatSecs(s) {
+    const abs = Math.abs(s);
+    const m   = Math.floor(abs / 60);
+    const sec = String(abs % 60).padStart(2, '0');
+    return (s < 0 ? '+' : '') + m + ':' + sec;
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Projection aspect ratio ──────────────────────────────────────────
+  var _projAspect = '{{ aspect }}';
+
+  function _projApplyAspect(aspect) {
+    if (aspect !== undefined) _projAspect = aspect;
+    var c = document.getElementById('proj-content');
+    if (!c) return;
+    c.style.width = '';
+    c.style.height = '';
+    if (!_projAspect || _projAspect === 'off' || _projAspect === 'auto') return;
+    var m = /(\d+)\s*[:xX]\s*(\d+)/.exec(String(_projAspect));
+    if (!m) return;
+    var w = +m[1], h = +m[2];
+    var W = Math.min(window.innerWidth, window.innerHeight * w / h);
+    var H = W * h / w;
+    c.style.width = W + 'px';
+    c.style.height = H + 'px';
+  }
+  _projApplyAspect();
+
+  socket.on('aspect:update', function (data) {
+    _projApplyAspect(data && data.aspect);
+  });
+
+  var _projResizeRaf;
+  window.addEventListener('resize', function () {
+    cancelAnimationFrame(_projResizeRaf);
+    _projResizeRaf = requestAnimationFrame(function () { _projApplyAspect(); });
+  });
+</script>
+<div id="output-close" style="display:none;position:fixed;top:10px;right:14px;z-index:99999;opacity:.55;transition:opacity .3s;">
+  <button onclick="outputClose()" title="Close output" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;">&#10005;</button>
+</div>
+<script>
+  (function(){
+    if (location.search.indexOf('output=1') === -1) return;
+    var el = document.getElementById('output-close');
+    el.style.display = 'block';
+    var hideTimer;
+    function hide(){ el.style.opacity = '0'; }
+    function show(){ el.style.opacity = '.55'; }
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('mouseleave', hide);
+    document.addEventListener('mousemove', function(){
+      show(); clearTimeout(hideTimer); hideTimer = setTimeout(hide, 4000);
+    });
+  })();
+  function outputClose(){
+    try {
+      fetch('/api/output/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: CHANNEL })
+      }).catch(function(){});
+    } catch(e){}
+    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+  }
+</script>
+</body>
+</html>

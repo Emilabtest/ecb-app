@@ -1,0 +1,13 @@
+/* ocean.css — Deep teal/aqua */
+:root {
+  --proj-bg:       #07161E;
+  --proj-card:     #0D2430;
+  --proj-dark:     #040D14;
+  --proj-gold:     #3EC8C0;
+  --proj-gold-lt:  #70DED8;
+  --proj-white:    #E8F8FA;
+  --proj-off-white:#D0EEF2;
+  --proj-muted:    #5090A0;
+  --font-heading:  Georgia, serif;
+  --font-body:     Calibri, 'DM Sans', sans-serif;
+}

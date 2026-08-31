@@ -1,0 +1,13 @@
+/* forest.css — Deep green/gold */
+:root {
+  --proj-bg:       #0C1E0E;
+  --proj-card:     #162B18;
+  --proj-dark:     #060E07;
+  --proj-gold:     #C8B840;
+  --proj-gold-lt:  #E5D56A;
+  --proj-white:    #F4FAF4;
+  --proj-off-white:#E2F0E4;
+  --proj-muted:    #6A8A6C;
+  --font-heading:  Georgia, serif;
+  --font-body:     Calibri, 'DM Sans', sans-serif;
+}

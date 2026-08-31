@@ -1,0 +1,13 @@
+/* midnight.css — Deep navy/gold (default variant, richer contrast) */
+:root {
+  --proj-bg:       #050D1E;
+  --proj-card:     #0D1830;
+  --proj-dark:     #020810;
+  --proj-gold:     #E2B64E;
+  --proj-gold-lt:  #F5D07A;
+  --proj-white:    #FFFFFF;
+  --proj-off-white:#EEF0F8;
+  --proj-muted:    #7080A0;
+  --font-heading:  Georgia, serif;
+  --font-body:     Calibri, 'DM Sans', sans-serif;
+}

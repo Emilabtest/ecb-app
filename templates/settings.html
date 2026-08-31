@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leiturgia — Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #0a1628;
+      --surface: #111f3a;
+      --card:    #162240;
+      --border:  #1e2f52;
+      --gold:    #d4a843;
+      --white:   #f0f2f8;
+      --muted:   #6b7fa0;
+      --success: #4caf82;
+      --error:   #e05252;
+      --warn:    #e09652;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      height: 60px;
+    }
+    .back-btn {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 1.3rem;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--white); }
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--white);
+    }
+
+    /* ── Layout ── */
+    main {
+      max-width: 600px;
+      margin: 2.5rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card-body { padding: 1.25rem; }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 1rem; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--white);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: var(--gold); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn:not(:disabled):hover { opacity: 0.85; }
+    .btn-gold { background: var(--gold); color: #0a1628; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--white);
+    }
+    .btn-danger {
+      background: transparent;
+      border: 1px solid #55223a;
+      color: var(--error);
+    }
+    .btn-danger:not(:disabled):hover { background: rgba(224,82,82,0.08); }
+
+    /* ── Status dot ── */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding-top: 1rem;
+      font-size: 0.85rem;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-green   { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .dot-orange  { background: var(--warn);    box-shadow: 0 0 6px var(--warn); }
+    .dot-grey    { background: #3a4a5a; }
+
+    /* ── Message banner ── */
+    .msg {
+      font-size: 0.82rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      margin-top: 0.75rem;
+      display: none;
+    }
+    .msg.show { display: block; }
+    .msg-ok   { background: rgba(76,175,130,0.12); color: var(--success); border: 1px solid rgba(76,175,130,0.25); }
+    .msg-err  { background: rgba(224,82,82,0.12);  color: var(--error);   border: 1px solid rgba(224,82,82,0.25); }
+    .msg-warn { background: rgba(224,150,82,0.12); color: var(--warn);    border: 1px solid rgba(224,150,82,0.25); }
+    .msg-info { background: rgba(107,127,160,0.12); color: var(--muted);  border: 1px solid rgba(107,127,160,0.25); }
+    .msg-alert {
+      background: rgba(224,82,82,0.18); color: var(--error);
+      border: 1px solid var(--error); font-weight: 500;
+    }
+
+    /* ── Separator ── */
+    .separator {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="back-btn" title="Back to console">&#8592;</a>
+  <h1>Settings</h1>
+</header>
+
+<main>
+
+  <!-- ── Cloud Link ─────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">Cloud Link</div>
+    <div class="card-body">
+
+      <div class="field">
+        <label for="cloud-url">Cloud URL</label>
+        <input type="text" id="cloud-url" placeholder="ssdgob.leiturgia.cc"
+               autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="field">
+        <label for="cloud-token">Token</label>
+        <input type="text" id="cloud-token" placeholder="ltrg_..."
+               autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-gold" id="connect-btn" onclick="connectCloud()">Connect</button>
+        <button class="btn btn-danger" id="unlink-btn" onclick="unlinkCloud()" style="display:none">Unlink</button>
+      </div>
+
+      <div class="msg" id="cloud-msg"></div>
+
+      <div class="status-row">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-label">Checking…</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PIN ────────────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">Operator PIN</div>
+    <div class="card-body">
+      <div class="field">
+        <label for="new-pin">New PIN (4–6 digits)</label>
+        <input type="password" id="new-pin" maxlength="6" placeholder="••••"
+               inputmode="numeric">
+      </div>
+      <button class="btn btn-outline" onclick="changePin()">Update PIN</button>
+      <div class="msg" id="pin-msg"></div>
+    </div>
+  </div>
+
+  <!-- ── Video Storage (media-storage-budget TDD §5.6) ─────────────── -->
+  <div class="card">
+    <div class="card-header">Video Storage</div>
+    <div class="card-body">
+
+      <div class="msg" id="video-dir-unavailable-msg"></div>
+
+      <div class="status-row" style="padding-top:0;">
+        <span id="video-dir-location-label">Loading…</span>
+      </div>
+
+      <div id="video-dir-usage-wrap" style="margin-top:0.75rem;">
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem;">
+          <span id="video-dir-usage-text"></span>
+        </div>
+        <div style="width:100%;height:6px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;">
+          <div id="video-dir-usage-fill" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width .3s ease;"></div>
+        </div>
+      </div>
+
+      <hr class="separator">
+
+      <div class="field">
+        <label>Budget configuration (read-only — set in config.json)</label>
+        <div id="video-dir-budget-summary" style="font-size:0.82rem;color:var(--white);">—</div>
+      </div>
+
+      <hr class="separator">
+
+      <div class="field">
+        <label>Storage location</label>
+        <div id="video-dir-picker" style="display:flex;flex-direction:column;gap:0.5rem;">Loading…</div>
+      </div>
+
+      <div class="msg" id="video-dir-msg"></div>
+
+    </div>
+  </div>
+
+  <!-- ── App Update ─────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">App Update</div>
+    <div class="card-body">
+
+      <div class="status-row" style="padding-top:0;">
+        <span id="update-current-label">Current version: —</span>
+      </div>
+
+      <div class="field" style="margin-top:1rem;">
+        <label for="update-url">Update server URL</label>
+        <div style="display:flex; gap:0.5rem;">
+          <input type="text" id="update-url" value="{{ update_url }}" placeholder="https://updates.example.com/leiturgia">
+          <button class="btn btn-outline" onclick="saveUpdateUrl()">Save</button>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:1rem;">
+        <button class="btn btn-outline" id="check-update-btn" onclick="checkForUpdate()">Check for updates</button>
+        <button class="btn btn-gold" id="start-update-btn" onclick="showUpdateModal()" style="display:none">Update</button>
+      </div>
+
+      <div class="msg" id="update-msg"></div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Sync Direction Modal ─────────────────────────────────────────────── -->
+<div id="sync-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:100; align-items:center; justify-content:center;">
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.75rem; max-width:400px; width:90%; margin:1rem;">
+    <p style="font-size:1rem; font-weight:500; margin-bottom:0.4rem; color:var(--white);">Programs found on both sides</p>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.4rem;">Choose which set to keep. The other side will be replaced.</p>
+    <div id="sync-options" style="display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1.5rem;"></div>
+    <button class="btn btn-gold" style="width:100%;" onclick="confirmSync()">Confirm</button>
+  </div>
+</div>
+
+<!-- ── Video Storage Switch Modal (TDD §5.6) ──────────────────────────────── -->
+<div id="video-dir-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:100; align-items:center; justify-content:center;">
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.75rem; max-width:440px; width:90%; margin:1rem;">
+    <p style="font-size:1rem; font-weight:500; margin-bottom:0.4rem; color:var(--white);">Switch video storage location</p>
+    <p id="video-dir-modal-body" style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem;">
+      Switching applies instantly.
+    </p>
+
+    <div id="video-dir-modal-options" style="display:flex; flex-direction:column; gap:0.6rem; margin-bottom:0.75rem;"></div>
+    <p id="video-dir-modal-leave-note" style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;"></p>
+
+    <div id="video-dir-modal-progress" style="display:none; font-size:0.82rem; color:var(--muted); margin-bottom:1rem;"></div>
+
+    <div class="msg" id="video-dir-modal-msg"></div>
+
+    <div class="actions" style="margin-top:1rem;">
+      <button class="btn btn-gold" id="video-dir-modal-confirm-btn" onclick="confirmVideoDirSwitch()">Switch</button>
+      <button class="btn btn-outline" id="video-dir-modal-cancel-btn" onclick="closeVideoDirModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Update Confirm Modal ─────────────────────────────────────────────── -->
+<div id="update-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:100; align-items:center; justify-content:center;">
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.75rem; max-width:400px; width:90%; margin:1rem;">
+    <p style="font-size:1rem; font-weight:500; margin-bottom:0.4rem; color:var(--white);" id="update-modal-title">Update Leiturgia</p>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem;" id="update-modal-body"></p>
+
+    <div class="field">
+      <label for="update-pin">Confirm PIN</label>
+      <input type="password" id="update-pin" maxlength="6" placeholder="••••" inputmode="numeric">
+    </div>
+
+    <div class="msg" id="update-modal-msg"></div>
+
+    <div class="actions" style="margin-top:1rem;">
+      <button class="btn btn-gold" id="update-confirm-btn" onclick="confirmUpdate()">Confirm</button>
+      <button class="btn btn-outline" onclick="hideUpdateModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/socket.io.js?v=2"></script>
+<script>
+  const $url   = document.getElementById('cloud-url');
+  const $token = document.getElementById('cloud-token');
+  const $dot   = document.getElementById('status-dot');
+  const $label = document.getElementById('status-label');
+  const $connectBtn = document.getElementById('connect-btn');
+  const $unlinkBtn  = document.getElementById('unlink-btn');
+
+  function showMsg(id, text, ok) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg show ' + (ok ? 'msg-ok' : 'msg-err');
+  }
+
+  function applyStatus(s) {
+    $dot.className = 'dot';
+    if (s === 'connected') {
+      $dot.classList.add('dot-green');
+      $label.textContent = 'Connected';
+      $unlinkBtn.style.display = 'inline-flex';
+      $connectBtn.textContent = 'Reconnect';
+    } else if (s === 'reconnecting' || s === 'connecting') {
+      $dot.classList.add('dot-orange');
+      $label.textContent = s === 'connecting' ? 'Connecting…' : 'Reconnecting…';
+      $unlinkBtn.style.display = 'inline-flex';
+      $connectBtn.textContent = 'Reconnect';
+    } else if (s === 'not_linked') {
+      $dot.classList.add('dot-grey');
+      $label.textContent = 'Not linked';
+      $unlinkBtn.style.display = 'none';
+      $connectBtn.textContent = 'Connect';
+    } else {
+      $dot.classList.add('dot-grey');
+      $label.textContent = '—';
+    }
+  }
+
+  async function loadStatus() {
+    try {
+      const r = await fetch('/api/cloud/status');
+      const d = await r.json();
+      if (d.cloud_url)   $url.value   = d.cloud_url;
+      if (d.cloud_token) $token.value = d.cloud_token;
+      applyStatus(d.status);
+    } catch (_) {
+      applyStatus('not_linked');
+    }
+  }
+
+  async function connectCloud() {
+    const url   = $url.value.trim().replace(/^https?:\/\//i, '').replace(/\/$/, '');
+    const token = $token.value.trim();
+    if (!url || !token) {
+      showMsg('cloud-msg', 'Both Cloud URL and Token are required.', false);
+      return;
+    }
+    $connectBtn.disabled = true;
+    $connectBtn.textContent = 'Connecting…';
+    try {
+      const r = await fetch('/api/cloud/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cloud_url: url, cloud_token: token }),
+      });
+      const d = await r.json();
+      if (d.status === 'linked') {
+        showMsg('cloud-msg', `Linked to ${d.church_name || 'cloud'} successfully.`, true);
+        runSyncCheck();
+      } else {
+        showMsg('cloud-msg', d.message || 'Failed to connect.', false);
+      }
+    } catch (_) {
+      showMsg('cloud-msg', 'Network error — could not reach the server.', false);
+    } finally {
+      $connectBtn.disabled = false;
+      loadStatus();
+    }
+  }
+
+  async function unlinkCloud() {
+    if (!confirm('Unlink this Pi from the cloud?')) return;
+    try {
+      const r = await fetch('/api/cloud/unlink', { method: 'POST' });
+      const d = await r.json();
+      if (d.status === 'ok') {
+        $url.value = '';
+        $token.value = '';
+        showMsg('cloud-msg', 'Unlinked successfully.', true);
+      }
+    } catch (_) {
+      showMsg('cloud-msg', 'Network error.', false);
+    }
+    loadStatus();
+  }
+
+  async function changePin() {
+    const pin = document.getElementById('new-pin').value.trim();
+    if (!/^\d{4,6}$/.test(pin)) {
+      showMsg('pin-msg', 'PIN must be 4–6 digits.', false);
+      return;
+    }
+    try {
+      const r = await fetch('/api/settings/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      if (r.ok) {
+        showMsg('pin-msg', 'PIN updated.', true);
+        document.getElementById('new-pin').value = '';
+      } else {
+        const d = await r.json();
+        showMsg('pin-msg', d.message || 'Failed to update PIN.', false);
+      }
+    } catch (_) {
+      showMsg('pin-msg', 'Network error.', false);
+    }
+  }
+
+
+  // ── Sync dialog ──────────────────────────────────────────────────────────
+
+  let _syncChoice = null;
+
+  function showSyncModal(status) {
+    const cloud = status.cloud;
+    const pi    = status.pi;
+    const fmt   = d => d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    const pl    = n => n === 1 ? 'program' : 'programs';
+
+    const opts = [
+      { value: 'cloud_to_pi', label: `Use Cloud &nbsp;(${cloud.program_count} ${pl(cloud.program_count)} · ${fmt(cloud.updated_at)})` },
+      { value: 'pi_to_cloud', label: `Use Pi &nbsp;(${pi.count} ${pl(pi.count)})` },
+      { value: 'skip',        label: 'Skip — decide later' },
+    ];
+
+    const container = document.getElementById('sync-options');
+    container.innerHTML = opts.map((o, i) => `
+      <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
+        <input type="radio" name="sync-dir" value="${o.value}" ${i === 0 ? 'checked' : ''} style="accent-color:var(--gold); flex-shrink:0;">
+        ${o.label}
+      </label>
+    `).join('');
+
+    _syncChoice = opts[0].value;
+    container.querySelectorAll('input[name="sync-dir"]').forEach(r => {
+      r.addEventListener('change', () => { _syncChoice = r.value; });
+    });
+
+    document.getElementById('sync-modal').style.display = 'flex';
+  }
+
+  async function confirmSync() {
+    document.getElementById('sync-modal').style.display = 'none';
+    if (_syncChoice === 'skip') {
+      showMsg('cloud-msg', 'Sync skipped — programs unchanged.', true);
+      return;
+    }
+    try {
+      const r = await fetch('/api/cloud/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction: _syncChoice }),
+      });
+      const d = await r.json();
+      const label = _syncChoice === 'cloud_to_pi'
+        ? 'Cloud programs synced to Pi.'
+        : 'Pi programs uploaded to cloud.';
+      showMsg('cloud-msg', d.ok ? label : (d.error || 'Sync failed.'), d.ok);
+    } catch (_) {
+      showMsg('cloud-msg', 'Network error during sync.', false);
+    }
+  }
+
+  async function runSyncCheck() {
+    try {
+      const r = await fetch('/api/cloud/sync-status');
+      const s = await r.json();
+      if (!s.linked) return;
+      if (s.error || !s.cloud) {
+        showMsg('cloud-msg', 'Connected — could not reach cloud for sync check.', true);
+        return;
+      }
+      const piEmpty    = !s.pi.has_data;
+      const cloudEmpty = !s.cloud.has_data;
+      if (piEmpty && cloudEmpty) {
+        showMsg('cloud-msg', 'Connected — no programs to sync yet.', true);
+      } else if (cloudEmpty) {
+        const r2 = await fetch('/api/cloud/sync', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction: 'pi_to_cloud' }),
+        });
+        const d2 = await r2.json();
+        showMsg('cloud-msg', d2.ok ? 'Connected — Pi programs uploaded to cloud.' : (d2.error || 'Auto-sync failed.'), d2.ok);
+      } else if (piEmpty) {
+        const r2 = await fetch('/api/cloud/sync', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction: 'cloud_to_pi' }),
+        });
+        const d2 = await r2.json();
+        showMsg('cloud-msg', d2.ok ? 'Connected — Cloud programs synced to Pi.' : (d2.error || 'Auto-sync failed.'), d2.ok);
+      } else {
+        showSyncModal(s);
+      }
+    } catch (_) {
+      showMsg('cloud-msg', 'Connected — sync check unavailable.', true);
+    }
+  }
+
+  // ── App Update ───────────────────────────────────────────────────────────
+
+  const $updateCurrentLabel = document.getElementById('update-current-label');
+  const $checkUpdateBtn     = document.getElementById('check-update-btn');
+  const $startUpdateBtn     = document.getElementById('start-update-btn');
+  const $updateUrlInput     = document.getElementById('update-url');
+
+  let _updateTargetTag  = null;
+  let _updatePollTimer  = null;
+
+  async function loadCurrentVersion() {
+    try {
+      const r = await fetch('/api/health');
+      const d = await r.json();
+      $updateCurrentLabel.textContent = `Current version: ${d.version || 'unknown'}`;
+    } catch (_) {
+      $updateCurrentLabel.textContent = 'Current version: unknown';
+    }
+  }
+
+  async function saveUpdateUrl() {
+    const url = $updateUrlInput.value.trim();
+    if (!/^https?:\/\//.test(url)) {
+      showMsg('update-msg', 'Enter a valid http(s):// update server URL first.', false);
+      return;
+    }
+    try {
+      const r = await fetch('/api/settings/update-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        showMsg('update-msg', 'Update server URL saved.', true);
+      } else {
+        showMsg('update-msg', d.message || 'Failed to save URL.', false);
+      }
+    } catch (_) {
+      showMsg('update-msg', 'Network error.', false);
+    }
+  }
+
+  async function checkForUpdate() {
+    $checkUpdateBtn.disabled = true;
+    $checkUpdateBtn.textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/update/check');
+      const d = await r.json();
+      $updateCurrentLabel.textContent = `Current version: ${d.current || 'unknown'}`;
+      if (!r.ok) {
+        const el = document.getElementById('update-msg');
+        el.textContent = d.message || 'No update server configured. Enter a URL above and save it.';
+        el.className = 'msg show msg-warn';
+        $startUpdateBtn.style.display = 'none';
+        _updateTargetTag = null;
+        return;
+      }
+      if (!d.available) {
+        showMsg('update-msg', `Up to date (${d.current}).`, true);
+        _updateTargetTag = null;
+        $startUpdateBtn.style.display = 'none';
+      } else {
+        showMsg('update-msg', `Update available: ${d.latest}`, true);
+        _updateTargetTag = d.latest;
+        $startUpdateBtn.textContent = `Update to ${d.latest}`;
+        $startUpdateBtn.style.display = 'inline-flex';
+      }
+    } catch (_) {
+      showMsg('update-msg', 'Could not check for updates — network error.', false);
+    } finally {
+      $checkUpdateBtn.disabled = false;
+      $checkUpdateBtn.textContent = 'Check for updates';
+    }
+  }
+
+  function showUpdateModal() {
+    if (!_updateTargetTag) return;
+    document.getElementById('update-modal-body').textContent =
+      `This will update Leiturgia to ${_updateTargetTag} and restart the app. `
+      + `It will be briefly unavailable, then reopen automatically.`;
+    document.getElementById('update-pin').value = '';
+    document.getElementById('update-modal-msg').className = 'msg';
+    document.getElementById('update-modal').style.display = 'flex';
+  }
+
+  function hideUpdateModal() {
+    document.getElementById('update-modal').style.display = 'none';
+  }
+
+  async function confirmUpdate() {
+    const pin = document.getElementById('update-pin').value.trim();
+    if (!/^\d{4,6}$/.test(pin)) {
+      showMsg('update-modal-msg', 'Enter your PIN to continue.', false);
+      return;
+    }
+    const $confirmBtn = document.getElementById('update-confirm-btn');
+    $confirmBtn.disabled = true;
+    try {
+      // Re-asserting the operator gate before a destructive action — /login
+      // already validates the PIN and refreshes the session, so reusing it
+      // avoids a second PIN-check code path.
+      const loginResp = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      const loginData = await loginResp.json();
+      if (loginData.status !== 'ok') {
+        showMsg('update-modal-msg', loginData.message || 'Incorrect PIN.', false);
+        return;
+      }
+
+      const startResp = await fetch('/api/update/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (startResp.status === 202) {
+        hideUpdateModal();
+        showMsg('update-msg', `Updating to ${_updateTargetTag}…`, true);
+        $startUpdateBtn.disabled = true;
+        beginUpdatePolling();
+      } else {
+        const d = await startResp.json();
+        showMsg('update-modal-msg', d.message || 'Failed to start update.', false);
+      }
+    } catch (_) {
+      showMsg('update-modal-msg', 'Network error.', false);
+    } finally {
+      $confirmBtn.disabled = false;
+    }
+  }
+
+  function beginUpdatePolling() {
+    if (_updatePollTimer) return;
+    _updatePollTimer = setInterval(pollUpdateStatus, 3000);
+  }
+
+  function stopUpdatePolling() {
+    if (_updatePollTimer) {
+      clearInterval(_updatePollTimer);
+      _updatePollTimer = null;
+    }
+  }
+
+  async function pollUpdateStatus() {
+    try {
+      const r = await fetch('/api/update/status');
+      const d = await r.json();
+      if (d.status === 'applying') {
+        $startUpdateBtn.disabled = true;
+        return;
+      }
+      stopUpdatePolling();
+      $startUpdateBtn.disabled = false;
+      if (d.status === 'success') {
+        showMsg('update-msg', `Updated to ${d.target_version || _updateTargetTag}.`, true);
+        $startUpdateBtn.style.display = 'none';
+        _updateTargetTag = null;
+        loadCurrentVersion();
+      } else if (d.status === 'error') {
+        const el = document.getElementById('update-msg');
+        el.textContent = `Update failed: ${d.message || 'unknown error'}`;
+        el.className = 'msg show msg-alert';
+        _updateTargetTag = null;
+        $startUpdateBtn.style.display = 'none';
+      } else if (d.status === 'idle') {
+        // No active update; nothing to show.
+      }
+    } catch (_) {
+      // Transient — keep polling; the restart drops the connection briefly.
+    }
+  }
+
+  loadCurrentVersion();
+
+  // Poll status every 5 seconds
+  loadStatus();
+  setInterval(loadStatus, 5000);
+
+  // ── Video storage location (media-storage-budget TDD §5.6) ─────────────────
+
+  const _videoDirSocket = io({ transports: ['websocket', 'polling'] });
+
+  let _videoDirTargets        = [];    // last-fetched /api/media/usb-targets
+  let _videoDirPendingChoice  = null;  // 'internal' or index into _videoDirTargets
+  let _videoDirPreviousPath   = null;  // captured pre-switch, for optional migration
+  let _videoDirBusy           = false; // true while our own switch/migrate is in flight
+  let _lastVideoDirStatus     = null;
+
+  function _fmtBytesVD(n) {
+    for (const unit of ['KB', 'MB', 'GB']) {
+      n /= 1024;
+      if (n < 1024) return `${n.toFixed(1)} ${unit}`;
+    }
+    return `${n.toFixed(1)} GB`;
+  }
+
+  async function loadVideoDirStatus() {
+    try {
+      const r = await fetch('/api/settings/video-dir');
+      const d = await r.json();
+      _renderVideoDirStatus(d);
+    } catch (_) {
+      document.getElementById('video-dir-location-label').textContent =
+        'Could not load video storage status.';
+    }
+  }
+
+  function _renderVideoDirStatus(d) {
+    _lastVideoDirStatus = d;
+    const usage = d.usage || {};
+
+    const unavailableMsg = document.getElementById('video-dir-unavailable-msg');
+    if (d.videos_unavailable) {
+      unavailableMsg.textContent = 'Video storage unavailable — is the drive connected?';
+      unavailableMsg.className = 'msg show msg-err';
+    } else {
+      unavailableMsg.className = 'msg';
+    }
+
+    document.getElementById('video-dir-location-label').textContent =
+      d.location === 'external' ? `External — ${d.label} (${d.path})` : 'Internal (default)';
+
+    const usageWrap = document.getElementById('video-dir-usage-wrap');
+    const usageText = document.getElementById('video-dir-usage-text');
+    const usageFill = document.getElementById('video-dir-usage-fill');
+    if (d.videos_unavailable) {
+      usageWrap.style.display = 'none';
+    } else {
+      usageWrap.style.display = '';
+      const unlimited = usage.budget_bytes === 0;
+      if (unlimited) {
+        const freeBytes = Math.max((usage.fs_free_bytes || 0) - (usage.reserve_bytes || 0), 0);
+        usageText.textContent =
+          `${usage.used_label} used · unlimited budget · ${_fmtBytesVD(freeBytes)} free on disk`;
+        usageFill.style.width = '0%';
+      } else {
+        usageText.textContent = `${usage.used_label} of ${usage.budget_label} used`;
+        usageFill.style.width = Math.min(100, Math.max(0, usage.percent || 0)) + '%';
+      }
+      usageFill.style.background = usage.full ? 'var(--error)' : (usage.warn ? 'var(--warn)' : 'var(--gold)');
+    }
+
+    const imagesBudget = usage.images
+      ? (usage.images.budget_bytes === 0 ? 'Unlimited' : usage.images.budget_label)
+      : '—';
+    document.getElementById('video-dir-budget-summary').innerHTML =
+      `Video budget: ${usage.budget_bytes === 0 ? 'Unlimited' : (usage.budget_label || '—')} &middot; ` +
+      `Disk reserve: ${usage.reserve_bytes != null ? _fmtBytesVD(usage.reserve_bytes) : '—'} &middot; ` +
+      `Image budget: ${imagesBudget}`;
+
+    _renderVideoDirPicker(d);
+  }
+
+  async function _renderVideoDirPicker(status) {
+    const picker = document.getElementById('video-dir-picker');
+    picker.innerHTML = '<div style="font-size:0.82rem;color:var(--muted);">Looking for drives…</div>';
+    try {
+      const r = await fetch('/api/media/usb-targets');
+      _videoDirTargets = await r.json();
+    } catch (_) {
+      _videoDirTargets = [];
+    }
+
+    const rows = [];
+    rows.push(`
+      <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
+        <input type="radio" name="video-dir-choice" value="internal" ${status.location === 'internal' ? 'checked' : ''} style="accent-color:var(--gold);">
+        Internal (default)
+      </label>`);
+    if (!_videoDirTargets.length) {
+      rows.push('<div style="font-size:0.78rem;color:var(--muted);padding:0.3rem 0.6rem;">No USB drive detected — insert one and refresh.</div>');
+    }
+    _videoDirTargets.forEach((t, i) => {
+      const isCurrent = status.location === 'external' && status.path && status.path.startsWith(t.path);
+      rows.push(`
+        <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
+          <input type="radio" name="video-dir-choice" value="${i}" ${isCurrent ? 'checked' : ''} style="accent-color:var(--gold);">
+          ${t.label} &nbsp;<span style="color:var(--muted);font-size:0.78rem;">(${t.free_label} free${t.fat32 ? ' · FAT32' : ''})</span>
+        </label>`);
+    });
+    rows.push(`<button class="btn btn-outline" type="button" style="align-self:flex-start;font-size:0.78rem;padding:0.4rem 0.9rem;" onclick="loadVideoDirStatus()">&#8635; Refresh drives</button>`);
+    picker.innerHTML = rows.join('');
+
+    picker.querySelectorAll('input[name="video-dir-choice"]').forEach(r => {
+      r.addEventListener('change', () => onVideoDirChoiceChange(status));
+    });
+  }
+
+  function onVideoDirChoiceChange(status) {
+    const checked = document.querySelector('input[name="video-dir-choice"]:checked');
+    if (!checked) return;
+    const choice = checked.value;
+    if (choice === 'internal' && status.location === 'internal') return; // already internal
+    if (choice !== 'internal') {
+      const target = _videoDirTargets[parseInt(choice, 10)];
+      if (target && status.location === 'external' && status.path && status.path.startsWith(target.path)) {
+        return; // already this drive
+      }
+    }
+    openVideoDirModal(choice, status);
+  }
+
+  function openVideoDirModal(choice, status) {
+    _videoDirPendingChoice = choice;
+    _videoDirPreviousPath  = status.path;
+
+    const targetLabel = choice === 'internal'
+      ? 'Internal (default)'
+      : ((_videoDirTargets[parseInt(choice, 10)] || {}).label || 'the selected drive');
+
+    document.getElementById('video-dir-modal-body').textContent =
+      `Switching applies instantly. Videos will now be read from and saved to: ${targetLabel}.`;
+
+    const opts = document.getElementById('video-dir-modal-options');
+    opts.innerHTML = '<div style="font-size:0.8rem;color:var(--muted);">Checking existing videos…</div>';
+
+    fetch('/api/media').then(r => r.json()).then(d => {
+      const videos = d.videos || [];
+      const totalBytes = videos.reduce((s, f) => s + (f.size || 0), 0);
+      const n = videos.length;
+      const plural = n === 1 ? '' : 's';
+      opts.innerHTML = `
+        <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
+          <input type="radio" name="video-dir-move" value="leave" checked style="accent-color:var(--gold);">
+          Leave them
+        </label>
+        <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
+          <input type="radio" name="video-dir-move" value="move" style="accent-color:var(--gold);" ${n === 0 ? 'disabled' : ''}>
+          Move existing ${n} video${plural} (${_fmtBytesVD(totalBytes)}) to ${targetLabel}
+        </label>`;
+      document.getElementById('video-dir-modal-leave-note').textContent =
+        'Videos left behind won’t appear in the library — switching back makes them reappear.';
+    }).catch(() => {
+      opts.innerHTML = '<div style="font-size:0.8rem;color:var(--muted);">Could not check existing videos — Leave is the safe default.</div>';
+    });
+
+    document.getElementById('video-dir-modal-progress').style.display = 'none';
+    document.getElementById('video-dir-modal-progress').innerHTML = '';
+    document.getElementById('video-dir-modal-msg').className = 'msg';
+    document.getElementById('video-dir-modal-confirm-btn').disabled = false;
+    document.getElementById('video-dir-modal-cancel-btn').style.display = '';
+    document.getElementById('video-dir-modal').style.display = 'flex';
+  }
+
+  function closeVideoDirModal() {
+    if (_videoDirBusy) return;   // don't let an in-flight migration be dismissed
+    document.getElementById('video-dir-modal').style.display = 'none';
+    loadVideoDirStatus();        // re-sync the picker in case the click was a stray
+  }
+
+  async function confirmVideoDirSwitch() {
+    const confirmBtn = document.getElementById('video-dir-modal-confirm-btn');
+    confirmBtn.disabled = true;
+    _videoDirBusy = true;
+
+    let dir = '';
+    if (_videoDirPendingChoice !== 'internal') {
+      const target = _videoDirTargets[parseInt(_videoDirPendingChoice, 10)];
+      if (!target) {
+        showMsg('video-dir-modal-msg', 'Selected drive is no longer available.', false);
+        confirmBtn.disabled = false;
+        _videoDirBusy = false;
+        return;
+      }
+      dir = target.path;
+    }
+
+    const moveChoice = document.querySelector('input[name="video-dir-move"]:checked')?.value || 'leave';
+
+    try {
+      const r = await fetch('/api/settings/video-dir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dir }),
+      });
+      const d = await r.json();
+      if (d.status !== 'ok') {
+        showMsg('video-dir-modal-msg', d.message || 'Failed to switch location.', false);
+        confirmBtn.disabled = false;
+        _videoDirBusy = false;
+        return;
+      }
+
+      if (moveChoice === 'move' && d.previous_path && d.previous_path !== d.path) {
+        document.getElementById('video-dir-modal-options').style.display = 'none';
+        const progWrap = document.getElementById('video-dir-modal-progress');
+        progWrap.style.display = '';
+        progWrap.textContent = 'Moving videos…';
+        document.getElementById('video-dir-modal-cancel-btn').style.display = 'none';
+        _videoDirSocket.emit('media:migrate:start', { from: d.previous_path });
+        // completion is handled by the media:export:done / media:export:error
+        // listeners below — same events the USB export flow uses.
+      } else {
+        _videoDirBusy = false;
+        document.getElementById('video-dir-modal').style.display = 'none';
+        showMsg('video-dir-msg', 'Video storage location updated.', true);
+        loadVideoDirStatus();
+      }
+    } catch (_) {
+      showMsg('video-dir-modal-msg', 'Network error.', false);
+      confirmBtn.disabled = false;
+      _videoDirBusy = false;
+    }
+  }
+
+  _videoDirSocket.on('media:export:progress', function (data) {
+    if (!_videoDirBusy) return;
+    const progWrap = document.getElementById('video-dir-modal-progress');
+    const pct = data.total ? Math.min(100, Math.round(data.bytes / data.total * 100)) : 0;
+    progWrap.textContent = `Moving ${data.filename}… ${pct}%`;
+  });
+
+  _videoDirSocket.on('media:export:done', function (data) {
+    if (!_videoDirBusy) return;
+    _videoDirBusy = false;
+    const moved     = data.moved      || [];
+    const keptLocal = data.kept_local || [];
+    const failed    = data.failed     || [];
+    const parts = [];
+    if (moved.length)     parts.push(`${moved.length} moved`);
+    if (keptLocal.length) parts.push(`${keptLocal.length} kept locally (in use)`);
+    if (failed.length)    parts.push(`${failed.length} failed`);
+    document.getElementById('video-dir-modal').style.display = 'none';
+    showMsg('video-dir-msg',
+      parts.length ? `Location switched — ${parts.join(', ')}.` : 'Location switched.', true);
+    loadVideoDirStatus();
+  });
+
+  _videoDirSocket.on('media:export:error', function (data) {
+    if (!_videoDirBusy) return;
+    _videoDirBusy = false;
+    document.getElementById('video-dir-modal').style.display = 'none';
+    showMsg('video-dir-msg',
+      'Location switched, but moving videos failed: ' + (data.message || 'unknown error'), false);
+    loadVideoDirStatus();
+  });
+
+  loadVideoDirStatus();
+</script>
+</body>
+</html>
