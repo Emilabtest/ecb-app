@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for the embedded Leiturgia server executable.
 # Builds LeiturgiaServer.exe (windowed) from server_entry.py.
+from PyInstaller.utils.hooks import collect_submodules
 
 a = Analysis(
     ['server_entry.py'],
@@ -14,13 +15,17 @@ a = Analysis(
     hiddenimports=[
         'eventlet.hubs.epolls',
         'eventlet.hubs.kqueue',
+        'eventlet.hubs.poll',
         'eventlet.hubs.selects',
         'eventlet.green.thread',
+        'eventlet.green.threading',
+        'eventlet.websocket',
         'engineio.async_drivers.threading',
+        'engineio.async_drivers.eventlet',
         'socketio',
         'licensing',
         'updater',
-    ],
+    ] + collect_submodules('dns'),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

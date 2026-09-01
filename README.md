@@ -24,9 +24,10 @@ source tree was lost during a failed update apply.
 | `updater_apply.py` | The standalone applier compiled to `updater.exe`. Run as `updater.exe apply <install_dir> <stage_dir> <manifest_json>`: stops processes, backs up user files, clears + installs the new signed bundle, restores user files, writes status, relaunches. |
 | `licensing.py` | Machine-lock licensing. `hwid` prints this machine's Hardware ID (SHA-256 of the Windows `MachineGuid`); `gen <hwid>` signs it (owner-only, uses `_SECRET_KEY`). The server refuses to start without a valid `license.dat`. |
 | `server_entry.py` | PyInstaller entry point for `LeiturgiaServer.exe`. Freeze-safe working dir, licence check, dir creation, temp cleanup, then `socketio.run(...)` on `0.0.0.0:5001`. |
+| `desktop.py` | PyInstaller entry point for the desktop launcher `Leiturgia.exe` (pywebview wrapper that launches `LeiturgiaServer.exe` and opens the operator console). |
 | `templates/`, `static/`, `app.version` | Our packaged assets. `templates/settings.html` is our Windows UI (includes `/api/update/*` and update-URL endpoints). `app.version` = `1.1.0`. |
-| `LeiturgiaServer.spec`, `updater.spec` | PyInstaller build specs. |
-| `app.py` — Windows additions | See `windows_app_additions.py` for the **changes we made on top of the darqlab base** (the `/api/update/*` endpoints, `config.json` update settings, and helper functions). The full `app.py` is upstream base code and is intentionally not committed here. |
+| `LeiturgiaServer.spec`, `Leiturgia.spec`, `updater.spec` | PyInstaller build specs. `LeiturgiaServer.spec` includes the `collect_submodules('dns')` + eventlet/engineio hiddenimports fix that prevents the frozen server from failing to import its dependencies at runtime. |
+| `app.py` — Windows additions | See `windows_app_additions.py` for the **changes we made on top of the darqlab base** (the `/api/update/*` endpoints, `config.json` update settings, the `/api/settings/update-url` route, the remote-live screen-share relay, and helper functions). The full `app.py` is upstream base code and is intentionally not committed here. |
 
 ## Building (optional)
 
@@ -36,6 +37,9 @@ files, then:
 ```bat
 :: rebuild the server executable
 pyinstaller --noconfirm LeiturgiaServer.spec
+
+:: rebuild the desktop launcher
+pyinstaller --noconfirm Leiturgia.spec
 
 :: rebuild the updater
 pyinstaller --noconfirm updater.spec

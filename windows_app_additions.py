@@ -98,3 +98,37 @@ the /api/update/* handlers and the config helpers.
 # #     try: with open(status_path) as _f: return jsonify(json.load(_f))
 # #     except Exception: ...
 # #
+
+# --------------------------------------------------------------------------- #
+# LATER ADDITIONS (post initial recovery) — settings update-URL + remote-live
+# --------------------------------------------------------------------------- #
+# 5. POST /api/settings/update-url  (@operator_required)
+#      data = request.get_json(force=True, silent=True) or {}
+#      url  = str(data.get('url') or '').strip()
+#      if not re.match(r'^https?://', url):
+#          return jsonify({'status':'error',
+#                          'message':'Enter a valid http(s):// update server URL.'}), 400
+#      cfg = _update_config(); cfg['update_url'] = url
+#      atomic_write_json('config.json', cfg)
+#      return jsonify({'status':'ok'})
+#
+# 6. Remote-live screen-share relay (live projection from presenting PCs)
+#    Server runs on 0.0.0.0:5001 (eventlet). Presenters open /share and stream
+#    compressed base64-JPEG frames; the operator console picks which source each
+#    projection channel (ch1..ch5) shows; the server relays that source's latest
+#    frame to the matching channel room. In-memory state (not persisted):
+#      _live_sources[sid]     -> {"name", "w", "h"}
+#      _live_last_frame[sid]  -> base64 JPEG string (data: prefix stripped)
+#      _live_selected[ch]     -> sid currently shown on that channel
+#    Socket events (all under Flask-SocketIO / eventlet):
+#      public   "join"                -> join_room(channel); used by projection/channel clients
+#      console  "console:join"        -> operator-only; joins 'console' + 'ch1'; emits live:sources + live:selection
+#      console  "console:watch"       -> operator-only; leave old channel, join new (ch1..ch5)
+#      console  "live:select"         -> operator-only; {"channel","source"} -> set live on channel + emit live:start + buffered live:frame
+#      console  "live:stop"           -> operator-only; {"channel"} -> blank + emit live:stop / slide:blank
+#      source   "live:register"       -> {"name","w","h"} -> register source, broadcast live:sources, emit live:registered {sid}
+#      source   "live:frame"          -> {"data"(base64),"w","h"} -> buffer; if selected, relay live:frame to that channel room
+#      (on source disconnect) _live_remove_source(sid) -> drop source + clear any channel showing it (live:stop / slide:blank)
+#    Live relay is the mechanism behind sharing a presenter's screen to the
+#    projection without the operator posting a static image.
+# --------------------------------------------------------------------------- #
