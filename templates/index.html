@@ -5332,14 +5332,16 @@
     const sel = document.getElementById('liveSourceSelect');
     if (!sel) return;
     sel.innerHTML = '<option value="">Select source…</option>';
+    // Also refresh while a wireless presenter is on: poll every 5s.
     fetch('/api/live/sources')
       .then(function (r) { return r.json(); })
       .then(function (d) {
         const srcs = d.sources || [];
         srcs.forEach(function (s) {
           const opt = document.createElement('option');
-          opt.value = s.index;
-          opt.textContent = 'Source ' + s.index + '  (' + s.w + '×' + s.h + ')';
+          opt.value = s.source_id !== undefined ? s.source_id : s.index;
+          const kind = s.kind === 'cast' ? 'ECB CAST' : 'Source';
+          opt.textContent = (s.name || (kind + ' ' + s.index)) + '  (' + s.w + '×' + s.h + ')';
           sel.appendChild(opt);
         });
         if (!srcs.length) {
@@ -5375,7 +5377,7 @@
     const sd = {
       channel: _liveSelectedCh,
       type: 'live',
-      source_index: parseInt(idx, 10),
+      source_id: String(idx),
       theme_id: _getTheme(),
       item_id: null,
       stanza_idx: null,

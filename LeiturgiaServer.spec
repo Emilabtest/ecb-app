@@ -14,6 +14,7 @@ a = Analysis(
         ('pymod', 'pymod'),
         ('templates', 'templates'),
         ('static', 'static'),
+        ('data', 'data'),
         ('app.version', '.'),
     ],
     hiddenimports=[

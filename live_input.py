@@ -10,34 +10,29 @@ into the *server* machine (the operator's PC), because the projection clients
 This module solves that by capturing frames ON the server (where the capture
 cards physically are) and relaying them to any client via MJPEG-over-HTTP.
 
+It also hosts the **ECB CAST** wireless screen-share: a presenter opens ``/share``
+in their browser, the browser captures their screen, and streams JPEG frames to
+this server over Socket.IO. The server stores the latest frame per presenter and
+serves it as another live source (``?cast=<id>``) through the same MJPEG path.
+
 It is deliberately written OUTSIDE the recovered app.pyc so the sourceless
 module stays untouched. Wiring happens in server_entry.py / the operator
 console (index.html) / the projection template (projection.html).
 
-ARCHITECTURE
-------------
-* ``describe_sources()`` enumerates server-side capture devices via OpenCV.
-* Each source that has at least one subscriber runs a *single* capture thread
-  that pulls frames at ~target_fps, JPEG-encodes them, and stores the latest
-  encoded byte string in a shared slot. Every HTTP subscriber yields that same
-  slot, so N projection clients share ONE camera (no device contention).
-* Because eventlet.monkey_patch() has already run in server_entry.py, we must
-  NOT let a blocking OpenCV ``read()`` stall the green event loop. So the
-  capture threads are real OS threads created with the *unpatched* threading
-  module (captured below), and we communicate with them via a small helpers.
+SOURCE IDs
+----------
+A live source is identified by a string ``source_id``:
+  * ``"<digit>"``            -> a server-side camera / HDMI capture card
+  * ``"cast-<token>"``       -> a wireless ECB CAST presenter session
 
-NOTE on importing order: server_entry.py imports this module BEFORE calling
-``eventlet.monkey_patch()`` so that ``import threading`` here binds to the
-real (non-green) threading module. This lets the capture threads block on
-``cap.read()`` without freezing the socketio/eventlet loop.
+``describe_sources()`` merges both kinds so the operator console sees one list.
 """
 
-import io
 import time
+import uuid
 
 # Real (non-green) threading — see module docstring re: monkey_patch ordering.
 import threading as _native_threading
-import queue as _native_queue
 
 import cv2
 
@@ -46,7 +41,6 @@ import cv2
 # block natively. The MJPEG generator, however, runs inside the eventlet reactor
 # and must yield green (see _green_sleep below).
 _native_sleep = time.sleep
-_native_time = time.time
 _native_monotonic = time.monotonic
 
 try:
@@ -90,11 +84,6 @@ def _in_greenthread():
         return False
     return False
 
-try:
-    import numpy as _np
-except Exception:  # pragma: no cover - numpy ships with opencv-python
-    _np = None
-
 
 # --------------------------------------------------------------------------- #
 # Config
@@ -102,175 +91,15 @@ except Exception:  # pragma: no cover - numpy ships with opencv-python
 TARGET_FPS = 30.0
 JPEG_QUALITY = 80
 MAX_SOURCE_SCAN = 12
-DSHOW_BACKENDS = (cv2.CAP_DSHOW, cv2.CAP_ANY)
-
-_scan_lock = _native_threading.Lock()
-
-
-# --------------------------------------------------------------------------- #
-# Single-source capture worker
-# --------------------------------------------------------------------------- #
-class _SourceWorker:
-    """Owns one capture device and the latest JPEG frame for its subscribers."""
-
-    def __init__(self, index, target_fps=TARGET_FPS, quality=JPEG_QUALITY):
-        self.index = index
-        self.target_fps = target_fps
-        self.quality = quality
-        self.frame_interval = 1.0 / max(1, target_fps)
-
-        self._cap = None
-        self._latest = None          # latest JPEG bytes (or None)
-        self._mtime = 0.0
-        self._lock = _native_threading.Lock()
-
-        self._subscribers = 0
-        self._sub_event = _native_threading.Event()
-        self._stop = False
-        self._thread = None
-
-    # -- lifecycle ----------------------------------------------------------
-    def add_subscriber(self):
-        with self._lock:
-            self._subscribers += 1
-            self._sub_event.set()
-        if self._thread is None or not self._thread.is_alive():
-            self._start_thread()
-
-    def remove_subscriber(self):
-        with self._lock:
-            self._subscribers = max(0, self._subscribers - 1)
-            if self._subscribers == 0:
-                self._sub_event.clear()
-
-    @property
-    def subscriber_count(self):
-        return self._subscribers
-
-    def _start_thread(self):
-        self._stop = False
-        self._thread = _native_threading.Thread(
-            target=self._run, name=f"live-capture-{self.index}", daemon=True
-        )
-        self._thread.start()
-
-    def shutdown(self):
-        self._stop = True
-        self._sub_event.set()
-
-    # -- capture loop -------------------------------------------------------
-    def _open(self):
-        # DSHOW works reliably on Windows for camera / capture-card devices.
-        # (CAP_ANY/MSMF can hang on some virtual/HDMI capture cards.)
-        if hasattr(cv2, "CAP_DSHOW"):
-            cap = cv2.VideoCapture(self.index, cv2.CAP_DSHOW)
-            if cap.isOpened():
-                return cap
-            cap.release()
-        return cv2.VideoCapture(self.index)
-
-    def _run(self):
-        self._cap = self._open()
-        if self._cap is None or not self._cap.isOpened():
-            with self._lock:
-                self._latest = None
-            self._sub_event.clear()
-            return
-
-        next_t = _native_monotonic()
-        try:
-            while not self._stop:
-                have_subs = self._subscribers > 0
-                if not have_subs:
-                    self._sub_event.wait(timeout=0.2)
-                    self._sub_event.clear()
-                    continue
-
-                ok, frame = self._cap.read()
-                now = _native_monotonic()
-                if not ok or frame is None:
-                    # Retry opening the device (cable unplug/replug), then rest.
-                    self._cap.release()
-                    self._sub_event.clear()
-                    _native_sleep(0.5)
-                    self._cap = self._open()
-                    next_t = _native_monotonic()
-                    continue
-
-                ok_enc, buf = cv2.imencode(
-                    ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, self.quality]
-                )
-                if ok_enc:
-                    with self._lock:
-                        self._latest = buf.tobytes()
-                        self._mtime = now
-
-                # Keep cadence near target_fps without busy-waiting.
-                next_t += self.frame_interval
-                sleep_for = next_t - _native_monotonic()
-                if sleep_for > 0:
-                    _native_sleep(sleep_for)
-        finally:
-            with self._lock:
-                self._latest = None
-            if self._cap is not None:
-                self._cap.release()
-                self._cap = None
-
-    # -- reader -------------------------------------------------------------
-    def snapshot(self):
-        """Return (bytes, mtime) of the latest JPEG frame, or (None, 0)."""
-        with self._lock:
-            return self._latest, self._mtime
-
-    def probe(self, timeout=1.0):
-        """Open the device and grab one frame; returns (w, h) or (0, 0)."""
-        cap = self._open()
-        try:
-            if cap is None or not cap.isOpened():
-                return (0, 0)
-            ok, frame = cap.read()
-            if ok and frame is not None:
-                return (int(frame.shape[1]), int(frame.shape[0]))
-            return (0, 0)
-        finally:
-            cap.release()
+CAST_NAME = "ECB CAST"
+CAST_IDLE_TIMEOUT = 30.0  # drop a presenter after this long without a frame
 
 
 # --------------------------------------------------------------------------- #
-# Source registry + MJPEG generator
+# Camera (capture-card) helpers
 # --------------------------------------------------------------------------- #
-_registry = {}
-_registry_lock = _native_threading.Lock()
-
-
-def _get_worker(index):
-    with _registry_lock:
-        w = _registry.get(index)
-        if w is None:
-            w = _SourceWorker(index)
-            _registry[index] = w
-        return w
-
-
-def describe_sources(scan=MAX_SOURCE_SCAN):
-    """Enumerate server-side capture devices. Returns a list of dicts.
-
-    Uses a lightweight, direct cv2 probe per index (not the worker registry) so
-    this doesn't leave half-initialised capture threads around. Each index is
-    opened once, a single frame is read, and the handle is closed immediately —
-    this keeps DirectShow happy and avoids disrupting subsequent MJPEG streams.
-    """
-    out = []
-    for i in range(scan):
-        w, h = _probe_resolution(i)
-        if w and h:
-            out.append({"index": i, "w": w, "h": h})
-    return out
-
-
 def _probe_resolution(index):
-    """Open `index` once and return (width, height), or (0, 0)."""
+    """Open capture `index` once and return (width, height), or (0, 0)."""
     cap = None
     try:
         if hasattr(cv2, "CAP_DSHOW"):
@@ -292,143 +121,8 @@ def _probe_resolution(index):
             cap.release()
 
 
-def _drop_unused(index):
-    """Remove a worker only if it has no subscribers (post-probe cleanup)."""
-    with _registry_lock:
-        w = _registry.get(index)
-        if w is not None and w.subscriber_count == 0:
-            w.shutdown()
-            _registry.pop(index, None)
-
-
-def snapshot(index):
-    """Latest JPEG bytes for a source (without creating a worker if absent)."""
-    with _registry_lock:
-        w = _registry.get(index)
-    if w is None:
-        # one-shot grab
-        w = _SourceWorker(index)
-        return w.snapshot()[0]
-    return w.snapshot()[0]
-
-
-def mjpeg_generator(index, boundary=b"--frame"):
-    """Yield MJPEG multipart chunks for a live source.
-
-    Captures frames DIRECTLY in this generator (in the request thread) rather
-    than relying on a background capture thread. This keeps the stream working
-    under both the packaged eventlet server and a plain ``app.run`` (dev/test).
-    Each client opens its own capture handle; for a single projector this is
-    negligible and far more robust than cross-thread device sharing.
-    """
-    send_interval = 1.0 / max(1, TARGET_FPS)
-    # Open the capture handle once for the duration of the stream.
-    cap = None
-    try:
-        try:
-            if hasattr(cv2, "CAP_DSHOW"):
-                cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-            if cap is None or not cap.isOpened():
-                if cap is not None:
-                    cap.release()
-                cap = cv2.VideoCapture(index)
-            if cap is None or not cap.isOpened():
-                # Emit a minimal error frame so the client at least sees a stream
-                yield boundary + b"\r\nContent-Type: image/jpeg\r\n\r\n" + b"\r\n"
-                return
-
-            last_sent = 0.0
-            ok_base, first = cap.read()  # warm up
-            while True:
-                ok, frame = cap.read()
-                if not ok or frame is None:
-                    # Device dropped: try to reopen.
-                    cap.release()
-                    _sleep(0.3)
-                    cap = cv2.VideoCapture(index, cv2.CAP_DSHOW) \
-                          if hasattr(cv2, "CAP_DSHOW") else cv2.VideoCapture(index)
-                    if cap is None or not cap.isOpened():
-                        _sleep(0.3)
-                        continue
-                    ok, frame = cap.read()
-                    if not ok:
-                        continue
-
-                ok_enc, buf = cv2.imencode(
-                    ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
-                )
-                if not ok_enc:
-                    continue
-                data = buf.tobytes()
-                header = (
-                    f"Content-Type: image/jpeg\r\n"
-                    f"Content-Length: {len(data)}\r\n\r\n"
-                ).encode("latin-1")
-                yield boundary + b"\r\n" + header + data + b"\r\n"
-
-                # Keep cadence near target_fps without busy-waiting.
-                cadence = _native_monotonic() - last_sent
-                if cadence < send_interval:
-                    _sleep(send_interval - cadence)
-                last_sent = _native_monotonic()
-        finally:
-            if cap is not None:
-                cap.release()
-    except GeneratorExit:
-        raise
-    except Exception:
-        # Don't leak the capture handle.
-        if cap is not None:
-            cap.release()
-        raise
-
-
-# --------------------------------------------------------------------------- #
-# Flask wiring
-# --------------------------------------------------------------------------- #
-def init_app(app):
-    """Register the Live Input Flask routes on the existing app.
-
-    Called from server_entry.py AFTER ``from app import app``. The recovered
-    app.pyc is untouched — these endpoints are additive.
-    """
-    from flask import Response, jsonify
-    from flask_socketio import emit, disconnect as _sio_disconnect
-    from flask import session
-
-    @app.route("/api/live/sources", methods=["GET"])
-    def _api_live_sources():
-        return jsonify({"sources": describe_sources()})
-
-    @app.route("/live/feed/<int:index>.mjpeg", methods=["GET"])
-    def _live_feed(index):
-        # direct_passthrough + no buffering lets the eventlet WSGI server flush
-        # each MJPEG chunk immediately rather than holding the whole stream.
-        from werkzeug.wsgi import ClosingIterator
-        resp = Response(
-            mjpeg_generator(index),
-            mimetype="multipart/x-mixed-replace; boundary=--frame",
-            direct_passthrough=True,
-        )
-        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        resp.headers["Pragma"] = "no-cache"
-        resp.headers["Connection"] = "close"
-        resp.headers["X-Accel-Buffering"] = "no"
-        return resp
-
-    @app.route("/live/snapshot/<int:index>.jpg", methods=["GET"])
-    def _live_snapshot(index):
-        # One-shot frame grab: open the device, read one frame, encode & return.
-        data = grab_frame(index)
-        if data is None:
-            return jsonify({"status": "no frame"}), 204
-        return _send_bytes(data, "image/jpeg")
-
-    return app
-
-
 def grab_frame(index):
-    """Open `index` once, read one frame, JPEG-encode it. Returns bytes or None."""
+    """Open camera `index` once, read one frame, JPEG-encode it. bytes | None."""
     cap = None
     try:
         try:
@@ -454,6 +148,352 @@ def grab_frame(index):
                 cap.release()
     except Exception:
         return None
+
+
+# --------------------------------------------------------------------------- #
+# ECB CAST source registry (wireless presenters)
+# --------------------------------------------------------------------------- #
+_cast_lock = _native_threading.Lock()
+_cast_next = 0
+_cast_sources = {}  # source_id -> {"name","jpeg","w","h","last"}
+
+
+def _new_cast_token():
+    global _cast_next
+    with _cast_lock:
+        _cast_next += 1
+        return "c%02d" % _cast_next
+
+
+def register_cast_source(name=CAST_NAME, w=0, h=0):
+    """Register a wireless presenter and return its source_id."""
+    source_id = "cast-%s" % _new_cast_token()
+    with _cast_lock:
+        _cast_sources[source_id] = {
+            "name": name,
+            "jpeg": None,
+            "w": int(w or 0),
+            "h": int(h or 0),
+            "last": time.time(),
+        }
+    return source_id
+
+
+def update_cast_source(source_id, jpeg_bytes, w=0, h=0):
+    """Store the latest JPEG frame from a presenter (called on share:frame)."""
+    if source_id not in _cast_sources:
+        return
+    with _cast_lock:
+        src = _cast_sources[source_id]
+        src["jpeg"] = jpeg_bytes
+        if w:
+            src["w"] = int(w)
+        if h:
+            src["h"] = int(h)
+        src["last"] = time.time()
+
+
+def drop_cast_source(source_id):
+    """Remove a presenter's source (on disconnect / idle)."""
+    with _cast_lock:
+        _cast_sources.pop(source_id, None)
+
+
+def cast_sources():
+    """Return the list of currently-registered ECB CAST sources (drop idle)."""
+    now = time.time()
+    live = []
+    stale = []
+    with _cast_lock:
+        for sid, s in _cast_sources.items():
+            if now - s["last"] > CAST_IDLE_TIMEOUT:
+                stale.append(sid)
+            elif s["jpeg"] is not None:
+                live.append((sid, s))
+        if stale:
+            for sid in stale:
+                _cast_sources.pop(sid, None)
+    return live
+
+
+def cast_snapshot(source_id):
+    """Latest JPEG bytes for a cast source; bytes | None."""
+    with _cast_lock:
+        s = _cast_sources.get(source_id)
+        if s and s["jpeg"] is not None:
+            return s["jpeg"]
+    return None
+
+
+# --------------------------------------------------------------------------- #
+# Merged source listing
+# --------------------------------------------------------------------------- #
+def describe_sources(scan=MAX_SOURCE_SCAN):
+    """Enumerate server-side cameras + current ECB CAST presenters.
+
+    Returns a list of dicts, each with ``source_id`` (string), ``name``,
+    ``w``/``h``, and ``kind`` ("camera" or "cast").
+    """
+    out = []
+    for i in range(scan):
+        w, h = _probe_resolution(i)
+        if w and h:
+            out.append(
+                {
+                    "source_id": str(i),
+                    "index": i,
+                    "name": "Camera %d (%dx%d)" % (i, w, h),
+                    "w": w,
+                    "h": h,
+                    "kind": "camera",
+                }
+            )
+    for sid, s in cast_sources():
+        out.append(
+            {
+                "source_id": sid,
+                "name": "%s (%dx%d)" % (s["name"], s.get("w", 0), s.get("h", 0)),
+                "w": s.get("w", 0),
+                "h": s.get("h", 0),
+                "kind": "cast",
+            }
+        )
+    return out
+
+
+def is_cast_source(source_id):
+    return isinstance(source_id, str) and source_id.startswith("cast-")
+
+
+def _cast_index_of(source_id):
+    """Return the numeric part of a cast source_id, or None."""
+    if source_id.startswith("cast-"):
+        return source_id[len("cast-"):]
+    return None
+
+
+# --------------------------------------------------------------------------- #
+# MJPEG generators
+# --------------------------------------------------------------------------- #
+def _camera_mjpeg_generator(index, boundary=b"--frame"):
+    """Yield MJPEG chunks for a server-side camera / capture card.
+
+    Captures frames DIRECTLY in this generator (in the request thread) rather
+    than relying on a background capture thread. This keeps the stream working
+    under both the packaged eventlet server and a plain ``app.run`` (dev/test).
+    Each client opens its own capture handle; for a single projector this is
+    negligible and far more robust than cross-thread device sharing.
+    """
+    send_interval = 1.0 / max(1, TARGET_FPS)
+    cap = None
+    try:
+        try:
+            if hasattr(cv2, "CAP_DSHOW"):
+                cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+            if cap is None or not cap.isOpened():
+                if cap is not None:
+                    cap.release()
+                cap = cv2.VideoCapture(index)
+            if cap is None or not cap.isOpened():
+                yield boundary + b"\r\nContent-Type: image/jpeg\r\n\r\n" + b"\r\n"
+                return
+
+            last_sent = 0.0
+            while True:
+                ok, frame = cap.read()
+                if not ok or frame is None:
+                    cap.release()
+                    _sleep(0.3)
+                    cap = cv2.VideoCapture(index, cv2.CAP_DSHOW) \
+                        if hasattr(cv2, "CAP_DSHOW") else cv2.VideoCapture(index)
+                    if cap is None or not cap.isOpened():
+                        _sleep(0.3)
+                        continue
+                    ok, frame = cap.read()
+                    if not ok:
+                        continue
+
+                ok_enc, buf = cv2.imencode(
+                    ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
+                )
+                if not ok_enc:
+                    continue
+                data = buf.tobytes()
+                header = (
+                    f"Content-Type: image/jpeg\r\n"
+                    f"Content-Length: {len(data)}\r\n\r\n"
+                ).encode("latin-1")
+                yield boundary + b"\r\n" + header + data + b"\r\n"
+
+                cadence = _native_monotonic() - last_sent
+                if cadence < send_interval:
+                    _sleep(send_interval - cadence)
+                last_sent = _native_monotonic()
+        finally:
+            if cap is not None:
+                cap.release()
+    except GeneratorExit:
+        raise
+    except Exception:
+        if cap is not None:
+            cap.release()
+        raise
+
+
+def _cast_mjpeg_generator(source_id, boundary=b"--frame"):
+    """Yield MJPEG chunks for a wireless ECB CAST presenter.
+
+    Each frame is the latest JPEG the presenter pushed via Socket.IO. The
+    generator only sends a chunk when a *new* frame appears, so a still screen
+    does not spam the network while staying live.
+    """
+    send_interval = 1.0 / max(1, TARGET_FPS)
+    last_mtime = -1.0
+    last_sent = 0.0
+    try:
+        while True:
+            with _cast_lock:
+                s = _cast_sources.get(source_id)
+                jpeg = s["jpeg"] if s else None
+                mtime = s["last"] if s else 0.0
+            if jpeg is None:
+                _sleep(0.2)
+                continue
+            if mtime != last_mtime:
+                last_mtime = mtime
+                header = (
+                    f"Content-Type: image/jpeg\r\n"
+                    f"Content-Length: {len(jpeg)}\r\n\r\n"
+                ).encode("latin-1")
+                yield boundary + b"\r\n" + header + jpeg + b"\r\n"
+                last_sent = _native_monotonic()
+            else:
+                _sleep(0.05)
+            cadence = _native_monotonic() - last_sent
+            if cadence < send_interval:
+                _sleep(send_interval - cadence)
+    except GeneratorExit:
+        raise
+
+
+def mjpeg_generator(source_id, boundary=b"--frame"):
+    """Dispatch MJPEG generation to the camera or cast path by source_id."""
+    if is_cast_source(source_id):
+        return _cast_mjpeg_generator(source_id, boundary)
+    try:
+        return _camera_mjpeg_generator(int(source_id), boundary)
+    except (TypeError, ValueError):
+        return _cast_mjpeg_generator(source_id, boundary)
+
+
+# --------------------------------------------------------------------------- #
+# Flask + Socket.IO wiring
+# --------------------------------------------------------------------------- #
+def init_app(app, socketio=None):
+    """Register the Live Input Flask routes + the ECB CAST socket events.
+
+    Called from server_entry.py AFTER ``from app import app`` (and socketio).
+    The recovered app.pyc is untouched — these endpoints are additive.
+    """
+    from flask import Response, jsonify, render_template, request
+
+    @app.route("/api/live/sources", methods=["GET"])
+    def _api_live_sources():
+        return jsonify({"sources": describe_sources()})
+
+    @app.route("/live/feed/<path:source_id>.mjpeg", methods=["GET"])
+    def _live_feed(source_id):
+        resp = Response(
+            mjpeg_generator(source_id),
+            mimetype="multipart/x-mixed-replace; boundary=--frame",
+            direct_passthrough=True,
+        )
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Connection"] = "close"
+        resp.headers["X-Accel-Buffering"] = "no"
+        return resp
+
+    @app.route("/live/snapshot/<path:source_id>.jpg", methods=["GET"])
+    def _live_snapshot(source_id):
+        if is_cast_source(source_id):
+            data = cast_snapshot(source_id)
+        else:
+            data = grab_frame(int(source_id))
+        if data is None:
+            return jsonify({"status": "no frame"}), 204
+        return _send_bytes(data, "image/jpeg")
+
+    @app.route("/share", methods=["GET"])
+    def _share_page():
+        return render_template("share.html", cast_name=CAST_NAME)
+
+    # -- ECB CAST socket events ----------------------------------------------
+    def _share_register(data):
+        """Presenter opens /share and registers; return its source_id."""
+        name = (data or {}).get("name") or CAST_NAME
+        w = (data or {}).get("w") or 0
+        h = (data or {}).get("h") or 0
+        sid = register_cast_source(name, w, h)
+        if socketio is not None:
+            from flask_socketio import join_room
+            room = "cast-" + sid
+            join_room(room)
+        # tell the operator console the source list changed
+        if socketio is not None:
+            emit("live:sources", {"sources": describe_sources()}, broadcast=True)
+        return {"source_id": sid, "name": name}
+
+    def _share_frame(data):
+        """Presenter pushes a base64/raw JPEG frame for its session."""
+        sid = (data or {}).get("source_id")
+        if not sid:
+            return
+        frame_b64 = (data or {}).get("frame")
+        if not frame_b64:
+            return
+        try:
+            import base64
+            raw = base64.b64decode(frame_b64)
+        except Exception:
+            return
+        update_cast_source(sid, raw, (data or {}).get("w"), (data or {}).get("h"))
+
+    def _share_close(data):
+        sid = (data or {}).get("source_id")
+        if sid:
+            drop_cast_source(sid)
+        if socketio is not None:
+            emit("live:sources", {"sources": describe_sources()}, broadcast=True)
+
+    def _share_disconnect():
+        # Clean up any cast source tied to this connection.
+        from flask_socketio import request as sio_request
+        sid = getattr(sio_request, "_cast_source_id", None)
+        if sid:
+            drop_cast_source(sid)
+        if socketio is not None:
+            emit("live:sources", {"sources": describe_sources()}, broadcast=True)
+
+    if socketio is not None:
+
+        @socketio.on("share:register", namespace="/share")
+        def _on_share_register(data):
+            return _share_register(data)
+
+        @socketio.on("share:frame", namespace="/share")
+        def _on_share_frame(data):
+            _share_frame(data)
+
+        @socketio.on("share:close", namespace="/share")
+        def _on_share_close(data):
+            _share_close(data)
+
+        @socketio.on("disconnect")
+        def _on_share_disconnect():
+            _share_disconnect()
+
+    return app
 
 
 def _send_bytes(data, mimetype):

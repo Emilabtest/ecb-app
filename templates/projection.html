@@ -740,9 +740,11 @@
     const slide = document.getElementById('slide');
     slide.innerHTML = '';
 
-    // New path: server-side live source (source_index) -> MJPEG from server.
-    const srcIdx = data.source_index;
-    if (srcIdx !== undefined && srcIdx !== null && srcIdx !== '') {
+    // New path: server-side live source -> MJPEG from the server. The operator
+    // sends a source_id that may be a camera index ("0") or an ECB CAST
+    // wireless presenter ("cast-..."); both stream via /live/feed/<id>.mjpeg.
+    const srcId = data.source_id !== undefined && data.source_id !== null ? data.source_id : data.source_index;
+    if (srcId !== undefined && srcId !== null && srcId !== '') {
       // Tear down any prior browser-camera stream.
       Object.keys(_liveStreams).forEach(function (k) {
         _liveStreams[k].getTracks().forEach(function (t) { t.stop(); });
@@ -755,7 +757,7 @@
         _liveImgEl.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
         slide.appendChild(_liveImgEl);
       }
-      _liveImgEl.src = '/live/feed/' + encodeURIComponent(srcIdx) + '.mjpeg';
+      _liveImgEl.src = '/live/feed/' + encodeURIComponent(srcId) + '.mjpeg';
       return;
     }
 

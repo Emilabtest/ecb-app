@@ -89,8 +89,9 @@ def _fix_asset_paths(app_obj):
 
 _fix_asset_paths(app)
 
-# Register the server-side Live Input endpoints (additive; app.pyc untouched).
-live_input.init_app(app)
+# Register the server-side Live Input + ECB CAST endpoints (additive; app.pyc
+# untouched). Pass socketio so the wireless /share page can register/stream.
+live_input.init_app(app, socketio)
 
 
 def _ensure_dirs():
