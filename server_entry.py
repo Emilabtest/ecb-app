@@ -12,12 +12,36 @@ import glob
 
 if getattr(sys, 'frozen', False):
     HERE = os.path.dirname(sys.executable)
+    _MEIPASS = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
+    _MEIPASS = HERE
 
 os.chdir(HERE)
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
+
+
+def _resolve(name):
+    """Return the first existing path under the install dir or the PyInstaller
+    _MEIPASS bundle dir, so recovery data resolves in both onefile and onedir."""
+    cands = [os.path.join(HERE, name)]
+    if _MEIPASS and _MEIPASS != HERE:
+        cands.append(os.path.join(_MEIPASS, name))
+    for c in cands:
+        if os.path.exists(c):
+            return c
+    return cands[0]
+
+
+def _register_pymod():
+    """Expose the recovered .pyc project modules (app, roles, ...) on sys.path."""
+    pymod = _resolve('pymod')
+    if pymod and os.path.isdir(pymod):
+        sys.path.insert(0, pymod)
+
+
+_register_pymod()
 
 from licensing import verify_licence
 
