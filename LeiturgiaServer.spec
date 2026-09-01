@@ -1,6 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for the embedded Leiturgia server executable.
 # Builds LeiturgiaServer.exe (windowed) from server_entry.py.
+#
+# The recovered .pyc project modules (app, roles, updater, licensing, etc.)
+# live in pymod/ and are loaded sourceless at runtime by server_entry.py.
 from PyInstaller.utils.hooks import collect_submodules
 
 a = Analysis(
@@ -8,8 +11,10 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
+        ('pymod', 'pymod'),
         ('templates', 'templates'),
         ('static', 'static'),
+        ('data', 'data'),
         ('app.version', '.'),
     ],
     hiddenimports=[
@@ -23,9 +28,26 @@ a = Analysis(
         'engineio.async_drivers.threading',
         'engineio.async_drivers.eventlet',
         'socketio',
-        'licensing',
-        'updater',
-    ] + collect_submodules('dns'),
+        'flask_limiter',
+        'flask_limiter.util',
+        'python_dotenv',
+        'dotenv',
+        'live_input',
+        'cv2',
+        'numpy',
+        'sqlite3',
+        'asyncio',
+        'ctypes',
+        'websockets',
+        'wsproto',
+        'bidict',
+        'requests',
+        'urllib3',
+        'certifi',
+        'idna',
+        'charset_normalizer',
+        'mutagen',
+    ] + collect_submodules('dns') + collect_submodules('websockets') + collect_submodules('requests') + collect_submodules('wsproto'),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

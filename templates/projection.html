@@ -731,11 +731,37 @@
 
   // ── Live input ─────────────────────────────────────────────────────────────
   var _liveStreams = {};
+  // Server-side live input: show the MJPEG stream relayed by the server, so a
+  // capture card/hdmi input plugged into the SERVER machine can be shown here
+  // even though this projection client never has direct access to that device.
+  var _liveImgEl = null;
   function renderLive(data) {
     setSlideType('live');
     const slide = document.getElementById('slide');
     slide.innerHTML = '';
 
+    // New path: server-side live source -> MJPEG from the server. The operator
+    // sends a source_id that may be a camera index ("0") or an ECB CAST
+    // wireless presenter ("cast-..."); both stream via /live/feed/<id>.mjpeg.
+    const srcId = data.source_id !== undefined && data.source_id !== null ? data.source_id : data.source_index;
+    if (srcId !== undefined && srcId !== null && srcId !== '') {
+      // Tear down any prior browser-camera stream.
+      Object.keys(_liveStreams).forEach(function (k) {
+        _liveStreams[k].getTracks().forEach(function (t) { t.stop(); });
+      });
+      _liveStreams = {};
+
+      if (!_liveImgEl) {
+        _liveImgEl = document.createElement('img');
+        _liveImgEl.alt = 'Live input';
+        _liveImgEl.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;';
+        slide.appendChild(_liveImgEl);
+      }
+      _liveImgEl.src = '/live/feed/' + encodeURIComponent(srcId) + '.mjpeg';
+      return;
+    }
+
+    // Fallback: browser-side device capture (getUserMedia).
     const deviceId = data.device_id || '';
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       slide.innerHTML = '<div class="slide-lines"><div class="slide-line">Live input not supported in this browser.</div></div>';

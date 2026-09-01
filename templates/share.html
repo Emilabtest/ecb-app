@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ cast_name }} — Share your screen</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0b1424; color: #e8ecf3; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; text-align: center;
+  }
+  .logo { font-size: 15px; letter-spacing: .12em; color: #cbb26a; font-weight: 700; margin-bottom: 4px; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .sub { color: #8a95a8; font-size: 14px; max-width: 480px; margin-bottom: 24px; line-height: 1.5; }
+  .btn {
+    background: #cbb26a; color: #0b1424; border: none; border-radius: 10px;
+    font-size: 16px; font-weight: 600; padding: 14px 34px; cursor: pointer;
+    transition: transform .1s, background .15s; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { background: #d8c178; transform: translateY(-1px); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn-stop { background: #6b1d1d; color: #f4d9d9; margin-left: 10px; }
+  .btn-stop:hover { background: #7d2424; }
+  .status { margin-top: 20px; font-size: 13px; color: #9aa6ba; min-height: 20px; }
+  .status.on { color: #6bcf8a; }
+  .status.err { color: #f08a8a; }
+  #preview-wrap { width: 100%; max-width: 900px; margin-top: 22px; display: none; }
+  #preview {
+    width: 100%; border: 1px solid #22314d; border-radius: 12px; background: #000;
+    box-shadow: 0 10px 40px rgba(0,0,0,.4);
+  }
+  .hint { color: #6b7688; font-size: 12px; margin-top: 14px; }
+</style>
+</head>
+<body>
+  <div class="logo">LEITURGIA</div>
+  <h1>{{ cast_name }}</h1>
+  <div class="sub">Share your screen to the projection. Press the button, choose "Entire screen" or a window, then present normally — the operator will push it to the display.</div>
+
+  <div>
+    <button id="startBtn" class="btn">▶ Share my screen</button>
+    <button id="stopBtn" class="btn btn-stop" style="display:none;">■ Stop</button>
+  </div>
+
+  <div class="status" id="status">Ready to share.</div>
+
+  <div id="preview-wrap"><video id="preview" muted autoplay playsinline></video></div>
+
+  <div class="hint">This page stays open in a background tab while you present.</div>
+
+<script src="/static/socket.io.js"></script>
+<script>
+  var socket = io('/share', { transports: ['websocket', 'polling'] });
+  var sourceId = null;
+  var stream = null;
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  var running = false;
+  var statusEl = document.getElementById('status');
+  var preview = document.getElementById('preview');
+  var startBtn = document.getElementById('startBtn');
+  var stopBtn = document.getElementById('stopBtn');
+  var JW = 960;   // capture width (scaled down for bandwidth)
+  var JH = 540;   // capture height
+
+  function setStatus(msg, cls) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  // Poll for a broadcast of the current source list (keeps us in sync).
+  function ensureRegistered(cb) {
+    socket.emit('share:register', { name: '{{ cast_name }}', w: JW, h: JH }, function (resp) {
+      sourceId = resp.source_id;
+      setStatus('Connected. Presenting as "' + resp.name + '".', 'on');
+      cb && cb();
+    });
+  }
+
+  async function startShare() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      setStatus('Screen sharing is not supported in this browser.', 'err');
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    } catch (e) {
+      setStatus('You cancelled or could not share.', 'err');
+      return;
+    }
+    preview.srcObject = stream;
+    document.getElementById('preview-wrap').style.display = 'block';
+    startBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-flex';
+    running = true;
+
+    if (!sourceId) {
+      await new Promise(function (res) { ensureRegistered(res); });
+    }
+
+    var fps = 15;
+    var interval = 1000 / fps;
+    var last = performance.now();
+    function loop(now) {
+      if (!running) return;
+      var track = stream.getVideoTracks()[0];
+      if (track && track.readyState === 'ended') { stopShare(); return; }
+      if (now - last >= interval) {
+        last = now;
+        sendFrame();
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    stream.getVideoTracks()[0].addEventListener('ended', function () { stopShare(); });
+  }
+
+  function sendFrame() {
+    var track = stream.getVideoTracks()[0];
+    if (!track) return;
+    var sw = track.getSettings().width || 1280;
+    var sh = track.getSettings().height || 720;
+    // keep aspect ratio, cap resolution
+    var scale = Math.min(JW / sw, JH / sh, 1);
+    canvas.width = Math.max(1, Math.round(sw * scale));
+    canvas.height = Math.max(1, Math.round(sh * scale));
+    ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
+    var data = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+    if (sourceId) {
+      socket.emit('share:frame', { source_id: sourceId, frame: data, w: canvas.width, h: canvas.height });
+    }
+  }
+
+  function stopShare() {
+    running = false;
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    if (sourceId) { socket.emit('share:close', { source_id: sourceId }); }
+    sourceId = null;
+    document.getElementById('preview-wrap').style.display = 'none';
+    startBtn.style.display = 'inline-flex';
+    stopBtn.style.display = 'none';
+    setStatus('Sharing stopped. Share again anytime.');
+  }
+
+  startBtn.addEventListener('click', startShare);
+  stopBtn.addEventListener('click', stopShare);
+  window.addEventListener('beforeunload', function () { if (sourceId) socket.emit('share:close', { source_id: sourceId }); });
+
+  socket.on('connect', function () {
+    setStatus('Connected to the projection server. Ready to share.', 'on');
+    socket.emit('share:register', { name: '{{ cast_name }}', w: JW, h: JH }, function (resp) {
+      sourceId = resp.source_id;
+      setStatus('Connected. Presenting as "' + resp.name + '".', 'on');
+    });
+  });
+  socket.on('disconnect', function () { setStatus('Disconnected from the server.'); });
+</script>
+</body>
+</html>

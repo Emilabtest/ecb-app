@@ -2253,6 +2253,35 @@
   <!-- Blank button -->
   <button class="btn-rp-blank" onclick="_projBlank()">■ Blank Screen</button>
 
+  <!-- Live input (server-side capture) -->
+  <div id="liveInputPanel">
+    <div class="rp-section-label">Live input</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+      <select id="liveSourceSelect" class="channel-select" style="width:100%;">
+        <option value="">Select source…</option>
+      </select>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 10px;flex:none;"
+              onclick="liveLoadSources()">↺</button>
+    </div>
+    <div style="margin-bottom:6px;">
+      <div class="rp-section-label" style="margin-bottom:3px;">Target channel</div>
+      <div style="display:flex;gap:4px;" id="liveChannelRow">
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch1" style="flex:1;">ch1</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch2" style="flex:1;">ch2</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch3" style="flex:1;">ch3</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch4" style="flex:1;">ch4</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch5" style="flex:1;">ch5</button>
+      </div>
+    </div>
+    <div id="liveThumbPreview" style="display:none;aspect-ratio:16/9;background:#000;border-radius:6px;border:1px solid var(--border);overflow:hidden;margin-bottom:6px;">
+      <img id="liveThumbImg" alt="" style="width:100%;height:100%;object-fit:contain;display:block;">
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="btn-rp-blank" style="flex:1;color:#4caf82;border-color:#4caf82;" onclick="livePush()">▶ Push</button>
+      <button class="btn-rp-blank" style="flex:1;" onclick="liveStop()">■ Stop</button>
+    </div>
+  </div>
+
   <!-- Timer controls -->
   <div>
     <div class="rp-section-label">Countdown Timer</div>
@@ -5295,6 +5324,96 @@
     _updateChTile(data.channel || _getChannel(), data);
   }
 
+  // ── Standalone Live input (server-side capture) ───────────────────────────
+  var _liveSelectedCh = 'ch1';
+  var _livePreviewTimer = null;
+
+  function liveLoadSources() {
+    const sel = document.getElementById('liveSourceSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select source…</option>';
+    // Also refresh while a wireless presenter is on: poll every 5s.
+    fetch('/api/live/sources')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        const srcs = d.sources || [];
+        srcs.forEach(function (s) {
+          const opt = document.createElement('option');
+          opt.value = s.source_id !== undefined ? s.source_id : s.index;
+          const kind = s.kind === 'cast' ? 'ECB CAST' : 'Source';
+          opt.textContent = (s.name || (kind + ' ' + s.index)) + '  (' + s.w + '×' + s.h + ')';
+          sel.appendChild(opt);
+        });
+        if (!srcs.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'No sources found';
+          sel.appendChild(opt);
+        }
+      })
+      .catch(function (e) {
+        toast('Failed to list live sources: ' + e, 'error');
+      });
+  }
+
+  function liveSelectSource(idx) {
+    const prev = document.getElementById('liveThumbPreview');
+    const img  = document.getElementById('liveThumbImg');
+    if (!prev || !img) return;
+    if (idx === '' || idx === null || idx === undefined) {
+      prev.style.display = 'none';
+      if (img) img.src = '';
+      return;
+    }
+    // Live thumbnail preview: loop the MJPEG stream in a small <img>.
+    img.src = '/live/feed/' + encodeURIComponent(idx) + '.mjpeg';
+    prev.style.display = 'block';
+  }
+
+  function livePush() {
+    const sel = document.getElementById('liveSourceSelect');
+    const idx = sel ? sel.value : '';
+    if (!idx) { toast('Select a live source first', 'error'); return; }
+    const sd = {
+      channel: _liveSelectedCh,
+      type: 'live',
+      source_id: String(idx),
+      theme_id: _getTheme(),
+      item_id: null,
+      stanza_idx: null,
+    };
+    _socket.emit('media:live', sd);
+    renderLivePreview({ channel: sd.channel, type: 'live' });
+    toast('Pushing live source ' + idx + ' → ' + sd.channel, 'ok');
+  }
+
+  function liveStop() {
+    const sd = { channel: _liveSelectedCh, type: 'blank' };
+    _socket.emit('slide:blank', sd);
+    renderLivePreview({ channel: sd.channel, type: 'blank' });
+    toast('Live stopped on ' + sd.channel, 'ok');
+  }
+
+  function _bindLivePanel() {
+    const sel = document.getElementById('liveSourceSelect');
+    if (sel) sel.addEventListener('change', function () {
+      liveSelectSource(sel.value);
+    });
+    document.querySelectorAll('.live-ch-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _liveSelectedCh = btn.dataset.ch;
+        document.querySelectorAll('.live-ch-btn').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.ch === _liveSelectedCh);
+        });
+      });
+    });
+    // Pre-select the first channel and load sources.
+    document.querySelectorAll('.live-ch-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.ch === _liveSelectedCh);
+    });
+    liveLoadSources();
+  }
+
   function _lpEsc(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
@@ -6270,6 +6389,7 @@
         }
       }).catch(function(){ alert('Failed to add channel'); });
     });
+    _bindLivePanel();
   });
 </script>
 
