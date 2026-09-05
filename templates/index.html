@@ -621,6 +621,28 @@
     .item-subtitle-text { font-size: 12px; color: var(--muted); }
     .item-detail-text { font-size: 12px; color: var(--gold-dim); margin-top: 1px; }
 
+    /* Long titles (e.g. video file names) must NOT push the action buttons on
+       the program strip. Let the title column shrink and ellipsize instead. */
+    .program-item .item-header > div[style*="flex:1"] {
+      min-width: 0;
+    }
+    .program-item .item-header .item-title-text,
+    .program-item .item-header .item-detail-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .program-item .item-header .item-type-badge,
+    .program-item .item-header .edit-hint,
+    .program-item .item-header .duplicate-hint,
+    .program-item .item-header .item-enabled-toggle,
+    .program-item .item-header .btn-live,
+    .program-item .item-header .item-chevron,
+    .program-item .item-header .item-delete {
+      flex-shrink: 0;
+    }
+
     .back-bar {
       display: flex; align-items: center; gap: 6px;
       padding: 4px 2px 10px;
@@ -1182,8 +1204,8 @@
 
     /* ── Right panel (live control) ── */
     .right-panel {
-      width: 248px;
-      min-width: 248px;
+      width: 330px;
+      min-width: 330px;
       flex-shrink: 0;
       background: #070f1f;
       border-left: 1px solid #0e1a30;
@@ -1307,6 +1329,50 @@
       position: relative;
     }
 
+    /* Layer toggle rail — sits OUTSIDE the monitor, to its right */
+    .lp-layer-rail {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      padding: 5px 4px;
+      background: #0a1430;
+      border: 1px solid #1e2f52;
+      border-radius: 6px;
+    }
+    .lp-layer-btn {
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      padding: 0;
+      border-radius: 4px;
+      border: 1px solid #33518a;
+      background: rgba(9, 18, 36, 0.84);
+      color: #8c9ab5;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: sans-serif;
+      text-align: center;
+      cursor: pointer;
+      transition: background .12s, color .12s, border-color .12s;
+      user-select: none;
+    }
+    .lp-layer-btn:hover { border-color: #4f6faf; color: #c7d4ee; }
+    .lp-layer-btn.active {
+      background: #d4a843;
+      border-color: #d4a843;
+      color: #070f1f;
+    }
+    .lp-layer-btn[data-layer="background"]:not(.active) { color: #6b7c9c; font-size: 7px; }
+    /* Master OFF - destructive, so use red when the layers are actually off. */
+    .lp-layer-btn[data-layer="off"] { color: #b07070; font-size: 7px; }
+    .lp-layer-btn[data-layer="off"].active {
+      background: #c0392b;
+      border-color: #c0392b;
+      color: #fff;
+    }
+
     .lp-part {
       font-size: 6px;
       color: #D4A843;
@@ -1400,6 +1466,7 @@
       text-align: center;
     }
     .btn-rp-blank:hover { border-color: var(--error); color: var(--error); }
+    .btn-rp-blank.feed-active { border-color: #4caf82; color: #4caf82; }
 
     /* ── Slide strip (docked footer row) ── */
     .slide-strip {
@@ -1995,22 +2062,10 @@
             </div>
             <input type="hidden" class="lyrics-key" value="">
             {% elif _is_live %}
-            <div class="form-row single">
-              <div class="field"><label>Title</label><input type="text" class="item-title" value="{{ item.title }}" placeholder="e.g. Live Camera"></div>
+            <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--gold)">
+              Live input is controlled from the Live panel (right rail). Please remove this item from the program.
             </div>
-            <div class="field" style="margin-top:8px">
-              <label>Live input device</label>
-              <div style="display:flex;gap:6px;align-items:center">
-                <select class="ctb-sel live-device-select" style="flex:1"
-                        onchange="this.closest('.program-item').querySelector('.item-live-device').value=this.value">
-                  <option value="">Select a device…</option>
-                </select>
-                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 10px"
-                        onclick="loadLiveDevices(this.closest('.program-item'))">↺ Refresh</button>
-              </div>
-              <div class="media-selected-info" style="margin-top:4px;font-size:11px;color:var(--gold)"></div>
-            </div>
-            <input type="hidden" class="item-live-device" value="{{ item.get('device_id','') }}">
+            <input type="hidden" class="item-title" value="{{ item.title }}">
             <input type="hidden" class="lyrics-key" value="">
             {% elif _is_song %}
             <div class="field" style="margin-bottom:8px">
@@ -2047,14 +2102,13 @@
             <div class="field" style="margin-top:8px">
               <label>Content</label>
               {% set _fs = item.get('font_size', 'md') %}
+              {% set _fs_px = (_fs if _fs|int > 0 else {'sm':'40','md':'60','lg':'90','xl':'130'}.get(_fs, '60')) %}
               {% set _ta = item.get('text_align', 'center') %}
               <div class="content-toolbar">
                 <div class="content-toolbar-group">
                   <span class="content-toolbar-label">Size</span>
-                  <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'sm' }}" data-size="sm">S</button>
-                  <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'md' }}" data-size="md">M</button>
-                  <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'lg' }}" data-size="lg">L</button>
-                  <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'xl' }}" data-size="xl">XL</button>
+                  <input type="number" class="ctb-sel item-font-size-input" min="12" max="200" step="1" value="{{ _fs_px }}" title="Font size (px)" style="width:72px;">
+                  <span style="color:var(--muted);font-size:11px;">px</span>
                 </div>
                 <div class="content-toolbar-divider"></div>
                 <div class="content-toolbar-group">
@@ -2093,7 +2147,7 @@
               <input type="hidden" class="item-text-bold"    value="{% if _bold %}1{% else %}0{% endif %}">
               <input type="hidden" class="item-text-italic"  value="{% if _italic %}1{% else %}0{% endif %}">
               <input type="hidden" class="item-text-color"   value="{{ item.get('text_color', '') }}">
-              <textarea class="item-content" rows="3" placeholder="Free-form text displayed on the slide…" style="width:100%; resize:vertical; min-height:220px;background:var(--card); color:var(--white); border:1px solid var(--border); border-radius:6px; padding:8px; font-family:inherit; font-size:13px;">{{ item.get('content', '') }}</textarea>
+              <textarea class="item-content" rows="3" placeholder="Free-form text displayed on the slide…" style="width:100%; resize:vertical; min-height:220px;background:var(--card); color:var(--white); border:1px solid var(--border); border-radius:6px; padding:8px; font-family:inherit; font-size:11px;">{{ item.get('content', '') }}</textarea>
             </div>
             {% elif not _is_song and not _is_video and not _is_image %}
             <div class="participants">
@@ -2102,6 +2156,51 @@
                 <input type="text" class="item-participant" value="{{ item.get('participant', '') }}" placeholder="Name">
               </div>
             </div>
+            {% set _ff = item.get('font_family', 'default') %}
+            {% set _fs = item.get('font_size', 'lg') %}
+            {% set _ta = item.get('text_align', 'center') %}
+            {% set _bold = item.get('text_bold', False) %}
+            {% set _italic = item.get('text_italic', False) %}
+            <div class="content-toolbar" style="margin-top:8px;">
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Size</span>
+                <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'sm' }}" data-size="sm">S</button>
+                <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'md' }}" data-size="md">M</button>
+                <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'lg' }}" data-size="lg">L</button>
+                <button type="button" class="ctb-btn size-btn {{ 'active' if _fs == 'xl' }}" data-size="xl">XL</button>
+              </div>
+              <div class="content-toolbar-divider"></div>
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Align</span>
+                <button type="button" class="ctb-btn align-btn {{ 'active' if _ta == 'left' }}"   data-align="left">Left</button>
+                <button type="button" class="ctb-btn align-btn {{ 'active' if _ta == 'center' }}" data-align="center">Ctr</button>
+                <button type="button" class="ctb-btn align-btn {{ 'active' if _ta == 'right' }}"  data-align="right">Right</button>
+              </div>
+              <div class="content-toolbar-divider"></div>
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Font</span>
+                <select class="ctb-sel font-sel" data-ff="{{ _ff }}">
+                  <option value="default" {{ 'selected' if _ff == 'default' }}>Default</option>
+                  <option value="serif"   {{ 'selected' if _ff == 'serif' }}>Serif</option>
+                  <option value="sans"    {{ 'selected' if _ff == 'sans' }}>Sans-serif</option>
+                  <option value="script"  {{ 'selected' if _ff == 'script' }}>Script</option>
+                </select>
+                <button type="button" class="ctb-btn style-btn {{ 'active' if _bold }}" data-style="bold" title="Bold">B</button>
+                <button type="button" class="ctb-btn style-btn {{ 'active' if _italic }}" data-style="italic" title="Italic">I</button>
+              </div>
+              <div class="content-toolbar-divider"></div>
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Color</span>
+                <input type="color" class="item-text-color-input" value="{{ item.get('text_color', '#ffffff') }}" title="Text color">
+                <button type="button" class="ctb-btn color-reset" title="Use default text color" onclick="var f=this.closest('.program-item');f.querySelector('.item-text-color').value='';">Reset</button>
+              </div>
+            </div>
+            <input type="hidden" class="item-font-size"  value="{{ _fs }}">
+            <input type="hidden" class="item-text-align" value="{{ _ta }}">
+            <input type="hidden" class="item-font-family"  value="{{ _ff }}">
+            <input type="hidden" class="item-text-bold"    value="{% if _bold %}1{% else %}0{% endif %}">
+            <input type="hidden" class="item-text-italic"  value="{% if _italic %}1{% else %}0{% endif %}">
+            <input type="hidden" class="item-text-color"   value="{{ item.get('text_color', '') }}">
             {% endif %}
             {% if _is_song %}
             <div class="rule" style="margin:10px 0 8px;"></div>
@@ -2124,7 +2223,52 @@
               </div>
               <input type="hidden" class="lyrics-key" value="{{ item['lyrics_key'] if 'lyrics_key' in item else '' }}">
             </div>
-            <div class="lyrics-display"></div>
+            <div class="song-lyrics-label" style="display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;">Lyrics <span style="color:var(--muted);font-weight:400">(edit directly; leave a blank line between stanzas)</span></div>
+            <textarea class="song-lyrics" rows="14" placeholder="Search a hymn above or type/paste lyrics here, then edit them directly." style="width:100%;resize:vertical;background:var(--card);color:var(--white);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:inherit;font-size:11px;line-height:1.6;">{{ item.get('manual_lyrics', '') }}</textarea>
+            {% set _ff = item.get('font_family', 'default') %}
+            {% set _fs = item.get('font_size', 'md') %}
+            {% set _fs_px = (_fs if _fs|int > 0 else {'sm':'40','md':'60','lg':'90','xl':'130'}.get(_fs, '60')) %}
+            {% set _ta = item.get('text_align', 'center') %}
+            {% set _bold = item.get('text_bold', False) %}
+            {% set _italic = item.get('text_italic', False) %}
+            <div class="content-toolbar" style="margin-top:8px;">
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Size</span>
+                <input type="number" class="ctb-sel item-font-size-input" min="12" max="200" step="1" value="{{ _fs_px }}" title="Font size (px)" style="width:72px;">
+                <span style="color:var(--muted);font-size:11px;">px</span>
+              </div>
+              <div class="content-toolbar-divider"></div>
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Align</span>
+                <button type="button" class="ctb-btn align-btn {{ 'active' if _ta == 'left' }}"   data-align="left">Left</button>
+                <button type="button" class="ctb-btn align-btn {{ 'active' if _ta == 'center' }}" data-align="center">Ctr</button>
+                <button type="button" class="ctb-btn align-btn {{ 'active' if _ta == 'right' }}"  data-align="right">Right</button>
+              </div>
+              <div class="content-toolbar-divider"></div>
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Font</span>
+                <select class="ctb-sel font-sel" data-ff="{{ _ff }}">
+                  <option value="default" {{ 'selected' if _ff == 'default' }}>Default</option>
+                  <option value="serif"   {{ 'selected' if _ff == 'serif' }}>Serif</option>
+                  <option value="sans"    {{ 'selected' if _ff == 'sans' }}>Sans-serif</option>
+                  <option value="script"  {{ 'selected' if _ff == 'script' }}>Script</option>
+                </select>
+                <button type="button" class="ctb-btn style-btn {{ 'active' if _bold }}" data-style="bold" title="Bold">B</button>
+                <button type="button" class="ctb-btn style-btn {{ 'active' if _italic }}" data-style="italic" title="Italic">I</button>
+              </div>
+              <div class="content-toolbar-divider"></div>
+              <div class="content-toolbar-group">
+                <span class="content-toolbar-label">Color</span>
+                <input type="color" class="item-text-color-input" value="{{ item.get('text_color', '#ffffff') }}" title="Text color">
+                <button type="button" class="ctb-btn color-reset" title="Use default text color" onclick="var f=this.closest('.program-item');f.querySelector('.item-text-color').value='';">Reset</button>
+              </div>
+            </div>
+            <input type="hidden" class="item-font-size"  value="{{ _fs }}">
+            <input type="hidden" class="item-text-align" value="{{ _ta }}">
+            <input type="hidden" class="item-font-family"  value="{{ _ff }}">
+            <input type="hidden" class="item-text-bold"    value="{% if _bold %}1{% else %}0{% endif %}">
+            <input type="hidden" class="item-text-italic"  value="{% if _italic %}1{% else %}0{% endif %}">
+            <input type="hidden" class="item-text-color"   value="{{ item.get('text_color', '') }}">
             {% else %}
             <input type="hidden" class="lyrics-key" value="">
             {% endif %}
@@ -2150,7 +2294,6 @@
         <button onclick="addProgramItem('{{ sp.id }}', 'content')">+ Content</button>
         <button onclick="addProgramItem('{{ sp.id }}', 'video')">+ Video</button>
         <button onclick="addProgramItem('{{ sp.id }}', 'image')">+ Image</button>
-        <button onclick="addProgramItem('{{ sp.id }}', 'live')">+ Live</button>
       </div>
   </div>
   {% endfor %}
@@ -2168,9 +2311,26 @@
       <span id="live-status" class="live-status offline" title="Projection: disconnected"></span>
       <span class="rp-section-label" style="margin-bottom:0;">Live Projection</span>
     </div>
-    <div class="live-preview-screen" id="livePreviewScreen">
-      <iframe id="livePreviewFrame" src="/ch1" scrolling="no" tabindex="-1"
-              style="position:absolute;top:0;left:0;width:1920px;height:1080px;border:none;pointer-events:none;transform-origin:top left;"></iframe>
+    <!-- Monitor + layer rail side by side (rail sits OUTSIDE the monitor) -->
+    <div style="display:flex;align-items:stretch;gap:6px;">
+      <div class="live-preview-screen" id="livePreviewScreen">
+        <iframe id="livePreviewFrame" src="/ch1" scrolling="no" tabindex="-1"
+                style="position:absolute;top:0;left:0;width:1920px;height:1080px;border:none;pointer-events:none;transform-origin:top left;"></iframe>
+      </div>
+      <!-- Layer toggle rail — outside the monitor so the whole preview is visible.
+           Stacking on screen (bottom → top): background < video < image <
+           message < announcement. OFF is the master kill-switch that hides all
+           content layers (V, I, T, A) at once while keeping the background.
+           Rendered top→down so OFF sits at the top of the rail and BG at the
+           bottom. -->
+      <div class="lp-layer-rail" id="lpLayerRail" title="Toggle projection layers">
+        <button type="button" class="lp-layer-btn" data-layer="off"          title="Turn OFF all content layers (V, I, T, A)">OFF</button>
+        <button type="button" class="lp-layer-btn" data-layer="announcement" title="Announcement">A</button>
+        <button type="button" class="lp-layer-btn" data-layer="message"      title="Message / lyrics">T</button>
+        <button type="button" class="lp-layer-btn" data-layer="image"        title="Image layer">I</button>
+        <button type="button" class="lp-layer-btn" data-layer="video"        title="Video layer">V</button>
+        <button type="button" class="lp-layer-btn"        data-layer="background"   title="Background / theme">BG</button>
+      </div>
     </div>
   </div>
 
@@ -2180,14 +2340,11 @@
     <select id="themeSelect" class="channel-select" style="width:100%;">
       <option value="default">Default (Navy/Gold)</option>
       <option value="midnight">Midnight</option>
-      <option value="dawn">Dawn</option>
       <option value="forest">Forest</option>
-      <option value="slate">Slate</option>
       <option value="ivory">Ivory (Light)</option>
       <option value="ocean">Ocean</option>
       <option value="ember">Ember</option>
-      <option value="pearl">Pearl</option>
-      <option value="royal">Royal</option>
+      <option value="creation">Creation Grid (Background)</option>
       <option value="custom">Custom (Background Image)</option>
     </select>
   </div>
@@ -2253,6 +2410,54 @@
   <!-- Blank button -->
   <button class="btn-rp-blank" onclick="_projBlank()">■ Blank Screen</button>
 
+  <!-- Live input (server-side capture) -->
+  <div id="liveInputPanel">
+    <div class="rp-section-label">Live input</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+      <select id="liveSourceSelect" class="channel-select" style="width:100%;">
+        <option value="">Select source…</option>
+      </select>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 10px;flex:none;"
+              onclick="liveLoadSources(true)" title="I-re-scan ang mga device (hahanap ng bagong-saksak na USB)">↺</button>
+    </div>
+    <div style="margin-bottom:6px;">
+      <div class="rp-section-label" style="margin-bottom:3px;">Target channel</div>
+      <div style="display:flex;gap:4px;" id="liveChannelRow">
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch1" style="flex:1;">ch1</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch2" style="flex:1;">ch2</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch3" style="flex:1;">ch3</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch4" style="flex:1;">ch4</button>
+        <button type="button" class="ctb-btn live-ch-btn" data-ch="ch5" style="flex:1;">ch5</button>
+      </div>
+    </div>
+    <div style="margin-bottom:6px;">
+      <div class="rp-section-label" style="margin-bottom:3px;">Custom output PiP</div>
+      <div style="display:flex;gap:5px;align-items:center;">
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--white);flex:none;cursor:pointer;">
+          <input type="checkbox" id="pipEnable" checked style="accent-color:#4caf82;"> PiP
+        </label>
+        <select id="pipCorner" class="ctb-sel" style="flex:1;" title="Corner ng live box">
+          <option value="tr">Top-right</option>
+          <option value="tl">Top-left</option>
+          <option value="br">Bottom-right</option>
+          <option value="bl">Bottom-left</option>
+        </select>
+        <select id="pipSize" class="ctb-sel" style="flex:1;" title="Laki ng live box">
+          <option value="sm">Small</option>
+          <option value="md" selected>Medium</option>
+          <option value="lg">Large</option>
+        </select>
+      </div>
+    </div>
+    <div id="liveThumbPreview" style="display:none;aspect-ratio:16/9;background:#000;border-radius:6px;border:1px solid var(--border);overflow:hidden;margin-bottom:6px;">
+      <img id="liveThumbImg" alt="" style="width:100%;height:100%;object-fit:contain;display:block;">
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="btn-rp-blank" style="flex:1;color:#4caf82;border-color:#4caf82;" onclick="livePush()">▶ Push</button>
+      <button class="btn-rp-blank" style="flex:1;" onclick="liveStop()">■ Stop</button>
+    </div>
+  </div>
+
   <!-- Timer controls -->
   <div>
     <div class="rp-section-label">Countdown Timer</div>
@@ -2306,7 +2511,6 @@
     </div>
     <div style="display:flex;gap:6px;margin-top:6px;">
       <button class="btn-rp-blank" style="flex:1;" onclick="sendAnnouncement()">▶ Send Announcement</button>
-      <button class="btn-rp-blank" style="flex:0 0 auto;" title="Insert sample text to test the layout" onclick="fillSample('announcement')">Sample</button>
     </div>
   </div>
 
@@ -2343,8 +2547,7 @@
     </div>
     <div style="display:flex;gap:6px;margin-top:6px;">
       <button class="btn-rp-blank" style="flex:1;" onclick="sendCustomOutput()">▶ Send Custom</button>
-      <button class="btn-rp-blank" style="flex:0 0 auto;" title="Insert sample text to test the layout" onclick="fillSample('custom')">Sample</button>
-      <button class="btn-rp-blank" style="flex:0 0 auto;" onclick="blankCustomOutput()">■ Blank</button>
+      <button class="btn-rp-blank" style="flex:0 0 auto;" id="customFeedBtn" onclick="toggleCustomFeed()" title="Show/hide the main projection feed inside the custom output">Show feed</button>
     </div>
   </div>
 
@@ -2364,7 +2567,15 @@
   <span id="toastMsg">Done</span>
 </div>
 
-<script src="/static/socket.io.js?v=2"></script>
+<script>/* socket.io client inlined */
+/*!
+ * Socket.IO v4.7.5
+ * (c) 2014-2024 Guillermo Rauch
+ * Released under the MIT License.
+ */
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):(e="undefined"!=typeof globalThis?globalThis:e||self).io=t()}(this,(function(){"use strict";function e(t){return e="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(e){return typeof e}:function(e){return e&&"function"==typeof Symbol&&e.constructor===Symbol&&e!==Symbol.prototype?"symbol":typeof e},e(t)}function t(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}function n(e,t){for(var n=0;n<t.length;n++){var r=t[n];r.enumerable=r.enumerable||!1,r.configurable=!0,"value"in r&&(r.writable=!0),Object.defineProperty(e,(i=r.key,o=void 0,"symbol"==typeof(o=function(e,t){if("object"!=typeof e||null===e)return e;var n=e[Symbol.toPrimitive];if(void 0!==n){var r=n.call(e,t||"default");if("object"!=typeof r)return r;throw new TypeError("@@toPrimitive must return a primitive value.")}return("string"===t?String:Number)(e)}(i,"string"))?o:String(o)),r)}var i,o}function r(e,t,r){return t&&n(e.prototype,t),r&&n(e,r),Object.defineProperty(e,"prototype",{writable:!1}),e}function i(){return i=Object.assign?Object.assign.bind():function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var r in n)Object.prototype.hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e},i.apply(this,arguments)}function o(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function");e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,writable:!0,configurable:!0}}),Object.defineProperty(e,"prototype",{writable:!1}),t&&a(e,t)}function s(e){return s=Object.setPrototypeOf?Object.getPrototypeOf.bind():function(e){return e.__proto__||Object.getPrototypeOf(e)},s(e)}function a(e,t){return a=Object.setPrototypeOf?Object.setPrototypeOf.bind():function(e,t){return e.__proto__=t,e},a(e,t)}function c(){if("undefined"==typeof Reflect||!Reflect.construct)return!1;if(Reflect.construct.sham)return!1;if("function"==typeof Proxy)return!0;try{return Boolean.prototype.valueOf.call(Reflect.construct(Boolean,[],(function(){}))),!0}catch(e){return!1}}function u(e,t,n){return u=c()?Reflect.construct.bind():function(e,t,n){var r=[null];r.push.apply(r,t);var i=new(Function.bind.apply(e,r));return n&&a(i,n.prototype),i},u.apply(null,arguments)}function h(e){var t="function"==typeof Map?new Map:void 0;return h=function(e){if(null===e||(n=e,-1===Function.toString.call(n).indexOf("[native code]")))return e;var n;if("function"!=typeof e)throw new TypeError("Super expression must either be null or a function");if(void 0!==t){if(t.has(e))return t.get(e);t.set(e,r)}function r(){return u(e,arguments,s(this).constructor)}return r.prototype=Object.create(e.prototype,{constructor:{value:r,enumerable:!1,writable:!0,configurable:!0}}),a(r,e)},h(e)}function f(e){if(void 0===e)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return e}function l(e){var t=c();return function(){var n,r=s(e);if(t){var i=s(this).constructor;n=Reflect.construct(r,arguments,i)}else n=r.apply(this,arguments);return function(e,t){if(t&&("object"==typeof t||"function"==typeof t))return t;if(void 0!==t)throw new TypeError("Derived constructors may only return object or undefined");return f(e)}(this,n)}}function p(){return p="undefined"!=typeof Reflect&&Reflect.get?Reflect.get.bind():function(e,t,n){var r=function(e,t){for(;!Object.prototype.hasOwnProperty.call(e,t)&&null!==(e=s(e)););return e}(e,t);if(r){var i=Object.getOwnPropertyDescriptor(r,t);return i.get?i.get.call(arguments.length<3?e:n):i.value}},p.apply(this,arguments)}function d(e,t){(null==t||t>e.length)&&(t=e.length);for(var n=0,r=new Array(t);n<t;n++)r[n]=e[n];return r}function y(e,t){var n="undefined"!=typeof Symbol&&e[Symbol.iterator]||e["@@iterator"];if(!n){if(Array.isArray(e)||(n=function(e,t){if(e){if("string"==typeof e)return d(e,t);var n=Object.prototype.toString.call(e).slice(8,-1);return"Object"===n&&e.constructor&&(n=e.constructor.name),"Map"===n||"Set"===n?Array.from(e):"Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)?d(e,t):void 0}}(e))||t&&e&&"number"==typeof e.length){n&&(e=n);var r=0,i=function(){};return{s:i,n:function(){return r>=e.length?{done:!0}:{done:!1,value:e[r++]}},e:function(e){throw e},f:i}}throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}var o,s=!0,a=!1;return{s:function(){n=n.call(e)},n:function(){var e=n.next();return s=e.done,e},e:function(e){a=!0,o=e},f:function(){try{s||null==n.return||n.return()}finally{if(a)throw o}}}}var v=Object.create(null);v.open="0",v.close="1",v.ping="2",v.pong="3",v.message="4",v.upgrade="5",v.noop="6";var g=Object.create(null);Object.keys(v).forEach((function(e){g[v[e]]=e}));var m,b={type:"error",data:"parser error"},k="function"==typeof Blob||"undefined"!=typeof Blob&&"[object BlobConstructor]"===Object.prototype.toString.call(Blob),w="function"==typeof ArrayBuffer,_=function(e){return"function"==typeof ArrayBuffer.isView?ArrayBuffer.isView(e):e&&e.buffer instanceof ArrayBuffer},E=function(e,t,n){var r=e.type,i=e.data;return k&&i instanceof Blob?t?n(i):A(i,n):w&&(i instanceof ArrayBuffer||_(i))?t?n(i):A(new Blob([i]),n):n(v[r]+(i||""))},A=function(e,t){var n=new FileReader;return n.onload=function(){var e=n.result.split(",")[1];t("b"+(e||""))},n.readAsDataURL(e)};function O(e){return e instanceof Uint8Array?e:e instanceof ArrayBuffer?new Uint8Array(e):new Uint8Array(e.buffer,e.byteOffset,e.byteLength)}for(var T="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",R="undefined"==typeof Uint8Array?[]:new Uint8Array(256),C=0;C<64;C++)R[T.charCodeAt(C)]=C;var B,S="function"==typeof ArrayBuffer,N=function(e,t){if("string"!=typeof e)return{type:"message",data:x(e,t)};var n=e.charAt(0);return"b"===n?{type:"message",data:L(e.substring(1),t)}:g[n]?e.length>1?{type:g[n],data:e.substring(1)}:{type:g[n]}:b},L=function(e,t){if(S){var n=function(e){var t,n,r,i,o,s=.75*e.length,a=e.length,c=0;"="===e[e.length-1]&&(s--,"="===e[e.length-2]&&s--);var u=new ArrayBuffer(s),h=new Uint8Array(u);for(t=0;t<a;t+=4)n=R[e.charCodeAt(t)],r=R[e.charCodeAt(t+1)],i=R[e.charCodeAt(t+2)],o=R[e.charCodeAt(t+3)],h[c++]=n<<2|r>>4,h[c++]=(15&r)<<4|i>>2,h[c++]=(3&i)<<6|63&o;return u}(e);return x(n,t)}return{base64:!0,data:e}},x=function(e,t){return"blob"===t?e instanceof Blob?e:new Blob([e]):e instanceof ArrayBuffer?e:e.buffer},P=String.fromCharCode(30);function j(){return new TransformStream({transform:function(e,t){!function(e,t){k&&e.data instanceof Blob?e.data.arrayBuffer().then(O).then(t):w&&(e.data instanceof ArrayBuffer||_(e.data))?t(O(e.data)):E(e,!1,(function(e){m||(m=new TextEncoder),t(m.encode(e))}))}(e,(function(n){var r,i=n.length;if(i<126)r=new Uint8Array(1),new DataView(r.buffer).setUint8(0,i);else if(i<65536){r=new Uint8Array(3);var o=new DataView(r.buffer);o.setUint8(0,126),o.setUint16(1,i)}else{r=new Uint8Array(9);var s=new DataView(r.buffer);s.setUint8(0,127),s.setBigUint64(1,BigInt(i))}e.data&&"string"!=typeof e.data&&(r[0]|=128),t.enqueue(r),t.enqueue(n)}))}})}function q(e){return e.reduce((function(e,t){return e+t.length}),0)}function D(e,t){if(e[0].length===t)return e.shift();for(var n=new Uint8Array(t),r=0,i=0;i<t;i++)n[i]=e[0][r++],r===e[0].length&&(e.shift(),r=0);return e.length&&r<e[0].length&&(e[0]=e[0].slice(r)),n}function U(e){if(e)return function(e){for(var t in U.prototype)e[t]=U.prototype[t];return e}(e)}U.prototype.on=U.prototype.addEventListener=function(e,t){return this._callbacks=this._callbacks||{},(this._callbacks["$"+e]=this._callbacks["$"+e]||[]).push(t),this},U.prototype.once=function(e,t){function n(){this.off(e,n),t.apply(this,arguments)}return n.fn=t,this.on(e,n),this},U.prototype.off=U.prototype.removeListener=U.prototype.removeAllListeners=U.prototype.removeEventListener=function(e,t){if(this._callbacks=this._callbacks||{},0==arguments.length)return this._callbacks={},this;var n,r=this._callbacks["$"+e];if(!r)return this;if(1==arguments.length)return delete this._callbacks["$"+e],this;for(var i=0;i<r.length;i++)if((n=r[i])===t||n.fn===t){r.splice(i,1);break}return 0===r.length&&delete this._callbacks["$"+e],this},U.prototype.emit=function(e){this._callbacks=this._callbacks||{};for(var t=new Array(arguments.length-1),n=this._callbacks["$"+e],r=1;r<arguments.length;r++)t[r-1]=arguments[r];if(n){r=0;for(var i=(n=n.slice(0)).length;r<i;++r)n[r].apply(this,t)}return this},U.prototype.emitReserved=U.prototype.emit,U.prototype.listeners=function(e){return this._callbacks=this._callbacks||{},this._callbacks["$"+e]||[]},U.prototype.hasListeners=function(e){return!!this.listeners(e).length};var I="undefined"!=typeof self?self:"undefined"!=typeof window?window:Function("return this")();function F(e){for(var t=arguments.length,n=new Array(t>1?t-1:0),r=1;r<t;r++)n[r-1]=arguments[r];return n.reduce((function(t,n){return e.hasOwnProperty(n)&&(t[n]=e[n]),t}),{})}var M=I.setTimeout,V=I.clearTimeout;function H(e,t){t.useNativeTimers?(e.setTimeoutFn=M.bind(I),e.clearTimeoutFn=V.bind(I)):(e.setTimeoutFn=I.setTimeout.bind(I),e.clearTimeoutFn=I.clearTimeout.bind(I))}var K,Y=function(e){o(i,e);var n=l(i);function i(e,r,o){var s;return t(this,i),(s=n.call(this,e)).description=r,s.context=o,s.type="TransportError",s}return r(i)}(h(Error)),W=function(e){o(i,e);var n=l(i);function i(e){var r;return t(this,i),(r=n.call(this)).writable=!1,H(f(r),e),r.opts=e,r.query=e.query,r.socket=e.socket,r}return r(i,[{key:"onError",value:function(e,t,n){return p(s(i.prototype),"emitReserved",this).call(this,"error",new Y(e,t,n)),this}},{key:"open",value:function(){return this.readyState="opening",this.doOpen(),this}},{key:"close",value:function(){return"opening"!==this.readyState&&"open"!==this.readyState||(this.doClose(),this.onClose()),this}},{key:"send",value:function(e){"open"===this.readyState&&this.write(e)}},{key:"onOpen",value:function(){this.readyState="open",this.writable=!0,p(s(i.prototype),"emitReserved",this).call(this,"open")}},{key:"onData",value:function(e){var t=N(e,this.socket.binaryType);this.onPacket(t)}},{key:"onPacket",value:function(e){p(s(i.prototype),"emitReserved",this).call(this,"packet",e)}},{key:"onClose",value:function(e){this.readyState="closed",p(s(i.prototype),"emitReserved",this).call(this,"close",e)}},{key:"pause",value:function(e){}},{key:"createUri",value:function(e){var t=arguments.length>1&&void 0!==arguments[1]?arguments[1]:{};return e+"://"+this._hostname()+this._port()+this.opts.path+this._query(t)}},{key:"_hostname",value:function(){var e=this.opts.hostname;return-1===e.indexOf(":")?e:"["+e+"]"}},{key:"_port",value:function(){return this.opts.port&&(this.opts.secure&&Number(443!==this.opts.port)||!this.opts.secure&&80!==Number(this.opts.port))?":"+this.opts.port:""}},{key:"_query",value:function(e){var t=function(e){var t="";for(var n in e)e.hasOwnProperty(n)&&(t.length&&(t+="&"),t+=encodeURIComponent(n)+"="+encodeURIComponent(e[n]));return t}(e);return t.length?"?"+t:""}}]),i}(U),z="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_".split(""),J=64,$={},Q=0,X=0;function G(e){var t="";do{t=z[e%J]+t,e=Math.floor(e/J)}while(e>0);return t}function Z(){var e=G(+new Date);return e!==K?(Q=0,K=e):e+"."+G(Q++)}for(;X<J;X++)$[z[X]]=X;var ee=!1;try{ee="undefined"!=typeof XMLHttpRequest&&"withCredentials"in new XMLHttpRequest}catch(e){}var te=ee;function ne(e){var t=e.xdomain;try{if("undefined"!=typeof XMLHttpRequest&&(!t||te))return new XMLHttpRequest}catch(e){}if(!t)try{return new(I[["Active"].concat("Object").join("X")])("Microsoft.XMLHTTP")}catch(e){}}function re(){}var ie=null!=new ne({xdomain:!1}).responseType,oe=function(e){o(s,e);var n=l(s);function s(e){var r;if(t(this,s),(r=n.call(this,e)).polling=!1,"undefined"!=typeof location){var i="https:"===location.protocol,o=location.port;o||(o=i?"443":"80"),r.xd="undefined"!=typeof location&&e.hostname!==location.hostname||o!==e.port}var a=e&&e.forceBase64;return r.supportsBinary=ie&&!a,r.opts.withCredentials&&(r.cookieJar=void 0),r}return r(s,[{key:"name",get:function(){return"polling"}},{key:"doOpen",value:function(){this.poll()}},{key:"pause",value:function(e){var t=this;this.readyState="pausing";var n=function(){t.readyState="paused",e()};if(this.polling||!this.writable){var r=0;this.polling&&(r++,this.once("pollComplete",(function(){--r||n()}))),this.writable||(r++,this.once("drain",(function(){--r||n()})))}else n()}},{key:"poll",value:function(){this.polling=!0,this.doPoll(),this.emitReserved("poll")}},{key:"onData",value:function(e){var t=this;(function(e,t){for(var n=e.split(P),r=[],i=0;i<n.length;i++){var o=N(n[i],t);if(r.push(o),"error"===o.type)break}return r})(e,this.socket.binaryType).forEach((function(e){if("opening"===t.readyState&&"open"===e.type&&t.onOpen(),"close"===e.type)return t.onClose({description:"transport closed by the server"}),!1;t.onPacket(e)})),"closed"!==this.readyState&&(this.polling=!1,this.emitReserved("pollComplete"),"open"===this.readyState&&this.poll())}},{key:"doClose",value:function(){var e=this,t=function(){e.write([{type:"close"}])};"open"===this.readyState?t():this.once("open",t)}},{key:"write",value:function(e){var t=this;this.writable=!1,function(e,t){var n=e.length,r=new Array(n),i=0;e.forEach((function(e,o){E(e,!1,(function(e){r[o]=e,++i===n&&t(r.join(P))}))}))}(e,(function(e){t.doWrite(e,(function(){t.writable=!0,t.emitReserved("drain")}))}))}},{key:"uri",value:function(){var e=this.opts.secure?"https":"http",t=this.query||{};return!1!==this.opts.timestampRequests&&(t[this.opts.timestampParam]=Z()),this.supportsBinary||t.sid||(t.b64=1),this.createUri(e,t)}},{key:"request",value:function(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:{};return i(e,{xd:this.xd,cookieJar:this.cookieJar},this.opts),new se(this.uri(),e)}},{key:"doWrite",value:function(e,t){var n=this,r=this.request({method:"POST",data:e});r.on("success",t),r.on("error",(function(e,t){n.onError("xhr post error",e,t)}))}},{key:"doPoll",value:function(){var e=this,t=this.request();t.on("data",this.onData.bind(this)),t.on("error",(function(t,n){e.onError("xhr poll error",t,n)})),this.pollXhr=t}}]),s}(W),se=function(e){o(i,e);var n=l(i);function i(e,r){var o;return t(this,i),H(f(o=n.call(this)),r),o.opts=r,o.method=r.method||"GET",o.uri=e,o.data=void 0!==r.data?r.data:null,o.create(),o}return r(i,[{key:"create",value:function(){var e,t=this,n=F(this.opts,"agent","pfx","key","passphrase","cert","ca","ciphers","rejectUnauthorized","autoUnref");n.xdomain=!!this.opts.xd;var r=this.xhr=new ne(n);try{r.open(this.method,this.uri,!0);try{if(this.opts.extraHeaders)for(var o in r.setDisableHeaderCheck&&r.setDisableHeaderCheck(!0),this.opts.extraHeaders)this.opts.extraHeaders.hasOwnProperty(o)&&r.setRequestHeader(o,this.opts.extraHeaders[o])}catch(e){}if("POST"===this.method)try{r.setRequestHeader("Content-type","text/plain;charset=UTF-8")}catch(e){}try{r.setRequestHeader("Accept","*/*")}catch(e){}null===(e=this.opts.cookieJar)||void 0===e||e.addCookies(r),"withCredentials"in r&&(r.withCredentials=this.opts.withCredentials),this.opts.requestTimeout&&(r.timeout=this.opts.requestTimeout),r.onreadystatechange=function(){var e;3===r.readyState&&(null===(e=t.opts.cookieJar)||void 0===e||e.parseCookies(r)),4===r.readyState&&(200===r.status||1223===r.status?t.onLoad():t.setTimeoutFn((function(){t.onError("number"==typeof r.status?r.status:0)}),0))},r.send(this.data)}catch(e){return void this.setTimeoutFn((function(){t.onError(e)}),0)}"undefined"!=typeof document&&(this.index=i.requestsCount++,i.requests[this.index]=this)}},{key:"onError",value:function(e){this.emitReserved("error",e,this.xhr),this.cleanup(!0)}},{key:"cleanup",value:function(e){if(void 0!==this.xhr&&null!==this.xhr){if(this.xhr.onreadystatechange=re,e)try{this.xhr.abort()}catch(e){}"undefined"!=typeof document&&delete i.requests[this.index],this.xhr=null}}},{key:"onLoad",value:function(){var e=this.xhr.responseText;null!==e&&(this.emitReserved("data",e),this.emitReserved("success"),this.cleanup())}},{key:"abort",value:function(){this.cleanup()}}]),i}(U);if(se.requestsCount=0,se.requests={},"undefined"!=typeof document)if("function"==typeof attachEvent)attachEvent("onunload",ae);else if("function"==typeof addEventListener){addEventListener("onpagehide"in I?"pagehide":"unload",ae,!1)}function ae(){for(var e in se.requests)se.requests.hasOwnProperty(e)&&se.requests[e].abort()}var ce="function"==typeof Promise&&"function"==typeof Promise.resolve?function(e){return Promise.resolve().then(e)}:function(e,t){return t(e,0)},ue=I.WebSocket||I.MozWebSocket,he="undefined"!=typeof navigator&&"string"==typeof navigator.product&&"reactnative"===navigator.product.toLowerCase(),fe=function(e){o(i,e);var n=l(i);function i(e){var r;return t(this,i),(r=n.call(this,e)).supportsBinary=!e.forceBase64,r}return r(i,[{key:"name",get:function(){return"websocket"}},{key:"doOpen",value:function(){if(this.check()){var e=this.uri(),t=this.opts.protocols,n=he?{}:F(this.opts,"agent","perMessageDeflate","pfx","key","passphrase","cert","ca","ciphers","rejectUnauthorized","localAddress","protocolVersion","origin","maxPayload","family","checkServerIdentity");this.opts.extraHeaders&&(n.headers=this.opts.extraHeaders);try{this.ws=he?new ue(e,t,n):t?new ue(e,t):new ue(e)}catch(e){return this.emitReserved("error",e)}this.ws.binaryType=this.socket.binaryType,this.addEventListeners()}}},{key:"addEventListeners",value:function(){var e=this;this.ws.onopen=function(){e.opts.autoUnref&&e.ws._socket.unref(),e.onOpen()},this.ws.onclose=function(t){return e.onClose({description:"websocket connection closed",context:t})},this.ws.onmessage=function(t){return e.onData(t.data)},this.ws.onerror=function(t){return e.onError("websocket error",t)}}},{key:"write",value:function(e){var t=this;this.writable=!1;for(var n=function(){var n=e[r],i=r===e.length-1;E(n,t.supportsBinary,(function(e){try{t.ws.send(e)}catch(e){}i&&ce((function(){t.writable=!0,t.emitReserved("drain")}),t.setTimeoutFn)}))},r=0;r<e.length;r++)n()}},{key:"doClose",value:function(){void 0!==this.ws&&(this.ws.close(),this.ws=null)}},{key:"uri",value:function(){var e=this.opts.secure?"wss":"ws",t=this.query||{};return this.opts.timestampRequests&&(t[this.opts.timestampParam]=Z()),this.supportsBinary||(t.b64=1),this.createUri(e,t)}},{key:"check",value:function(){return!!ue}}]),i}(W),le=function(e){o(i,e);var n=l(i);function i(){return t(this,i),n.apply(this,arguments)}return r(i,[{key:"name",get:function(){return"webtransport"}},{key:"doOpen",value:function(){var e=this;"function"==typeof WebTransport&&(this.transport=new WebTransport(this.createUri("https"),this.opts.transportOptions[this.name]),this.transport.closed.then((function(){e.onClose()})).catch((function(t){e.onError("webtransport error",t)})),this.transport.ready.then((function(){e.transport.createBidirectionalStream().then((function(t){var n=function(e,t){B||(B=new TextDecoder);var n=[],r=0,i=-1,o=!1;return new TransformStream({transform:function(s,a){for(n.push(s);;){if(0===r){if(q(n)<1)break;var c=D(n,1);o=128==(128&c[0]),i=127&c[0],r=i<126?3:126===i?1:2}else if(1===r){if(q(n)<2)break;var u=D(n,2);i=new DataView(u.buffer,u.byteOffset,u.length).getUint16(0),r=3}else if(2===r){if(q(n)<8)break;var h=D(n,8),f=new DataView(h.buffer,h.byteOffset,h.length),l=f.getUint32(0);if(l>Math.pow(2,21)-1){a.enqueue(b);break}i=l*Math.pow(2,32)+f.getUint32(4),r=3}else{if(q(n)<i)break;var p=D(n,i);a.enqueue(N(o?p:B.decode(p),t)),r=0}if(0===i||i>e){a.enqueue(b);break}}}})}(Number.MAX_SAFE_INTEGER,e.socket.binaryType),r=t.readable.pipeThrough(n).getReader(),i=j();i.readable.pipeTo(t.writable),e.writer=i.writable.getWriter();!function t(){r.read().then((function(n){var r=n.done,i=n.value;r||(e.onPacket(i),t())})).catch((function(e){}))}();var o={type:"open"};e.query.sid&&(o.data='{"sid":"'.concat(e.query.sid,'"}')),e.writer.write(o).then((function(){return e.onOpen()}))}))})))}},{key:"write",value:function(e){var t=this;this.writable=!1;for(var n=function(){var n=e[r],i=r===e.length-1;t.writer.write(n).then((function(){i&&ce((function(){t.writable=!0,t.emitReserved("drain")}),t.setTimeoutFn)}))},r=0;r<e.length;r++)n()}},{key:"doClose",value:function(){var e;null===(e=this.transport)||void 0===e||e.close()}}]),i}(W),pe={websocket:fe,webtransport:le,polling:oe},de=/^(?:(?![^:@\/?#]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@\/?#]*)(?::([^:@\/?#]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/,ye=["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"];function ve(e){var t=e,n=e.indexOf("["),r=e.indexOf("]");-1!=n&&-1!=r&&(e=e.substring(0,n)+e.substring(n,r).replace(/:/g,";")+e.substring(r,e.length));for(var i,o,s=de.exec(e||""),a={},c=14;c--;)a[ye[c]]=s[c]||"";return-1!=n&&-1!=r&&(a.source=t,a.host=a.host.substring(1,a.host.length-1).replace(/;/g,":"),a.authority=a.authority.replace("[","").replace("]","").replace(/;/g,":"),a.ipv6uri=!0),a.pathNames=function(e,t){var n=/\/{2,9}/g,r=t.replace(n,"/").split("/");"/"!=t.slice(0,1)&&0!==t.length||r.splice(0,1);"/"==t.slice(-1)&&r.splice(r.length-1,1);return r}(0,a.path),a.queryKey=(i=a.query,o={},i.replace(/(?:^|&)([^&=]*)=?([^&]*)/g,(function(e,t,n){t&&(o[t]=n)})),o),a}var ge=function(n){o(a,n);var s=l(a);function a(n){var r,o=arguments.length>1&&void 0!==arguments[1]?arguments[1]:{};return t(this,a),(r=s.call(this)).binaryType="arraybuffer",r.writeBuffer=[],n&&"object"===e(n)&&(o=n,n=null),n?(n=ve(n),o.hostname=n.host,o.secure="https"===n.protocol||"wss"===n.protocol,o.port=n.port,n.query&&(o.query=n.query)):o.host&&(o.hostname=ve(o.host).host),H(f(r),o),r.secure=null!=o.secure?o.secure:"undefined"!=typeof location&&"https:"===location.protocol,o.hostname&&!o.port&&(o.port=r.secure?"443":"80"),r.hostname=o.hostname||("undefined"!=typeof location?location.hostname:"localhost"),r.port=o.port||("undefined"!=typeof location&&location.port?location.port:r.secure?"443":"80"),r.transports=o.transports||["polling","websocket","webtransport"],r.writeBuffer=[],r.prevBufferLen=0,r.opts=i({path:"/engine.io",agent:!1,withCredentials:!1,upgrade:!0,timestampParam:"t",rememberUpgrade:!1,addTrailingSlash:!0,rejectUnauthorized:!0,perMessageDeflate:{threshold:1024},transportOptions:{},closeOnBeforeunload:!1},o),r.opts.path=r.opts.path.replace(/\/$/,"")+(r.opts.addTrailingSlash?"/":""),"string"==typeof r.opts.query&&(r.opts.query=function(e){for(var t={},n=e.split("&"),r=0,i=n.length;r<i;r++){var o=n[r].split("=");t[decodeURIComponent(o[0])]=decodeURIComponent(o[1])}return t}(r.opts.query)),r.id=null,r.upgrades=null,r.pingInterval=null,r.pingTimeout=null,r.pingTimeoutTimer=null,"function"==typeof addEventListener&&(r.opts.closeOnBeforeunload&&(r.beforeunloadEventListener=function(){r.transport&&(r.transport.removeAllListeners(),r.transport.close())},addEventListener("beforeunload",r.beforeunloadEventListener,!1)),"localhost"!==r.hostname&&(r.offlineEventListener=function(){r.onClose("transport close",{description:"network connection lost"})},addEventListener("offline",r.offlineEventListener,!1))),r.open(),r}return r(a,[{key:"createTransport",value:function(e){var t=i({},this.opts.query);t.EIO=4,t.transport=e,this.id&&(t.sid=this.id);var n=i({},this.opts,{query:t,socket:this,hostname:this.hostname,secure:this.secure,port:this.port},this.opts.transportOptions[e]);return new pe[e](n)}},{key:"open",value:function(){var e,t=this;if(this.opts.rememberUpgrade&&a.priorWebsocketSuccess&&-1!==this.transports.indexOf("websocket"))e="websocket";else{if(0===this.transports.length)return void this.setTimeoutFn((function(){t.emitReserved("error","No transports available")}),0);e=this.transports[0]}this.readyState="opening";try{e=this.createTransport(e)}catch(e){return this.transports.shift(),void this.open()}e.open(),this.setTransport(e)}},{key:"setTransport",value:function(e){var t=this;this.transport&&this.transport.removeAllListeners(),this.transport=e,e.on("drain",this.onDrain.bind(this)).on("packet",this.onPacket.bind(this)).on("error",this.onError.bind(this)).on("close",(function(e){return t.onClose("transport close",e)}))}},{key:"probe",value:function(e){var t=this,n=this.createTransport(e),r=!1;a.priorWebsocketSuccess=!1;var i=function(){r||(n.send([{type:"ping",data:"probe"}]),n.once("packet",(function(e){if(!r)if("pong"===e.type&&"probe"===e.data){if(t.upgrading=!0,t.emitReserved("upgrading",n),!n)return;a.priorWebsocketSuccess="websocket"===n.name,t.transport.pause((function(){r||"closed"!==t.readyState&&(f(),t.setTransport(n),n.send([{type:"upgrade"}]),t.emitReserved("upgrade",n),n=null,t.upgrading=!1,t.flush())}))}else{var i=new Error("probe error");i.transport=n.name,t.emitReserved("upgradeError",i)}})))};function o(){r||(r=!0,f(),n.close(),n=null)}var s=function(e){var r=new Error("probe error: "+e);r.transport=n.name,o(),t.emitReserved("upgradeError",r)};function c(){s("transport closed")}function u(){s("socket closed")}function h(e){n&&e.name!==n.name&&o()}var f=function(){n.removeListener("open",i),n.removeListener("error",s),n.removeListener("close",c),t.off("close",u),t.off("upgrading",h)};n.once("open",i),n.once("error",s),n.once("close",c),this.once("close",u),this.once("upgrading",h),-1!==this.upgrades.indexOf("webtransport")&&"webtransport"!==e?this.setTimeoutFn((function(){r||n.open()}),200):n.open()}},{key:"onOpen",value:function(){if(this.readyState="open",a.priorWebsocketSuccess="websocket"===this.transport.name,this.emitReserved("open"),this.flush(),"open"===this.readyState&&this.opts.upgrade)for(var e=0,t=this.upgrades.length;e<t;e++)this.probe(this.upgrades[e])}},{key:"onPacket",value:function(e){if("opening"===this.readyState||"open"===this.readyState||"closing"===this.readyState)switch(this.emitReserved("packet",e),this.emitReserved("heartbeat"),this.resetPingTimeout(),e.type){case"open":this.onHandshake(JSON.parse(e.data));break;case"ping":this.sendPacket("pong"),this.emitReserved("ping"),this.emitReserved("pong");break;case"error":var t=new Error("server error");t.code=e.data,this.onError(t);break;case"message":this.emitReserved("data",e.data),this.emitReserved("message",e.data)}}},{key:"onHandshake",value:function(e){this.emitReserved("handshake",e),this.id=e.sid,this.transport.query.sid=e.sid,this.upgrades=this.filterUpgrades(e.upgrades),this.pingInterval=e.pingInterval,this.pingTimeout=e.pingTimeout,this.maxPayload=e.maxPayload,this.onOpen(),"closed"!==this.readyState&&this.resetPingTimeout()}},{key:"resetPingTimeout",value:function(){var e=this;this.clearTimeoutFn(this.pingTimeoutTimer),this.pingTimeoutTimer=this.setTimeoutFn((function(){e.onClose("ping timeout")}),this.pingInterval+this.pingTimeout),this.opts.autoUnref&&this.pingTimeoutTimer.unref()}},{key:"onDrain",value:function(){this.writeBuffer.splice(0,this.prevBufferLen),this.prevBufferLen=0,0===this.writeBuffer.length?this.emitReserved("drain"):this.flush()}},{key:"flush",value:function(){if("closed"!==this.readyState&&this.transport.writable&&!this.upgrading&&this.writeBuffer.length){var e=this.getWritablePackets();this.transport.send(e),this.prevBufferLen=e.length,this.emitReserved("flush")}}},{key:"getWritablePackets",value:function(){if(!(this.maxPayload&&"polling"===this.transport.name&&this.writeBuffer.length>1))return this.writeBuffer;for(var e,t=1,n=0;n<this.writeBuffer.length;n++){var r=this.writeBuffer[n].data;if(r&&(t+="string"==typeof(e=r)?function(e){for(var t=0,n=0,r=0,i=e.length;r<i;r++)(t=e.charCodeAt(r))<128?n+=1:t<2048?n+=2:t<55296||t>=57344?n+=3:(r++,n+=4);return n}(e):Math.ceil(1.33*(e.byteLength||e.size))),n>0&&t>this.maxPayload)return this.writeBuffer.slice(0,n);t+=2}return this.writeBuffer}},{key:"write",value:function(e,t,n){return this.sendPacket("message",e,t,n),this}},{key:"send",value:function(e,t,n){return this.sendPacket("message",e,t,n),this}},{key:"sendPacket",value:function(e,t,n,r){if("function"==typeof t&&(r=t,t=void 0),"function"==typeof n&&(r=n,n=null),"closing"!==this.readyState&&"closed"!==this.readyState){(n=n||{}).compress=!1!==n.compress;var i={type:e,data:t,options:n};this.emitReserved("packetCreate",i),this.writeBuffer.push(i),r&&this.once("flush",r),this.flush()}}},{key:"close",value:function(){var e=this,t=function(){e.onClose("forced close"),e.transport.close()},n=function n(){e.off("upgrade",n),e.off("upgradeError",n),t()},r=function(){e.once("upgrade",n),e.once("upgradeError",n)};return"opening"!==this.readyState&&"open"!==this.readyState||(this.readyState="closing",this.writeBuffer.length?this.once("drain",(function(){e.upgrading?r():t()})):this.upgrading?r():t()),this}},{key:"onError",value:function(e){a.priorWebsocketSuccess=!1,this.emitReserved("error",e),this.onClose("transport error",e)}},{key:"onClose",value:function(e,t){"opening"!==this.readyState&&"open"!==this.readyState&&"closing"!==this.readyState||(this.clearTimeoutFn(this.pingTimeoutTimer),this.transport.removeAllListeners("close"),this.transport.close(),this.transport.removeAllListeners(),"function"==typeof removeEventListener&&(removeEventListener("beforeunload",this.beforeunloadEventListener,!1),removeEventListener("offline",this.offlineEventListener,!1)),this.readyState="closed",this.id=null,this.emitReserved("close",e,t),this.writeBuffer=[],this.prevBufferLen=0)}},{key:"filterUpgrades",value:function(e){for(var t=[],n=0,r=e.length;n<r;n++)~this.transports.indexOf(e[n])&&t.push(e[n]);return t}}]),a}(U);ge.protocol=4,ge.protocol;var me="function"==typeof ArrayBuffer,be=function(e){return"function"==typeof ArrayBuffer.isView?ArrayBuffer.isView(e):e.buffer instanceof ArrayBuffer},ke=Object.prototype.toString,we="function"==typeof Blob||"undefined"!=typeof Blob&&"[object BlobConstructor]"===ke.call(Blob),_e="function"==typeof File||"undefined"!=typeof File&&"[object FileConstructor]"===ke.call(File);function Ee(e){return me&&(e instanceof ArrayBuffer||be(e))||we&&e instanceof Blob||_e&&e instanceof File}function Ae(t,n){if(!t||"object"!==e(t))return!1;if(Array.isArray(t)){for(var r=0,i=t.length;r<i;r++)if(Ae(t[r]))return!0;return!1}if(Ee(t))return!0;if(t.toJSON&&"function"==typeof t.toJSON&&1===arguments.length)return Ae(t.toJSON(),!0);for(var o in t)if(Object.prototype.hasOwnProperty.call(t,o)&&Ae(t[o]))return!0;return!1}function Oe(e){var t=[],n=e.data,r=e;return r.data=Te(n,t),r.attachments=t.length,{packet:r,buffers:t}}function Te(t,n){if(!t)return t;if(Ee(t)){var r={_placeholder:!0,num:n.length};return n.push(t),r}if(Array.isArray(t)){for(var i=new Array(t.length),o=0;o<t.length;o++)i[o]=Te(t[o],n);return i}if("object"===e(t)&&!(t instanceof Date)){var s={};for(var a in t)Object.prototype.hasOwnProperty.call(t,a)&&(s[a]=Te(t[a],n));return s}return t}function Re(e,t){return e.data=Ce(e.data,t),delete e.attachments,e}function Ce(t,n){if(!t)return t;if(t&&!0===t._placeholder){if("number"==typeof t.num&&t.num>=0&&t.num<n.length)return n[t.num];throw new Error("illegal attachments")}if(Array.isArray(t))for(var r=0;r<t.length;r++)t[r]=Ce(t[r],n);else if("object"===e(t))for(var i in t)Object.prototype.hasOwnProperty.call(t,i)&&(t[i]=Ce(t[i],n));return t}var Be,Se=["connect","connect_error","disconnect","disconnecting","newListener","removeListener"];!function(e){e[e.CONNECT=0]="CONNECT",e[e.DISCONNECT=1]="DISCONNECT",e[e.EVENT=2]="EVENT",e[e.ACK=3]="ACK",e[e.CONNECT_ERROR=4]="CONNECT_ERROR",e[e.BINARY_EVENT=5]="BINARY_EVENT",e[e.BINARY_ACK=6]="BINARY_ACK"}(Be||(Be={}));var Ne=function(){function e(n){t(this,e),this.replacer=n}return r(e,[{key:"encode",value:function(e){return e.type!==Be.EVENT&&e.type!==Be.ACK||!Ae(e)?[this.encodeAsString(e)]:this.encodeAsBinary({type:e.type===Be.EVENT?Be.BINARY_EVENT:Be.BINARY_ACK,nsp:e.nsp,data:e.data,id:e.id})}},{key:"encodeAsString",value:function(e){var t=""+e.type;return e.type!==Be.BINARY_EVENT&&e.type!==Be.BINARY_ACK||(t+=e.attachments+"-"),e.nsp&&"/"!==e.nsp&&(t+=e.nsp+","),null!=e.id&&(t+=e.id),null!=e.data&&(t+=JSON.stringify(e.data,this.replacer)),t}},{key:"encodeAsBinary",value:function(e){var t=Oe(e),n=this.encodeAsString(t.packet),r=t.buffers;return r.unshift(n),r}}]),e}();function Le(e){return"[object Object]"===Object.prototype.toString.call(e)}var xe=function(e){o(i,e);var n=l(i);function i(e){var r;return t(this,i),(r=n.call(this)).reviver=e,r}return r(i,[{key:"add",value:function(e){var t;if("string"==typeof e){if(this.reconstructor)throw new Error("got plaintext data when reconstructing a packet");var n=(t=this.decodeString(e)).type===Be.BINARY_EVENT;n||t.type===Be.BINARY_ACK?(t.type=n?Be.EVENT:Be.ACK,this.reconstructor=new Pe(t),0===t.attachments&&p(s(i.prototype),"emitReserved",this).call(this,"decoded",t)):p(s(i.prototype),"emitReserved",this).call(this,"decoded",t)}else{if(!Ee(e)&&!e.base64)throw new Error("Unknown type: "+e);if(!this.reconstructor)throw new Error("got binary data when not reconstructing a packet");(t=this.reconstructor.takeBinaryData(e))&&(this.reconstructor=null,p(s(i.prototype),"emitReserved",this).call(this,"decoded",t))}}},{key:"decodeString",value:function(e){var t=0,n={type:Number(e.charAt(0))};if(void 0===Be[n.type])throw new Error("unknown packet type "+n.type);if(n.type===Be.BINARY_EVENT||n.type===Be.BINARY_ACK){for(var r=t+1;"-"!==e.charAt(++t)&&t!=e.length;);var o=e.substring(r,t);if(o!=Number(o)||"-"!==e.charAt(t))throw new Error("Illegal attachments");n.attachments=Number(o)}if("/"===e.charAt(t+1)){for(var s=t+1;++t;){if(","===e.charAt(t))break;if(t===e.length)break}n.nsp=e.substring(s,t)}else n.nsp="/";var a=e.charAt(t+1);if(""!==a&&Number(a)==a){for(var c=t+1;++t;){var u=e.charAt(t);if(null==u||Number(u)!=u){--t;break}if(t===e.length)break}n.id=Number(e.substring(c,t+1))}if(e.charAt(++t)){var h=this.tryParse(e.substr(t));if(!i.isPayloadValid(n.type,h))throw new Error("invalid payload");n.data=h}return n}},{key:"tryParse",value:function(e){try{return JSON.parse(e,this.reviver)}catch(e){return!1}}},{key:"destroy",value:function(){this.reconstructor&&(this.reconstructor.finishedReconstruction(),this.reconstructor=null)}}],[{key:"isPayloadValid",value:function(e,t){switch(e){case Be.CONNECT:return Le(t);case Be.DISCONNECT:return void 0===t;case Be.CONNECT_ERROR:return"string"==typeof t||Le(t);case Be.EVENT:case Be.BINARY_EVENT:return Array.isArray(t)&&("number"==typeof t[0]||"string"==typeof t[0]&&-1===Se.indexOf(t[0]));case Be.ACK:case Be.BINARY_ACK:return Array.isArray(t)}}}]),i}(U),Pe=function(){function e(n){t(this,e),this.packet=n,this.buffers=[],this.reconPack=n}return r(e,[{key:"takeBinaryData",value:function(e){if(this.buffers.push(e),this.buffers.length===this.reconPack.attachments){var t=Re(this.reconPack,this.buffers);return this.finishedReconstruction(),t}return null}},{key:"finishedReconstruction",value:function(){this.reconPack=null,this.buffers=[]}}]),e}(),je=Object.freeze({__proto__:null,protocol:5,get PacketType(){return Be},Encoder:Ne,Decoder:xe});function qe(e,t,n){return e.on(t,n),function(){e.off(t,n)}}var De=Object.freeze({connect:1,connect_error:1,disconnect:1,disconnecting:1,newListener:1,removeListener:1}),Ue=function(e){o(a,e);var n=l(a);function a(e,r,o){var s;return t(this,a),(s=n.call(this)).connected=!1,s.recovered=!1,s.receiveBuffer=[],s.sendBuffer=[],s._queue=[],s._queueSeq=0,s.ids=0,s.acks={},s.flags={},s.io=e,s.nsp=r,o&&o.auth&&(s.auth=o.auth),s._opts=i({},o),s.io._autoConnect&&s.open(),s}return r(a,[{key:"disconnected",get:function(){return!this.connected}},{key:"subEvents",value:function(){if(!this.subs){var e=this.io;this.subs=[qe(e,"open",this.onopen.bind(this)),qe(e,"packet",this.onpacket.bind(this)),qe(e,"error",this.onerror.bind(this)),qe(e,"close",this.onclose.bind(this))]}}},{key:"active",get:function(){return!!this.subs}},{key:"connect",value:function(){return this.connected||(this.subEvents(),this.io._reconnecting||this.io.open(),"open"===this.io._readyState&&this.onopen()),this}},{key:"open",value:function(){return this.connect()}},{key:"send",value:function(){for(var e=arguments.length,t=new Array(e),n=0;n<e;n++)t[n]=arguments[n];return t.unshift("message"),this.emit.apply(this,t),this}},{key:"emit",value:function(e){if(De.hasOwnProperty(e))throw new Error('"'+e.toString()+'" is a reserved event name');for(var t=arguments.length,n=new Array(t>1?t-1:0),r=1;r<t;r++)n[r-1]=arguments[r];if(n.unshift(e),this._opts.retries&&!this.flags.fromQueue&&!this.flags.volatile)return this._addToQueue(n),this;var i={type:Be.EVENT,data:n,options:{}};if(i.options.compress=!1!==this.flags.compress,"function"==typeof n[n.length-1]){var o=this.ids++,s=n.pop();this._registerAckCallback(o,s),i.id=o}var a=this.io.engine&&this.io.engine.transport&&this.io.engine.transport.writable;return this.flags.volatile&&(!a||!this.connected)||(this.connected?(this.notifyOutgoingListeners(i),this.packet(i)):this.sendBuffer.push(i)),this.flags={},this}},{key:"_registerAckCallback",value:function(e,t){var n,r=this,i=null!==(n=this.flags.timeout)&&void 0!==n?n:this._opts.ackTimeout;if(void 0!==i){var o=this.io.setTimeoutFn((function(){delete r.acks[e];for(var n=0;n<r.sendBuffer.length;n++)r.sendBuffer[n].id===e&&r.sendBuffer.splice(n,1);t.call(r,new Error("operation has timed out"))}),i),s=function(){r.io.clearTimeoutFn(o);for(var e=arguments.length,n=new Array(e),i=0;i<e;i++)n[i]=arguments[i];t.apply(r,n)};s.withError=!0,this.acks[e]=s}else this.acks[e]=t}},{key:"emitWithAck",value:function(e){for(var t=this,n=arguments.length,r=new Array(n>1?n-1:0),i=1;i<n;i++)r[i-1]=arguments[i];return new Promise((function(n,i){var o=function(e,t){return e?i(e):n(t)};o.withError=!0,r.push(o),t.emit.apply(t,[e].concat(r))}))}},{key:"_addToQueue",value:function(e){var t,n=this;"function"==typeof e[e.length-1]&&(t=e.pop());var r={id:this._queueSeq++,tryCount:0,pending:!1,args:e,flags:i({fromQueue:!0},this.flags)};e.push((function(e){if(r===n._queue[0]){if(null!==e)r.tryCount>n._opts.retries&&(n._queue.shift(),t&&t(e));else if(n._queue.shift(),t){for(var i=arguments.length,o=new Array(i>1?i-1:0),s=1;s<i;s++)o[s-1]=arguments[s];t.apply(void 0,[null].concat(o))}return r.pending=!1,n._drainQueue()}})),this._queue.push(r),this._drainQueue()}},{key:"_drainQueue",value:function(){var e=arguments.length>0&&void 0!==arguments[0]&&arguments[0];if(this.connected&&0!==this._queue.length){var t=this._queue[0];t.pending&&!e||(t.pending=!0,t.tryCount++,this.flags=t.flags,this.emit.apply(this,t.args))}}},{key:"packet",value:function(e){e.nsp=this.nsp,this.io._packet(e)}},{key:"onopen",value:function(){var e=this;"function"==typeof this.auth?this.auth((function(t){e._sendConnectPacket(t)})):this._sendConnectPacket(this.auth)}},{key:"_sendConnectPacket",value:function(e){this.packet({type:Be.CONNECT,data:this._pid?i({pid:this._pid,offset:this._lastOffset},e):e})}},{key:"onerror",value:function(e){this.connected||this.emitReserved("connect_error",e)}},{key:"onclose",value:function(e,t){this.connected=!1,delete this.id,this.emitReserved("disconnect",e,t),this._clearAcks()}},{key:"_clearAcks",value:function(){var e=this;Object.keys(this.acks).forEach((function(t){if(!e.sendBuffer.some((function(e){return String(e.id)===t}))){var n=e.acks[t];delete e.acks[t],n.withError&&n.call(e,new Error("socket has been disconnected"))}}))}},{key:"onpacket",value:function(e){if(e.nsp===this.nsp)switch(e.type){case Be.CONNECT:e.data&&e.data.sid?this.onconnect(e.data.sid,e.data.pid):this.emitReserved("connect_error",new Error("It seems you are trying to reach a Socket.IO server in v2.x with a v3.x client, but they are not compatible (more information here: https://socket.io/docs/v3/migrating-from-2-x-to-3-0/)"));break;case Be.EVENT:case Be.BINARY_EVENT:this.onevent(e);break;case Be.ACK:case Be.BINARY_ACK:this.onack(e);break;case Be.DISCONNECT:this.ondisconnect();break;case Be.CONNECT_ERROR:this.destroy();var t=new Error(e.data.message);t.data=e.data.data,this.emitReserved("connect_error",t)}}},{key:"onevent",value:function(e){var t=e.data||[];null!=e.id&&t.push(this.ack(e.id)),this.connected?this.emitEvent(t):this.receiveBuffer.push(Object.freeze(t))}},{key:"emitEvent",value:function(e){if(this._anyListeners&&this._anyListeners.length){var t,n=y(this._anyListeners.slice());try{for(n.s();!(t=n.n()).done;){t.value.apply(this,e)}}catch(e){n.e(e)}finally{n.f()}}p(s(a.prototype),"emit",this).apply(this,e),this._pid&&e.length&&"string"==typeof e[e.length-1]&&(this._lastOffset=e[e.length-1])}},{key:"ack",value:function(e){var t=this,n=!1;return function(){if(!n){n=!0;for(var r=arguments.length,i=new Array(r),o=0;o<r;o++)i[o]=arguments[o];t.packet({type:Be.ACK,id:e,data:i})}}}},{key:"onack",value:function(e){var t=this.acks[e.id];"function"==typeof t&&(delete this.acks[e.id],t.withError&&e.data.unshift(null),t.apply(this,e.data))}},{key:"onconnect",value:function(e,t){this.id=e,this.recovered=t&&this._pid===t,this._pid=t,this.connected=!0,this.emitBuffered(),this.emitReserved("connect"),this._drainQueue(!0)}},{key:"emitBuffered",value:function(){var e=this;this.receiveBuffer.forEach((function(t){return e.emitEvent(t)})),this.receiveBuffer=[],this.sendBuffer.forEach((function(t){e.notifyOutgoingListeners(t),e.packet(t)})),this.sendBuffer=[]}},{key:"ondisconnect",value:function(){this.destroy(),this.onclose("io server disconnect")}},{key:"destroy",value:function(){this.subs&&(this.subs.forEach((function(e){return e()})),this.subs=void 0),this.io._destroy(this)}},{key:"disconnect",value:function(){return this.connected&&this.packet({type:Be.DISCONNECT}),this.destroy(),this.connected&&this.onclose("io client disconnect"),this}},{key:"close",value:function(){return this.disconnect()}},{key:"compress",value:function(e){return this.flags.compress=e,this}},{key:"volatile",get:function(){return this.flags.volatile=!0,this}},{key:"timeout",value:function(e){return this.flags.timeout=e,this}},{key:"onAny",value:function(e){return this._anyListeners=this._anyListeners||[],this._anyListeners.push(e),this}},{key:"prependAny",value:function(e){return this._anyListeners=this._anyListeners||[],this._anyListeners.unshift(e),this}},{key:"offAny",value:function(e){if(!this._anyListeners)return this;if(e){for(var t=this._anyListeners,n=0;n<t.length;n++)if(e===t[n])return t.splice(n,1),this}else this._anyListeners=[];return this}},{key:"listenersAny",value:function(){return this._anyListeners||[]}},{key:"onAnyOutgoing",value:function(e){return this._anyOutgoingListeners=this._anyOutgoingListeners||[],this._anyOutgoingListeners.push(e),this}},{key:"prependAnyOutgoing",value:function(e){return this._anyOutgoingListeners=this._anyOutgoingListeners||[],this._anyOutgoingListeners.unshift(e),this}},{key:"offAnyOutgoing",value:function(e){if(!this._anyOutgoingListeners)return this;if(e){for(var t=this._anyOutgoingListeners,n=0;n<t.length;n++)if(e===t[n])return t.splice(n,1),this}else this._anyOutgoingListeners=[];return this}},{key:"listenersAnyOutgoing",value:function(){return this._anyOutgoingListeners||[]}},{key:"notifyOutgoingListeners",value:function(e){if(this._anyOutgoingListeners&&this._anyOutgoingListeners.length){var t,n=y(this._anyOutgoingListeners.slice());try{for(n.s();!(t=n.n()).done;){t.value.apply(this,e.data)}}catch(e){n.e(e)}finally{n.f()}}}}]),a}(U);function Ie(e){e=e||{},this.ms=e.min||100,this.max=e.max||1e4,this.factor=e.factor||2,this.jitter=e.jitter>0&&e.jitter<=1?e.jitter:0,this.attempts=0}Ie.prototype.duration=function(){var e=this.ms*Math.pow(this.factor,this.attempts++);if(this.jitter){var t=Math.random(),n=Math.floor(t*this.jitter*e);e=0==(1&Math.floor(10*t))?e-n:e+n}return 0|Math.min(e,this.max)},Ie.prototype.reset=function(){this.attempts=0},Ie.prototype.setMin=function(e){this.ms=e},Ie.prototype.setMax=function(e){this.max=e},Ie.prototype.setJitter=function(e){this.jitter=e};var Fe=function(n){o(s,n);var i=l(s);function s(n,r){var o,a;t(this,s),(o=i.call(this)).nsps={},o.subs=[],n&&"object"===e(n)&&(r=n,n=void 0),(r=r||{}).path=r.path||"/socket.io",o.opts=r,H(f(o),r),o.reconnection(!1!==r.reconnection),o.reconnectionAttempts(r.reconnectionAttempts||1/0),o.reconnectionDelay(r.reconnectionDelay||1e3),o.reconnectionDelayMax(r.reconnectionDelayMax||5e3),o.randomizationFactor(null!==(a=r.randomizationFactor)&&void 0!==a?a:.5),o.backoff=new Ie({min:o.reconnectionDelay(),max:o.reconnectionDelayMax(),jitter:o.randomizationFactor()}),o.timeout(null==r.timeout?2e4:r.timeout),o._readyState="closed",o.uri=n;var c=r.parser||je;return o.encoder=new c.Encoder,o.decoder=new c.Decoder,o._autoConnect=!1!==r.autoConnect,o._autoConnect&&o.open(),o}return r(s,[{key:"reconnection",value:function(e){return arguments.length?(this._reconnection=!!e,this):this._reconnection}},{key:"reconnectionAttempts",value:function(e){return void 0===e?this._reconnectionAttempts:(this._reconnectionAttempts=e,this)}},{key:"reconnectionDelay",value:function(e){var t;return void 0===e?this._reconnectionDelay:(this._reconnectionDelay=e,null===(t=this.backoff)||void 0===t||t.setMin(e),this)}},{key:"randomizationFactor",value:function(e){var t;return void 0===e?this._randomizationFactor:(this._randomizationFactor=e,null===(t=this.backoff)||void 0===t||t.setJitter(e),this)}},{key:"reconnectionDelayMax",value:function(e){var t;return void 0===e?this._reconnectionDelayMax:(this._reconnectionDelayMax=e,null===(t=this.backoff)||void 0===t||t.setMax(e),this)}},{key:"timeout",value:function(e){return arguments.length?(this._timeout=e,this):this._timeout}},{key:"maybeReconnectOnOpen",value:function(){!this._reconnecting&&this._reconnection&&0===this.backoff.attempts&&this.reconnect()}},{key:"open",value:function(e){var t=this;if(~this._readyState.indexOf("open"))return this;this.engine=new ge(this.uri,this.opts);var n=this.engine,r=this;this._readyState="opening",this.skipReconnect=!1;var i=qe(n,"open",(function(){r.onopen(),e&&e()})),o=function(n){t.cleanup(),t._readyState="closed",t.emitReserved("error",n),e?e(n):t.maybeReconnectOnOpen()},s=qe(n,"error",o);if(!1!==this._timeout){var a=this._timeout,c=this.setTimeoutFn((function(){i(),o(new Error("timeout")),n.close()}),a);this.opts.autoUnref&&c.unref(),this.subs.push((function(){t.clearTimeoutFn(c)}))}return this.subs.push(i),this.subs.push(s),this}},{key:"connect",value:function(e){return this.open(e)}},{key:"onopen",value:function(){this.cleanup(),this._readyState="open",this.emitReserved("open");var e=this.engine;this.subs.push(qe(e,"ping",this.onping.bind(this)),qe(e,"data",this.ondata.bind(this)),qe(e,"error",this.onerror.bind(this)),qe(e,"close",this.onclose.bind(this)),qe(this.decoder,"decoded",this.ondecoded.bind(this)))}},{key:"onping",value:function(){this.emitReserved("ping")}},{key:"ondata",value:function(e){try{this.decoder.add(e)}catch(e){this.onclose("parse error",e)}}},{key:"ondecoded",value:function(e){var t=this;ce((function(){t.emitReserved("packet",e)}),this.setTimeoutFn)}},{key:"onerror",value:function(e){this.emitReserved("error",e)}},{key:"socket",value:function(e,t){var n=this.nsps[e];return n?this._autoConnect&&!n.active&&n.connect():(n=new Ue(this,e,t),this.nsps[e]=n),n}},{key:"_destroy",value:function(e){for(var t=0,n=Object.keys(this.nsps);t<n.length;t++){var r=n[t];if(this.nsps[r].active)return}this._close()}},{key:"_packet",value:function(e){for(var t=this.encoder.encode(e),n=0;n<t.length;n++)this.engine.write(t[n],e.options)}},{key:"cleanup",value:function(){this.subs.forEach((function(e){return e()})),this.subs.length=0,this.decoder.destroy()}},{key:"_close",value:function(){this.skipReconnect=!0,this._reconnecting=!1,this.onclose("forced close"),this.engine&&this.engine.close()}},{key:"disconnect",value:function(){return this._close()}},{key:"onclose",value:function(e,t){this.cleanup(),this.backoff.reset(),this._readyState="closed",this.emitReserved("close",e,t),this._reconnection&&!this.skipReconnect&&this.reconnect()}},{key:"reconnect",value:function(){var e=this;if(this._reconnecting||this.skipReconnect)return this;var t=this;if(this.backoff.attempts>=this._reconnectionAttempts)this.backoff.reset(),this.emitReserved("reconnect_failed"),this._reconnecting=!1;else{var n=this.backoff.duration();this._reconnecting=!0;var r=this.setTimeoutFn((function(){t.skipReconnect||(e.emitReserved("reconnect_attempt",t.backoff.attempts),t.skipReconnect||t.open((function(n){n?(t._reconnecting=!1,t.reconnect(),e.emitReserved("reconnect_error",n)):t.onreconnect()})))}),n);this.opts.autoUnref&&r.unref(),this.subs.push((function(){e.clearTimeoutFn(r)}))}}},{key:"onreconnect",value:function(){var e=this.backoff.attempts;this._reconnecting=!1,this.backoff.reset(),this.emitReserved("reconnect",e)}}]),s}(U),Me={};function Ve(t,n){"object"===e(t)&&(n=t,t=void 0);var r,i=function(e){var t=arguments.length>1&&void 0!==arguments[1]?arguments[1]:"",n=arguments.length>2?arguments[2]:void 0,r=e;n=n||"undefined"!=typeof location&&location,null==e&&(e=n.protocol+"//"+n.host),"string"==typeof e&&("/"===e.charAt(0)&&(e="/"===e.charAt(1)?n.protocol+e:n.host+e),/^(https?|wss?):\/\//.test(e)||(e=void 0!==n?n.protocol+"//"+e:"https://"+e),r=ve(e)),r.port||(/^(http|ws)$/.test(r.protocol)?r.port="80":/^(http|ws)s$/.test(r.protocol)&&(r.port="443")),r.path=r.path||"/";var i=-1!==r.host.indexOf(":")?"["+r.host+"]":r.host;return r.id=r.protocol+"://"+i+":"+r.port+t,r.href=r.protocol+"://"+i+(n&&n.port===r.port?"":":"+r.port),r}(t,(n=n||{}).path||"/socket.io"),o=i.source,s=i.id,a=i.path,c=Me[s]&&a in Me[s].nsps;return n.forceNew||n["force new connection"]||!1===n.multiplex||c?r=new Fe(o,n):(Me[s]||(Me[s]=new Fe(o,n)),r=Me[s]),i.query&&!n.query&&(n.query=i.queryKey),r.socket(i.path,n)}return i(Ve,{Manager:Fe,Socket:Ue,io:Ve,connect:Ve}),Ve}));
+//# sourceMappingURL=socket.io.min.js.map
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
   // ── Add new program item from sidebar buttons ─────────────────────────────
@@ -2400,7 +2611,46 @@
           </div>
           <input type="hidden" class="lyrics-key" value="">
         </div>
-        <div class="lyrics-display"></div>`;
+        <div class="song-lyrics-label" style="display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;">Lyrics <span style="color:var(--muted);font-weight:400">(edit directly; leave a blank line between stanzas)</span></div>
+        <textarea class="song-lyrics" rows="14" placeholder="Search a hymn above or type/paste lyrics here, then edit them directly." style="width:100%;resize:vertical;background:var(--card);color:var(--white);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:inherit;font-size:11px;line-height:1.6;"></textarea>
+        <div class="content-toolbar" style="margin-top:8px;">
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Size</span>
+            <input type="number" class="ctb-sel item-font-size-input" min="12" max="200" step="1" value="60" title="Font size (px)" style="width:72px;">
+            <span style="color:var(--muted);font-size:11px;">px</span>
+          </div>
+          <div class="content-toolbar-divider"></div>
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Align</span>
+            <button type="button" class="ctb-btn align-btn" data-align="left">Left</button>
+            <button type="button" class="ctb-btn align-btn active" data-align="center">Ctr</button>
+            <button type="button" class="ctb-btn align-btn" data-align="right">Right</button>
+          </div>
+          <div class="content-toolbar-divider"></div>
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Font</span>
+            <select class="ctb-sel font-sel" data-ff="default">
+              <option value="default">Default</option>
+              <option value="serif">Serif</option>
+              <option value="sans">Sans-serif</option>
+              <option value="script">Script</option>
+            </select>
+            <button type="button" class="ctb-btn style-btn" data-style="bold" title="Bold">B</button>
+            <button type="button" class="ctb-btn style-btn" data-style="italic" title="Italic">I</button>
+          </div>
+          <div class="content-toolbar-divider"></div>
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Color</span>
+            <input type="color" class="item-text-color-input" value="#ffffff" title="Text color">
+            <button type="button" class="ctb-btn color-reset" title="Use default text color" onclick="var f=this.closest('.program-item');f.querySelector('.item-text-color').value='';">Reset</button>
+          </div>
+        </div>
+        <input type="hidden" class="item-font-size" value="md">
+        <input type="hidden" class="item-text-align" value="center">
+        <input type="hidden" class="item-font-family" value="default">
+        <input type="hidden" class="item-text-bold" value="0">
+        <input type="hidden" class="item-text-italic" value="0">
+        <input type="hidden" class="item-text-color" value="">`;
     } else if (type === "content") {
       badgeClass = "badge-content"; badgeLabel = "Content";
       bodyInner = `
@@ -2423,10 +2673,8 @@
           <div class="content-toolbar">
             <div class="content-toolbar-group">
               <span class="content-toolbar-label">Size</span>
-              <button type="button" class="ctb-btn size-btn" data-size="sm">S</button>
-              <button type="button" class="ctb-btn size-btn active" data-size="md">M</button>
-              <button type="button" class="ctb-btn size-btn" data-size="lg">L</button>
-              <button type="button" class="ctb-btn size-btn" data-size="xl">XL</button>
+              <input type="number" class="ctb-sel item-font-size-input" min="12" max="200" step="1" value="60" title="Font size (px)" style="width:72px;">
+              <span style="color:var(--muted);font-size:11px;">px</span>
             </div>
             <div class="content-toolbar-divider"></div>
             <div class="content-toolbar-group">
@@ -2462,7 +2710,7 @@
           <input type="hidden" class="item-text-bold"   value="0">
           <input type="hidden" class="item-text-italic" value="0">
           <input type="hidden" class="item-text-color"  value="">
-          <textarea class="item-content" rows="3" placeholder="Free-form text displayed on the slide…" style="width:100%; resize:vertical; min-height:220px;background:var(--card); color:var(--white); border:1px solid var(--border); border-radius:6px; padding:8px; font-family:inherit; font-size:13px;"></textarea>
+          <textarea class="item-content" rows="3" placeholder="Free-form text displayed on the slide…" style="width:100%; resize:vertical; min-height:220px;background:var(--card); color:var(--white); border:1px solid var(--border); border-radius:6px; padding:8px; font-family:inherit; font-size:11px;"></textarea>
         </div>
         <input type="hidden" class="lyrics-key" value="">`;
     } else if (type === "video") {
@@ -2585,25 +2833,6 @@
         </div>
         <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--gold)"></div>
         <input type="hidden" class="lyrics-key" value="">`;
-    } else if (type === "live") {
-      badgeClass = "badge-live"; badgeLabel = "Live";
-      bodyInner = `
-        <div class="form-row single">
-          <div class="field"><label>Title</label><input type="text" class="item-title" value="" placeholder="e.g. Live Camera"></div>
-        </div>
-        <div class="field" style="margin-top:8px">
-          <label>Live input device</label>
-          <div style="display:flex;gap:6px;align-items:center">
-            <select class="ctb-sel live-device-select" style="flex:1" onchange="this.closest('.program-item').querySelector('.item-live-device').value=this.value">
-              <option value="">Select a device…</option>
-            </select>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 10px"
-                    onclick="loadLiveDevices(this.closest('.program-item'))">↺ Refresh</button>
-          </div>
-          <div class="media-selected-info" style="margin-top:4px;font-size:11px;color:var(--gold)"></div>
-        </div>
-        <input type="hidden" class="item-live-device" value="">
-        <input type="hidden" class="lyrics-key" value="">`;
     } else {
       badgeClass = "badge-participant"; badgeLabel = "Participant";
       bodyInner = `
@@ -2611,7 +2840,15 @@
           <div class="role-label">Title</div><input type="text" class="item-title" value="">
         </div>
         <div class="participant" style="margin-top:8px">
-          <div class="role-label">Part</div><input type="text" class="item-part" value="">
+          <div class="role-label">Part</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" class="item-part" value="" placeholder="e.g. Worship Leader" style="flex:1;min-width:0">
+            <button type="button" class="ctb-btn part-size-btn" data-part-size="sm">S</button>
+            <button type="button" class="ctb-btn part-size-btn active" data-part-size="md">M</button>
+            <button type="button" class="ctb-btn part-size-btn" data-part-size="lg">L</button>
+            <button type="button" class="ctb-btn part-size-btn" data-part-size="xl">XL</button>
+            <input type="hidden" class="item-part-font-size" value="md">
+          </div>
         </div>
         <div class="participants">
           <div class="participant">
@@ -2619,6 +2856,46 @@
             <input type="text" class="item-participant" value="" placeholder="Name">
           </div>
         </div>
+        <div class="content-toolbar" style="margin-top:8px;">
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Size</span>
+            <button type="button" class="ctb-btn size-btn active" data-size="sm">S</button>
+            <button type="button" class="ctb-btn size-btn" data-size="md">M</button>
+            <button type="button" class="ctb-btn size-btn" data-size="lg">L</button>
+            <button type="button" class="ctb-btn size-btn" data-size="xl">XL</button>
+          </div>
+          <div class="content-toolbar-divider"></div>
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Align</span>
+            <button type="button" class="ctb-btn align-btn" data-align="left">Left</button>
+            <button type="button" class="ctb-btn align-btn active" data-align="center">Ctr</button>
+            <button type="button" class="ctb-btn align-btn" data-align="right">Right</button>
+          </div>
+          <div class="content-toolbar-divider"></div>
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Font</span>
+            <select class="ctb-sel font-sel" data-ff="default">
+              <option value="default" selected>Default</option>
+              <option value="serif">Serif</option>
+              <option value="sans">Sans-serif</option>
+              <option value="script">Script</option>
+            </select>
+            <button type="button" class="ctb-btn style-btn" data-style="bold" title="Bold">B</button>
+            <button type="button" class="ctb-btn style-btn" data-style="italic" title="Italic">I</button>
+          </div>
+          <div class="content-toolbar-divider"></div>
+          <div class="content-toolbar-group">
+            <span class="content-toolbar-label">Color</span>
+            <input type="color" class="item-text-color-input" value="#ffffff" title="Text color">
+            <button type="button" class="ctb-btn color-reset" title="Use default text color" onclick="this.closest('.program-item').querySelector('.item-text-color').value='';">Reset</button>
+          </div>
+        </div>
+        <input type="hidden" class="item-font-size" value="lg">
+        <input type="hidden" class="item-text-align" value="center">
+        <input type="hidden" class="item-font-family" value="default">
+        <input type="hidden" class="item-text-bold" value="0">
+        <input type="hidden" class="item-text-italic" value="0">
+        <input type="hidden" class="item-text-color" value="">
         <input type="hidden" class="lyrics-key" value="">`;
     }
 
@@ -2686,6 +2963,12 @@
   }
 
   // ── Content item formatting toolbar ───────────────────────────────────────
+  function _fsPx(v) {
+    const n = parseInt(v, 10);
+    if (!isNaN(n) && n > 0) return n;
+    return { sm: 40, md: 60, lg: 90, xl: 130 }[v] || 60;
+  }
+
   function _syncContentToolbar(itemEl) {
     if (!itemEl) return;
     const fs  = itemEl.querySelector('.item-font-size')?.value       || 'md';
@@ -2695,7 +2978,8 @@
     const bold = (itemEl.querySelector('.item-text-bold')?.value || '0') === '1';
     const italic = (itemEl.querySelector('.item-text-italic')?.value || '0') === '1';
     const color = itemEl.querySelector('.item-text-color')?.value   || '';
-    itemEl.querySelectorAll('.size-btn').forEach(b      => b.classList.toggle('active', b.dataset.size     === fs));
+    const fsInput = itemEl.querySelector('.item-font-size-input');
+    if (fsInput) fsInput.value = _fsPx(fs);
     itemEl.querySelectorAll('.align-btn').forEach(b     => b.classList.toggle('active', b.dataset.align    === ta));
     itemEl.querySelectorAll('.part-size-btn').forEach(b => b.classList.toggle('active', b.dataset.partSize === pfs));
     const fsel = itemEl.querySelector('.font-sel');
@@ -2729,7 +3013,7 @@
     if (!containerEl) return;
     const ta = containerEl.classList.contains('rp-font-editor')
       ? containerEl.querySelector('textarea')
-      : containerEl.querySelector('.item-content');
+      : (containerEl.querySelector('.song-lyrics') || containerEl.querySelector('.item-content'));
     if (!ta) return;
     const famMap = { default: '', serif: "'Georgia', 'Times New Roman', serif",
                      sans: "'Segoe UI', Arial, sans-serif",
@@ -2743,9 +3027,10 @@
     ta.style.fontStyle  = italic ? 'italic' : 'normal';
     ta.style.color      = color || '';
     if (containerEl.classList.contains('program-item')) {
-      const fsMap = { sm: '11px', md: '13px', lg: '16px', xl: '20px' };
-      const fs    = containerEl.querySelector('.item-font-size')?.value || 'md';
-      ta.style.fontSize = fsMap[fs] || '13px';
+      const fs = containerEl.querySelector('.item-font-size')?.value || 'md';
+      // Scaled-down edit-box preview: reflect the number but keep it compact
+      // so more lines fit in the textarea (real projection size = _fsPx(fs)).
+      ta.style.fontSize = Math.max(9, Math.round(_fsPx(fs) / 6)) + 'px';
       const al = containerEl.querySelector('.item-text-align')?.value || 'center';
       ta.style.textAlign = ['left','center','right'].includes(al) ? al : 'center';
     }
@@ -2756,16 +3041,16 @@
     const alignBtn    = e.target.closest('.align-btn');
     const partSizeBtn = e.target.closest('.part-size-btn');
     const styleBtn    = e.target.closest('.style-btn');
-    if (!sizeBtn && !alignBtn && !partSizeBtn && !styleBtn) return;
-    const itemEl = (sizeBtn || alignBtn || partSizeBtn || styleBtn).closest('.program-item')
-                || (styleBtn ? styleBtn.closest('.rp-font-editor') : null);
+    const resetBtn    = e.target.closest('.color-reset');
+    if (!sizeBtn && !alignBtn && !partSizeBtn && !styleBtn && !resetBtn) return;
+    const itemEl = (sizeBtn || alignBtn || partSizeBtn || styleBtn || resetBtn).closest('.program-item')
+                || (styleBtn || resetBtn ? (styleBtn || resetBtn).closest('.rp-font-editor') : null);
     if (!itemEl) return;
     if (sizeBtn) {
       itemEl.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
       sizeBtn.classList.add('active');
       const inp = itemEl.querySelector('.item-font-size');
       if (inp) inp.value = sizeBtn.dataset.size;
-      _applyEditorStyle(itemEl);
     }
     if (alignBtn) {
       itemEl.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
@@ -2787,14 +3072,23 @@
       if (inp) inp.value = on ? '1' : '0';
       _applyEditorStyle(itemEl);
     }
+    if (resetBtn) {
+      const inp = itemEl.querySelector('.item-text-color');
+      if (inp) inp.value = '';
+      const sw = itemEl.querySelector('.item-text-color-input');
+      if (sw && sw.type === 'color') sw.value = '#ffffff';
+      _applyEditorStyle(itemEl);
+    }
+    _scheduleRepush();
   });
 
   document.addEventListener('change', function(e) {
-    const fsel   = e.target.closest('.font-sel');
-    const cinput = e.target.closest('.item-text-color-input');
-    if (!fsel && !cinput) return;
-    const itemEl = (fsel || cinput).closest('.program-item')
-                || (fsel || cinput).closest('.rp-font-editor');
+    const fsel    = e.target.closest('.font-sel');
+    const cinput  = e.target.closest('.item-text-color-input');
+    const fsinp   = e.target.closest('.item-font-size-input');
+    if (!fsel && !cinput && !fsinp) return;
+    const itemEl = (fsel || cinput || fsinp).closest('.program-item')
+                || (fsel || cinput || fsinp).closest('.rp-font-editor');
     if (!itemEl) return;
     if (fsel) {
       const inp = itemEl.querySelector('.item-font-family');
@@ -2804,7 +3098,32 @@
       const inp = itemEl.querySelector('.item-text-color');
       if (inp) inp.value = cinput.value;
     }
+    if (fsinp) {
+      const inp = itemEl.querySelector('.item-font-size');
+      if (inp) inp.value = Math.max(12, Math.min(200, parseInt(fsinp.value, 10) || 60));
+      fsinp.value = inp.value;
+    }
     _applyEditorStyle(itemEl);
+    _scheduleRepush();
+  });
+
+  // Live-update the hidden font-size as the operator types, so the projected
+  // lyrics follow the size immediately (before blur/Enter).
+  document.addEventListener('input', function(e) {
+    const fsinp = e.target.closest('.item-font-size-input');
+    if (fsinp) {
+      const itemEl = fsinp.closest('.program-item');
+      if (!itemEl) return;
+      const inp = itemEl.querySelector('.item-font-size');
+      if (inp) inp.value = Math.max(12, Math.min(200, parseInt(fsinp.value, 10) || 60));
+      _applyEditorStyle(itemEl);
+      _scheduleRepush();
+    }
+    // Any edit in the projected item's edit box (lyrics, content, participant,
+    // title, part, hymn) re-pushes the current slide so the output follows.
+    if (e.target.closest('.song-lyrics, .item-content, .item-title, .item-part, .item-participant, .item-hymn')) {
+      _scheduleRepush();
+    }
   });
 
   function renumberItems(itemsEl, panel) {
@@ -2861,7 +3180,7 @@
 
     // Copy field values from src to dest
     [".item-title", ".item-part", ".item-participant", ".item-hymn",
-     ".lyrics-key", ".item-content", ".item-media-url", ".item-media-type",
+     ".lyrics-key", ".item-content", ".song-lyrics", ".item-media-url", ".item-media-type",
      ".item-font-size", ".item-text-align", ".item-part-font-size",
      ".item-font-family", ".item-text-bold", ".item-text-italic", ".item-text-color"].forEach(cls => {
       const s = src.querySelector(cls), d = dest?.querySelector(cls);
@@ -2917,15 +3236,34 @@
       return item;
     }
 
+    // Shared text-formatting fields (Song & Participant echo the Content toolbar).
+    function _font(item) {
+      const font_size     = el.querySelector(".item-font-size")?.value     || "md";
+      const text_align    = el.querySelector(".item-text-align")?.value    || "center";
+      const font_family   = el.querySelector(".item-font-family")?.value   || "default";
+      const text_bold     = (el.querySelector(".item-text-bold")?.value    || "0") === "1";
+      const text_italic   = (el.querySelector(".item-text-italic")?.value  || "0") === "1";
+      const text_color    = el.querySelector(".item-text-color")?.value    || "";
+      item.font_size    = font_size;
+      item.text_align   = text_align;
+      item.font_family  = font_family;
+      item.text_bold    = text_bold;
+      item.text_italic  = text_italic;
+      if (text_color) item.text_color = text_color;
+      return item;
+    }
+
     if (type === "song") {
-      const hymn_num  = el.querySelector(".item-hymn")?.value      || "";
-      const hymn_lang = el.querySelector(".item-hymn-lang")?.value || "en";
-      const lyricsKey = el.querySelector(".lyrics-key")?.value     || "";
-      const songPart  = el.querySelector(".item-part")?.value      || "";
-      const item = { type: "song", title, hymn_lang };
+      const hymn_num     = el.querySelector(".item-hymn")?.value      || "";
+      const hymn_lang    = el.querySelector(".item-hymn-lang")?.value || "en";
+      const lyricsKey    = el.querySelector(".lyrics-key")?.value     || "";
+      const songPart     = el.querySelector(".item-part")?.value      || "";
+      const manualLyrics = (el.querySelector(".song-lyrics")?.value || "").trim();
+      const item = _font({ type: "song", title, hymn_lang });
       if (hymn_num)  item.hymn_number = hymn_num;
       if (lyricsKey) item.lyrics_key  = lyricsKey;
       if (songPart)  item.part        = songPart;
+      if (manualLyrics) item.manual_lyrics = manualLyrics;
       return _base(item);
     } else if (type === "content") {
       const content         = el.querySelector(".item-content")?.value         || "";
@@ -2953,11 +3291,13 @@
       return _base({ type: "image", title, url });
     } else if (type === "live") {
       const device_id = el.querySelector(".item-live-device")?.value.trim() || "";
-      return _base({ type: "live", title, device_id });
+      const sourceRaw = el.querySelector(".item-live-source")?.value?.trim() || "";
+      const source_index = sourceRaw !== "" ? parseInt(sourceRaw, 10) : null;
+      return _base({ type: "live", title, device_id, source_index });
     } else {
       const part        = el.querySelector(".item-part")?.value        || "";
       const participant = el.querySelector(".item-participant")?.value || "";
-      return _base({ type: "participant", title, part, participant });
+      return _base(_font({ type: "participant", title, part, participant }));
     }
   }
 
@@ -3011,8 +3351,9 @@
         const hymnTitle = itemEl?.querySelector(".item-title")?.value || "";
         if (hymnNum && hymnTitle) qInput.value = `#${hymnNum} — ${hymnTitle}`;
         else if (hymnNum)         qInput.value = `#${hymnNum}`;
-        const disp = itemEl?.querySelector(".lyrics-display");
-        if (disp) { disp.innerHTML = ""; delete disp.dataset.loaded; loadLyricsDisplay(itemEl); }
+        // Populate the editable lyrics textarea with the searched hymn's lyrics
+        const ta = itemEl?.querySelector(".song-lyrics");
+        if (ta) { delete ta.dataset.loaded; loadLyricsDisplay(itemEl, true); }
       } else {
         status.textContent = data.message || "No lyrics found";
         status.className = "lyrics-status-text err";
@@ -3034,8 +3375,8 @@
     status.textContent = "";
     status.className = "lyrics-status-text";
     const itemEl = section.closest(".program-item");
-    const disp = itemEl?.querySelector(".lyrics-display");
-    if (disp) { disp.innerHTML = ""; delete disp.dataset.loaded; }
+    const ta = itemEl?.querySelector(".song-lyrics");
+    if (ta) { ta.value = ""; delete ta.dataset.loaded; }
     if (itemEl?.dataset.itemType === "song") {
       const titleInput = itemEl.querySelector(".item-title");
       const hymnInput  = itemEl.querySelector(".item-hymn");
@@ -3264,27 +3605,30 @@
 
 
   // ── Item select / edit mode ──────────────────────────────────────────────
-  // ── Load lyrics into the read-only display block ──────────────────────────
-  function loadLyricsDisplay(el) {
-    const display = el.querySelector(".lyrics-display");
-    if (!display || display.dataset.loaded) return;
+  // ── Load lyrics into the editable textarea ─────────────────────────────────
+  function loadLyricsDisplay(el, force) {
+    const ta = el.querySelector(".song-lyrics");
+    if (!ta) return;
+    if (ta.dataset.loaded && !force) return;
+    if (!force && String(ta.value || "").trim()) { el.querySelector(".lyrics-key")?.value && (ta.dataset.loaded = "1"); return; }
     const key = el.querySelector(".lyrics-key")?.value;
     if (!key) return;
 
-    display.textContent = "Loading…";
     fetch(`/api/lyrics/${encodeURIComponent(key)}`)
       .then(r => r.json())
       .then(data => {
-        if (data.status !== "ok") { display.textContent = ""; return; }
-        display.innerHTML = data.stanzas.map(s => {
-          const label = s.type.charAt(0).toUpperCase() + s.type.slice(1) +
-                        (s.number ? " " + s.number : "");
-          const lines = s.lines.map(l => l.replace(/&/g,"&amp;").replace(/</g,"&lt;")).join("\n");
-          return `<div class="lyrics-stanza"><div class="lyrics-stanza-label">${label}</div><div class="lyrics-stanza-lines">${lines}</div></div>`;
-        }).join("");
-        display.dataset.loaded = "1";
+        if (data.status !== "ok") return;
+        const text = (_formatStanzasToText(data.stanzas));
+        if (text) {
+          ta.value = text;
+          ta.dataset.loaded = "1";
+        }
       })
-      .catch(() => { display.textContent = ""; });
+      .catch(() => {});
+  }
+
+  function _formatStanzasToText(stanzas) {
+    return (stanzas || []).map(s => (s.lines || []).join("\n")).filter(t => t.trim()).join("\n\n");
   }
 
   // ── Select item (open in edit mode) / deselect ───────────────────────────
@@ -3318,6 +3662,7 @@
     el.querySelector(".item-chevron")?.classList.add("open");
     el.classList.add("item-editing");
     loadLyricsDisplay(el);
+    _applyEditorStyle(el);
     if (el.dataset.itemType === 'video' || el.dataset.itemType === 'image') {
       loadMediaListFor(el, el.dataset.itemType);
       if (el.dataset.itemType === 'video') {
@@ -3548,30 +3893,31 @@
     const info = itemEl.querySelector('.media-selected-info');
     if (!sel) return;
     sel.innerHTML = '<option value="">Select a device…</option>';
-    const current = itemEl.querySelector('.item-live-device')?.value || '';
-    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-      if (info) info.textContent = 'Camera access not available in this browser.';
-      return;
-    }
+    // Server-side capture devices (the capture cards / webcams plugged into the
+    // SERVER machine). The projection shows the MJPEG relayed by the server, so
+    // we store the source *index* (not a browser deviceId).
+    const currentIdx = itemEl.querySelector('.item-live-source')?.value || '';
     try {
-      // Prompt for camera permission so device labels become readable
-      try { await navigator.mediaDevices.getUserMedia({ video: true }).then(s => s.getTracks().forEach(t => t.stop())); }
-      catch (e) { /* user may deny — still list by index */ }
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cams    = devices.filter(d => d.kind === 'videoinput');
-      if (!cams.length) {
-        if (info) info.textContent = 'No video input device found.';
+      let srcs = [];
+      try {
+        const res = await fetch('/api/live/sources');
+        if (res.ok) srcs = (await res.json()).sources || [];
+      } catch (e) { /* fall through */ }
+      if (!srcs.length) {
+        if (info) info.textContent = 'No server-side capture source found.';
         return;
       }
-      cams.forEach((d, i) => {
-        const label = d.label || `Camera ${i + 1}`;
-        const opt   = document.createElement('option');
-        opt.value   = d.deviceId;
-        opt.textContent = label;
+      srcs.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = String(s.index);
+        opt.textContent = s.name ? `${s.name} (${s.index})` : `Source ${s.index}`;
         sel.appendChild(opt);
       });
-      if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
-      if (info) info.textContent = `${cams.length} input device(s) found. Pick one then press ▶ Live.`;
+      if (currentIdx && [...sel.options].some(o => o.value === currentIdx)) {
+        sel.value = currentIdx;
+        if (itemEl.querySelector('.item-live-device')) itemEl.querySelector('.item-live-device').value = currentIdx;
+      }
+      if (info) info.textContent = `${srcs.length} input device(s) found. Pick one then press ▶ Live.`;
     } catch (e) {
       if (info) info.textContent = 'Unable to list devices.';
     }
@@ -4730,26 +5076,40 @@
   _socket.on('remote:blank', () => _projBlank());
 
   // ── Drive the preview iframe from every projection event ──────────────────
+  // The operator monitor is a projection channel ("/ch1") that shares the
+  // "main" role with every other main channel, so the server broadcasts every
+  // output to ALL main channels — including this monitor. Whatever is pushed
+  // to any main channel therefore appears here and on every other main channel
+  // identically. There is no separate channel routing; it is a single flow.
   function _lpFrameRender(data) {
     _updateChTile(data.channel || _getChannel(), data);
     const frame = document.getElementById('livePreviewFrame');
     if (!frame || !frame.contentWindow) return;
-    // Never call renderState for video — use the static thumbnail renderer instead
-    if (data.type === 'video') {
-      try {
-        const fw      = frame.contentWindow;
-        const slide   = fw.document.getElementById('slide');
-        const waiting = fw.document.getElementById('waiting');
-        if (waiting) waiting.classList.remove('visible');
-        if (slide) { slide.className = 'type-video'; _renderVideoPreview(slide, data.data || data); }
-      } catch(e) {}
-      return;
-    }
     try {
       if (typeof frame.contentWindow.renderState === 'function') {
         frame.contentWindow.renderState(data);
       }
     } catch (e) {}
+    // After rendering, reflect the projection's active layers onto the rail so
+    // the button(s) for the layer(s) in use turn yellow automatically.
+    _syncLayerRail();
+  }
+
+  // ── Stage-then-push: monitor FIRST, then the main channels ─────────────────
+  // Every live output should first be shown on the operator monitor (so the
+  // operator can verify the layer composition), then automatically broadcast to
+  // all main channels after a short delay. We render to the preview iframe
+  // immediately (via _lpFrameRender) and defer the server emit so the projected
+  // screens only change once the monitor has shown the result.
+  let _stagedPushTimer = null;
+  const _STAGE_PUSH_DELAY = 500;   // ms — time it stays on the monitor first
+  function _stageThenPush(event, payload) {
+    // Show on the operator monitor right away (no server round-trip yet).
+    _lpFrameRender(payload);
+    if (_stagedPushTimer) clearTimeout(_stagedPushTimer);
+    _stagedPushTimer = setTimeout(function () {
+      _socket.emit(event, payload);
+    }, _STAGE_PUSH_DELAY);
   }
 
   _socket.on('slide:show',   function (d) { _lpFrameRender(d); });
@@ -4783,9 +5143,11 @@
     const frame = document.getElementById('livePreviewFrame');
     if (!frame || !frame.contentWindow) return;
     try {
-      const slide = frame.contentWindow.document.getElementById('slide');
-      if (slide) _renderVideoPreview(slide, d);
+      if (typeof frame.contentWindow.renderState === 'function') {
+        frame.contentWindow.renderState(d);
+      }
     } catch(e) {}
+    _syncLayerRail();
   });
   _socket.on('media:live',  function (d) {
     _updateChTile(d.channel || _getChannel(), Object.assign({}, d, { type: 'live' }));
@@ -4796,6 +5158,7 @@
         frame.contentWindow.renderState(Object.assign({}, d, { type: 'live' }));
       }
     } catch(e) {}
+    _syncLayerRail();
   });
   _socket.on('timer:show',   function (d) { _lpFrameRender(Object.assign({}, d, { type: 'timer' })); });
   _socket.on('timer:start',  function (d) { _lpFrameRender(Object.assign({}, d, { type: 'timer' })); });
@@ -5218,7 +5581,8 @@
   }
 
   function _getTheme() {
-    return document.getElementById('themeSelect')?.value || 'default';
+    const v = document.getElementById('themeSelect')?.value || 'default';
+    return (v && v.indexOf('custom') === 0) ? 'custom' : v;
   }
 
 // ── Live preview iframe scaling ────────────────────────────────────────────
@@ -5231,28 +5595,74 @@
   window.addEventListener('resize', _scalePreviewFrame);
   _scalePreviewFrame();
 
-  // Patch the iframe's renderVideo so it never plays — shows thumbnail only.
-  function _patchPreviewFrameVideo() {
-    const frame = document.getElementById('livePreviewFrame');
-    if (!frame || !frame.contentWindow) return;
+  // ── Layer toggle rail (right side of the operator monitor) ─────────────────
+  // Toggle a layer on the projection page that the preview iframe loads. The
+  // projection page exports _showLayer/_hideLayer/_activeLayers on window; we
+  // drive them directly (a "background" toggle flips the custom-bg wallpaper).
+  function _toggleLayer(name) {
+    const fw  = (document.getElementById('livePreviewFrame') || {}).contentWindow;
+    const btn = document.querySelector('.lp-layer-btn[data-layer="' + name + '"]');
+    if (!fw || !btn) return;
+    const shouldShow = !btn.classList.contains('active');
     try {
-      const fw = frame.contentWindow;
-      fw.renderVideo = function (data) {
-        const slide = fw.document.getElementById('slide');
-        if (slide) _renderVideoPreview(slide, data);
-      };
-      // Stop any video/YT iframe that started before the patch was applied
-      const slide = fw.document.getElementById('slide');
-      if (slide) {
-        slide.querySelectorAll('video').forEach(function(v) { v.pause(); v.src = ''; });
-        slide.querySelectorAll('iframe').forEach(function(f) { f.src = ''; });
-        if (slide.querySelector('video, iframe')) {
-          _renderVideoPreview(slide, { url: '' });
-        }
+      if (name === 'off') {
+        // Master OFF: masks every content layer (V/I/T/A) at once. The DOM keeps
+        // the layers intact, so switching it off again restores everything.
+        fw.document.body.classList.toggle('layers-off', shouldShow);
+      } else if (name === 'background') {
+        const el = fw.document.getElementById('custom-bg');
+        if (el) el.classList.toggle('visible', shouldShow);
+        el && el.classList.toggle('active', shouldShow);
+        // Mask the whole background (theme colors + image) when BG is off.
+        fw.document.body.classList.toggle('bg-off', !shouldShow);
+        if (fw._activeLayers) { if (shouldShow) fw._activeLayers.add('background'); else fw._activeLayers.delete('background'); }
+      } else if (shouldShow) {
+        if (typeof fw._showLayer === 'function') fw._showLayer(name);
+      } else {
+        if (typeof fw._hideLayer === 'function') fw._hideLayer(name);
       }
+      if (typeof fw._updateMessageBackdrop === 'function') fw._updateMessageBackdrop();
+      // Mirror the toggle to every projection channel via the server, so hiding
+      // a layer on the monitor also removes it from the real output screens.
+      _socket.emit('layer:set', { layer: name, show: shouldShow });
     } catch(e) {}
+    btn.classList.toggle('active', shouldShow);
   }
-  document.getElementById('livePreviewFrame').addEventListener('load', _patchPreviewFrameVideo);
+
+  function _syncLayerRail() {
+    const fw  = (document.getElementById('livePreviewFrame') || {}).contentWindow;
+    if (!fw) return;
+    const active = fw._activeLayers;
+    document.querySelectorAll('.lp-layer-btn').forEach(function (btn) {
+      const n = btn.dataset.layer;
+      if (n === 'off') {
+        // Master OFF is active when the projection body is masked.
+        const fBody = fw.document.body;
+        btn.classList.toggle('active', !!(fBody && fBody.classList.contains('layers-off')));
+      } else if (n === 'background') {
+        const fBody = fw.document.body;
+        // The BG button reflects the whole background layer: on (theme color /
+        // image showing) unless masked to black via body.bg-off.
+        btn.classList.toggle('active', !!(fBody && !fBody.classList.contains('bg-off')));
+      } else if (active && active.has) {
+        btn.classList.toggle('active', active.has(n));
+      } else {
+        const el = fw.document.getElementById('layer-' + n);
+        btn.classList.toggle('active', !!(el && el.classList.contains('active')));
+      }
+    });
+  }
+
+  (function bindLayerRail() {
+    const rail = document.getElementById('lpLayerRail');
+    if (rail) rail.addEventListener('click', function (e) {
+      const btn = e.target.closest('.lp-layer-btn');
+      if (btn) _toggleLayer(btn.dataset.layer);
+    });
+  })();
+
+  // When the monitor iframe loads, reflect its active layers onto the rail.
+  document.getElementById('livePreviewFrame').addEventListener('load', _syncLayerRail);
 
   // ── Channel tile selection ─────────────────────────────────────────────────
   function selectChannel(ch) {
@@ -5293,6 +5703,105 @@
   function renderLivePreview(data) {
     // Visual rendering is handled by the scaled iframe — only update channel tile labels.
     _updateChTile(data.channel || _getChannel(), data);
+  }
+
+  // ── Standalone Live input (server-side capture) ───────────────────────────
+  var _liveSelectedCh = 'ch1';
+  var _livePreviewTimer = null;
+
+  function liveLoadSources(rescan) {
+    const sel = document.getElementById('liveSourceSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select source…</option>';
+    fetch('/api/live/sources' + (rescan ? '?rescan=1' : ''))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        const srcs = d.sources || [];
+        srcs.forEach(function (s) {
+          const opt = document.createElement('option');
+          opt.value = s.index;
+          const label = s.name
+            ? (s.name + '  (' + s.w + '×' + s.h + ')')
+            : ('Source ' + s.index + '  (' + s.w + '×' + s.h + ')');
+          opt.textContent = label;
+          sel.appendChild(opt);
+        });
+        if (!srcs.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'No sources found';
+          sel.appendChild(opt);
+        }
+      })
+      .catch(function (e) {
+        toast('Failed to list live sources: ' + e, 'error');
+      });
+  }
+
+  function liveSelectSource(idx) {
+    const prev = document.getElementById('liveThumbPreview');
+    const img  = document.getElementById('liveThumbImg');
+    if (!prev || !img) return;
+    if (idx === '' || idx === null || idx === undefined) {
+      prev.style.display = 'none';
+      if (img) img.src = '';
+      if (window._liveShotTimer) { clearInterval(window._liveShotTimer); window._liveShotTimer = null; }
+      return;
+    }
+    // Only show a placeholder hint — the live snapshot is NOT shown until the
+    // operator pushes it. Showing it here would make the live input appear on
+    // the monitor before it is actually commanded.
+    prev.style.display = 'none';
+    if (img) img.src = '';
+  }
+
+  function livePush() {
+    const sel = document.getElementById('liveSourceSelect');
+    const idx = sel ? sel.value : '';
+    if (!idx) { toast('Select a live source first', 'error'); return; }
+    const sd = {
+      channel: _liveSelectedCh,
+      type: 'live',
+      source_index: parseInt(idx, 10),
+      theme_id: _getTheme(),
+      item_id: null,
+      stanza_idx: null,
+      // Custom output PiP settings — relayed verbatim to the target channel so
+      // custom_output.html can mount a live box in a corner.
+      pip_enable: document.getElementById('pipEnable')?.checked === true,
+      pip_corner: document.getElementById('pipCorner')?.value || 'tr',
+      pip_size:   document.getElementById('pipSize')?.value   || 'md',
+    };
+    _stageThenPush('media:live', sd);
+    renderLivePreview({ channel: sd.channel, type: 'live' });
+    toast('Pushing live source ' + idx + ' → ' + sd.channel, 'ok');
+  }
+
+  function liveStop() {
+    const sd = { channel: _liveSelectedCh, type: 'blank' };
+    _stageThenPush('slide:blank', sd);
+    renderLivePreview({ channel: sd.channel, type: 'blank' });
+    toast('Live stopped on ' + sd.channel, 'ok');
+  }
+
+  function _bindLivePanel() {
+    const sel = document.getElementById('liveSourceSelect');
+    if (sel) sel.addEventListener('change', function () {
+      liveSelectSource(sel.value);
+    });
+    document.querySelectorAll('.live-ch-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _liveSelectedCh = btn.dataset.ch;
+        document.querySelectorAll('.live-ch-btn').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.ch === _liveSelectedCh);
+        });
+      });
+    });
+    // Pre-select the first channel and load sources.
+    document.querySelectorAll('.live-ch-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.ch === _liveSelectedCh);
+    });
+    liveLoadSources();
   }
 
   function _lpEsc(s) {
@@ -5556,6 +6065,18 @@
     return result;
   }
 
+  // Convert free-form manual lyrics text into projection stanzas.
+  // A blank line separates verses; each verse gets numbered V1, V2, ...
+  function _manualToStanzas(text) {
+    const blocks = String(text || '').split(/\n[ \t]*\n/).map(b => b.trim()).filter(Boolean);
+    return blocks.map((b, i) => ({
+      type: 'verse',
+      number: i + 1,
+      label: `Verse ${i + 1}`,
+      lines: b.split('\n').map(l => l.trim()).filter(Boolean),
+    }));
+  }
+
   async function sendLive(itemEl, startFromEnd = false) {
     if (!itemEl) return;
     if (itemEl.classList.contains('disabled')) { toast('This item is disabled', 'error'); return; }
@@ -5579,15 +6100,27 @@
     }
 
     if (type === 'song') {
+      const lyricsText = (itemEl.querySelector('.song-lyrics')?.value || '').trim();
+      if (lyricsText) {
+        // Editable lyrics textarea: build stanzas directly from the text box
+        const manualStanzas = _manualToStanzas(lyricsText);
+        _projStanzas   = manualStanzas.length ? [{ type: '__title__' }, ...manualStanzas] : [];
+        _projStanzaIdx = (startFromEnd && _projStanzas.length) ? _projStanzas.length - 1 : 0;
+        _projItem      = itemEl;
+        _activateStripThumb(itemEl, _projStanzas.length ? _projStanzaIdx : null);
+        _sendCurrentStanza(ch, title, part, hymn_number);
+        return;
+      }
       const lyricsKey = itemEl.querySelector('.lyrics-key')?.value || '';
       if (!lyricsKey) {
         _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
         _activateStripThumb(itemEl, null);
         const sd = { type: 'text', title, part, channel: ch, theme_id: _getTheme(),
                      item_id: itemEl.dataset.itemId, stanza_idx: null };
+        _itemFont(sd, itemEl);
         if (hymn_number) sd.hymn_number = hymn_number;
         sd.hymn_lang = hymn_lang;
-        _socket.emit('slide:show', sd);
+        _stageThenPush('slide:show', sd);
         renderLivePreview(sd);
         return;
       }
@@ -5606,9 +6139,10 @@
         _activateStripThumb(itemEl, null);
         const sd = { type: 'text', title, part, channel: ch, theme_id: _getTheme(),
                      item_id: itemEl.dataset.itemId, stanza_idx: null };
+        _itemFont(sd, itemEl);
         if (hymn_number) sd.hymn_number = hymn_number;
         sd.hymn_lang = hymn_lang;
-        _socket.emit('slide:show', sd);
+        _stageThenPush('slide:show', sd);
         renderLivePreview(sd);
       }
     } else if (type === 'video') {
@@ -5621,7 +6155,7 @@
       if (!url) { toast('No video file selected', 'error'); return; }
       const sd = { channel: ch, type: 'video', url, autoplay, loop, mute, theme_id: _getTheme(),
                    item_id: itemEl.dataset.itemId, stanza_idx: null };
-      _socket.emit('media:video', sd);
+      _stageThenPush('media:video', sd);
       renderLivePreview({ type: 'video', data: sd });
     } else if (type === 'image') {
       _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
@@ -5630,16 +6164,18 @@
       if (!url) { toast('No image file selected', 'error'); return; }
       const sd = { channel: ch, type: 'image', url, theme_id: _getTheme(),
                    item_id: itemEl.dataset.itemId, stanza_idx: null };
-      _socket.emit('media:image', sd);
+      _stageThenPush('media:image', sd);
       renderLivePreview({ type: 'image', data: sd });
     } else if (type === 'live') {
       _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
       _activateStripThumb(itemEl, null);
-      const device_id = itemEl.querySelector('.item-live-device')?.value.trim() || '';
-      if (!device_id) { toast('Select a live input device first', 'error'); return; }
+      const sourceRaw  = itemEl.querySelector('.item-live-source')?.value?.trim() || '';
+      const device_id  = itemEl.querySelector('.item-live-device')?.value.trim() || '';
+      if (!sourceRaw && !device_id) { toast('Select a live input device first', 'error'); return; }
       const sd = { channel: ch, type: 'live', device_id, theme_id: _getTheme(),
                    item_id: itemEl.dataset.itemId, stanza_idx: null };
-      _socket.emit('media:live', sd);
+      if (sourceRaw !== '') sd.source_index = parseInt(sourceRaw, 10);
+      _stageThenPush('media:live', sd);
       renderLivePreview({ type: 'live', data: sd });
     } else {
       _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
@@ -5668,6 +6204,7 @@
         _activateStripThumb(itemEl, null);
         const sd = { type: 'text', title: type === 'content' ? '' : title, part, channel: ch, theme_id: _getTheme(),
                      item_id: itemEl.dataset.itemId, stanza_idx: null };
+        _itemFont(sd, itemEl);
         if (part) sd.part_font_size = part_font_size;
         if (participant) sd.participants = [{ role: part || '', name: participant }];
         if (body) {
@@ -5675,10 +6212,126 @@
           sd.font_family = font_family; sd.text_bold = text_bold; sd.text_italic = text_italic;
           if (text_color) sd.text_color = text_color;
         }
-        _socket.emit('slide:show', sd);
+        _stageThenPush('slide:show', sd);
         renderLivePreview(sd);
       }
     }
+  }
+
+  // Attach the text-formatting fields (from the shared Content-style toolbar)
+  // onto a slide/show payload. Read from the item element's hidden inputs.
+  function _itemFont(sd, itemEl) {
+    const font_size   = itemEl.querySelector('.item-font-size')?.value     || 'md';
+    const text_align  = itemEl.querySelector('.item-text-align')?.value    || 'center';
+    const font_family = itemEl.querySelector('.item-font-family')?.value   || 'default';
+    const text_bold   = (itemEl.querySelector('.item-text-bold')?.value    || '0') === '1';
+    const text_italic = (itemEl.querySelector('.item-text-italic')?.value  || '0') === '1';
+    const text_color  = itemEl.querySelector('.item-text-color')?.value    || '';
+    sd.font_size    = font_size;
+    sd.text_align   = text_align;
+    sd.font_family  = font_family;
+    sd.text_bold    = text_bold;
+    sd.text_italic  = text_italic;
+    if (text_color) sd.text_color = text_color;
+    return sd;
+  }
+
+  // Re-push the currently projected item so text-format edits (font size,
+  // family, color, bold/italic, alignment) follow immediately on the output.
+  // Reads the LIVE toolbar values from the active item element and re-sends
+  // the current slide through the normal staged-push path.
+  function _repushActiveSlide() {
+    const activeBtn = document.querySelector('.program-item .btn-live.active');
+    const itemEl = (activeBtn ? activeBtn.closest('.program-item') : null) || _projItem;
+    if (!itemEl || itemEl.classList.contains('disabled')) return;
+    const ch   = _getChannel();
+    const type = itemEl.dataset.itemType || 'participant';
+    if (type === 'video' || type === 'image' || type === 'live') return;
+    const title = itemEl.querySelector('.item-title')?.value || '';
+    const part  = itemEl.querySelector('.item-part')?.value  || '';
+    if (type === 'song') {
+      const hymn = itemEl.querySelector('.item-hymn')?.value || '';
+      // Editable lyrics textarea: rebuild the stanzas live so the projected
+      // lyrics follow whatever is typed/pasted in the edit box.
+      const lyricsText = (itemEl.querySelector('.song-lyrics')?.value || '').trim();
+      if (lyricsText) {
+        const rebuilt = _manualToStanzas(lyricsText);
+        if (rebuilt.length) {
+          _projStanzas = [{ type: '__title__' }, ...rebuilt];
+          if (_projStanzaIdx >= _projStanzas.length) _projStanzaIdx = _projStanzas.length - 1;
+          if (_projStanzaIdx < 0) _projStanzaIdx = 0;
+          _activateStripThumb(itemEl, _projStanzaIdx);
+          _sendCurrentStanza(ch, title, part, hymn);
+          return;
+        }
+      }
+      // No editable lyrics (server hymn stanzas): resend the current stanza
+      // so its formatting picks up the edited toolbar values.
+      _sendCurrentStanza(ch, title, part, hymn);
+      return;
+    }
+    // participant / content
+    const body    = itemEl.querySelector('.item-content')?.value || '';
+    const paras   = body ? body.split(/\n[ \t]*\n/).map(s => s.trim()).filter(Boolean) : [];
+    if (paras.length > 1) {
+      _projStanzas = paras.map(t => ({ type: '__content_para__', text: t }));
+      if (_projStanzaIdx >= _projStanzas.length) _projStanzaIdx = _projStanzas.length - 1;
+      if (_projStanzaIdx < 0) _projStanzaIdx = 0;
+      _projContentMeta = {
+        font_size: itemEl.querySelector('.item-font-size')?.value    || 'md',
+        text_align: itemEl.querySelector('.item-text-align')?.value  || 'center',
+        part_font_size: itemEl.querySelector('.item-part-font-size')?.value || 'md',
+        participant: itemEl.querySelector('.item-participant')?.value || '',
+        title: title,
+        part: part,
+        font_family: itemEl.querySelector('.item-font-family')?.value || 'default',
+        text_bold: (itemEl.querySelector('.item-text-bold')?.value || '0') === '1',
+        text_italic: (itemEl.querySelector('.item-text-italic')?.value || '0') === '1',
+        text_color: itemEl.querySelector('.item-text-color')?.value || '',
+      };
+      _activateStripThumb(itemEl, _projStanzaIdx);
+      _sendCurrentContentPara(ch);
+      return;
+    }
+    const participant = itemEl.querySelector('.item-participant')?.value || '';
+    const font_size      = itemEl.querySelector('.item-font-size')?.value    || 'md';
+    const text_align     = itemEl.querySelector('.item-text-align')?.value   || 'center';
+    const part_font_size = itemEl.querySelector('.item-part-font-size')?.value || 'md';
+    const font_family    = itemEl.querySelector('.item-font-family')?.value  || 'default';
+    const text_bold      = (itemEl.querySelector('.item-text-bold')?.value   || '0') === '1';
+    const text_italic    = (itemEl.querySelector('.item-text-italic')?.value || '0') === '1';
+    const text_color     = itemEl.querySelector('.item-text-color')?.value   || '';
+    const sd = { type: 'text', title: type === 'content' ? '' : title, part, channel: ch,
+                 theme_id: _getTheme(), item_id: itemEl.dataset.itemId, stanza_idx: null };
+    _itemFont(sd, itemEl);
+    if (part) sd.part_font_size = part_font_size;
+    if (participant) sd.participants = [{ role: part || '', name: participant }];
+    if (body) {
+      sd.body = body; sd.font_size = font_size; sd.text_align = text_align;
+      sd.font_family = font_family; sd.text_bold = text_bold; sd.text_italic = text_italic;
+      if (text_color) sd.text_color = text_color;
+    }
+    _stageThenPush('slide:show', sd);
+    renderLivePreview(sd);
+  }
+
+  let _repushTimer = null;
+  function _scheduleRepush() {
+    if (_repushTimer) clearTimeout(_repushTimer);
+    _repushTimer = setTimeout(_repushActiveSlide, 350);
+  }
+
+  function _fitAll() {
+    if (!Array.isArray(_projStanzas)) return null;
+    const out = [];
+    _projStanzas.forEach(function (s) {
+      if (!s) return;
+      if (s.type === '__title__') return;
+      let lines = s.lines;
+      if (s.type === '__content_para__') lines = String(s.text || '').split('\n');
+      if (Array.isArray(lines) && lines.length) out.push(lines.slice());
+    });
+    return out.length ? out : null;
   }
 
   function _sendCurrentStanza(ch, title, part, hymn_number) {
@@ -5688,13 +6341,15 @@
       type: 'text', title, part, channel: ch, theme_id: _getTheme(),
       item_id: _projItem?.dataset.itemId || null,
       stanza_idx: _projStanzaIdx,
+      fit_all: _fitAll(),
     };
+    _itemFont(sd, _projItem);
     // Only attach stanza if it's a real stanza (not the title-card sentinel)
     if (stanza && stanza.type !== '__title__') sd.stanza = stanza;
     if (nextStanza && nextStanza.type !== '__title__') sd.next_stanza = nextStanza;
     if (hymn_number) sd.hymn_number = hymn_number;
     sd.hymn_lang = _projItem?.querySelector('.item-hymn-lang')?.value || 'en';
-    _socket.emit('slide:show', sd);
+    _stageThenPush('slide:show', sd);
     renderLivePreview(sd);
   }
 
@@ -5706,6 +6361,7 @@
       theme_id: _getTheme(), item_id: _projItem?.dataset.itemId || null,
       stanza_idx: _projStanzaIdx,
       is_content_para: true, para_idx: _projStanzaIdx,
+      fit_all: _fitAll(),
       body: para.text, font_size: m.font_size || 'md', text_align: m.text_align || 'center',
       font_family: m.font_family || 'default',
       text_bold: !!m.text_bold, text_italic: !!m.text_italic,
@@ -5713,7 +6369,7 @@
     if (m.text_color) sd.text_color = m.text_color;
     if (m.part) sd.part_font_size = m.part_font_size || 'md';
     if (m.participant) sd.participants = [{ role: m.part || '', name: m.participant }];
-    _socket.emit('slide:show', sd);
+    _stageThenPush('slide:show', sd);
     renderLivePreview(sd);
   }
 
@@ -5764,7 +6420,7 @@
 
   function _projBlank() {
     const ch = _getChannel();
-    _socket.emit('slide:blank', { channel: ch });
+    _stageThenPush('slide:blank', { channel: ch, type: 'blank' });
     _clearAudioBadge(ch);
     renderLivePreview({ type: 'blank' });
   }
@@ -5852,6 +6508,33 @@
   function blankCustomOutput() {
     document.getElementById('customOutputText').value = '';
     _socket.emit('custom:blank', {});
+  }
+
+  // ── Main projection feed in Custom Output ─────────────────────────────────
+  // The custom channel does not receive the main (ch1) program events, so the
+  // custom output page mounts the actual /ch1 projection inside an iframe. This
+  // toggle tells every custom output window whether to show or hide that feed.
+  function toggleCustomFeed() {
+    const btn = document.getElementById('customFeedBtn');
+    const on  = !(btn && btn.classList.contains('feed-active'));
+    if (btn) {
+      btn.classList.toggle('feed-active', on);
+      btn.textContent = on ? 'Hide feed' : 'Show feed';
+    }
+    _socket.emit('media:live', {
+      channel: _customOutputChannel(),
+      type: 'live',
+      mirror: on ? 'on' : 'off',
+      pip_enable: false,
+    });
+  }
+
+  function _customOutputChannel() {
+    const acc = _rpAssignments || {};
+    for (const ch in acc) {
+      if (acc[ch] === 'custom') return ch;
+    }
+    return 'ch2';
   }
 
   // ── Sample text test ───────────────────────────────────────────────────────
@@ -5972,8 +6655,15 @@
 
   function _pushThemeToProjection() {
     try {
-      const bg = (_customThemeState.slots && _customThemeState.slots[_customThemeState.active]) || null;
-      _socket.emit('theme:apply', { channel: _getChannel(), theme_id: _getTheme(), custom_bg: bg });
+      const themeId = _getTheme();
+      let bg = null;
+      if (themeId === 'custom') {
+        bg = (_customThemeState.slots && _customThemeState.slots[_customThemeState.active]) || null;
+      }
+      // A plain color theme hides the custom background image so the theme
+      // colors actually show; only 'custom' sends the slot image. Empty string
+      // tells the projection to take the background image down.
+      _socket.emit('theme:apply', { channel: _getChannel(), theme_id: themeId, custom_bg: (themeId === 'custom' && bg) ? bg : '' });
     } catch (e) {}
   }
 
@@ -5999,6 +6689,10 @@
 
   async function _setCustomActive(slotEl) {
     const idx = parseInt(slotEl.getAttribute('data-slot'), 10);
+    await _activateCustomSlot(idx);
+  }
+
+  async function _activateCustomSlot(idx) {
     try {
       const res = await fetch('/api/themes/custom/active', {
         method: 'POST',
@@ -6009,9 +6703,19 @@
       if (data && data.status === 'ok') {
         _customThemeState.active = data.active;
         _renderCustomThemeSlots();
+        _syncThemeSelectFromActive();
         _pushThemeToProjection();
       }
     } catch (e) {}
+  }
+
+  function _syncThemeSelectFromActive() {
+    const sel = document.getElementById('themeSelect');
+    if (!sel) return;
+    // Activating an image slot always targets the Custom (Background Image)
+    // theme. "Creation Grid" is a separate built-in option — never clobber it
+    // here, and never map back to the removed 'custom:3' (slot-bound) value.
+    sel.value = 'custom';
   }
 
   async function _deleteCustomBg(slotEl) {
@@ -6034,7 +6738,8 @@
         _syncCustomThemePanel();
         // Push the newly selected theme to the projection right away so the
         // background updates immediately (the theme normally only applies when a
-        // slide is projected).
+        // slide is projected). 'creation' is the built-in grid theme; 'custom'
+        // is the uploaded-slot image handled by _pushThemeToProjection.
         _pushThemeToProjection();
       });
     }
@@ -6270,8 +6975,36 @@
         }
       }).catch(function(){ alert('Failed to add channel'); });
     });
+    _bindLivePanel();
   });
 </script>
 
+<!-- New-build notice: the operator holds in-progress edits, so show a toast
+     with a reload button instead of forcing a reload. -->
+<script>
+(function () {
+  function mkToast() {
+    if (document.getElementById('buildToast')) return;
+    var t = document.createElement('div');
+    t.id = 'buildToast';
+    t.setAttribute('style', 'position:fixed;z-index:99999;top:14px;left:50%;transform:translateX(-50%);background:#0c1526;border:1px solid #c9a84c;color:#e8ecf3;padding:10px 18px;border-radius:10px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);white-space:nowrap');
+    t.innerHTML = 'May bagong update ang server. <a href="#" id="buildToastReload" style="color:#ffd76a;font-weight:600">I-reload ngayon</a>';
+    document.body.appendChild(t);
+    document.getElementById('buildToastReload').addEventListener('click', function (e) { e.preventDefault(); location.reload(); });
+  }
+  function poll() {
+    fetch('/api/server_version?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.build) return;
+        var meta = document.querySelector('meta[name="x-build"]');
+        if (meta && meta.content && meta.content !== j.build) mkToast();
+      })
+      .catch(function () {});
+    setTimeout(poll, 7000);
+  }
+  setTimeout(poll, 3000);
+})();
+</script>
 </body>
 </html>

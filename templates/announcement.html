@@ -169,5 +169,24 @@
     setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
   }
 </script>
+<!-- Auto-reload when the server ships a new build (stale tabs self-heal). -->
+<script>
+(function () {
+  var seen = null;
+  function poll() {
+    fetch('/api/server_version?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.build) return;
+        var meta = document.querySelector('meta[name="x-build"]');
+        if (meta && meta.content && meta.content !== j.build) { location.reload(); return; }
+        if (!meta || !meta.content) { if (seen !== null && seen !== j.build) location.reload(); seen = j.build; }
+      })
+      .catch(function () {});
+    setTimeout(poll, 5000);
+  }
+  setTimeout(poll, 2000);
+})();
+</script>
 </body>
 </html>

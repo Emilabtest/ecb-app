@@ -50,6 +50,49 @@
       letter-spacing: 0.1em;
       font-style: italic;
     }
+
+    /* ── Picture-in-Picture live box ──
+       Text stays full-screen; the live feed mounts in a small fixed-size box in
+       a corner. Config (on/off, corner, size) rides along the media:live data
+       sent by the Live panel — the server relays it verbatim. */
+    #pip-box {
+      position: absolute;
+      z-index: 100;
+      display: none;
+      background: #000;
+      border: 2px solid rgba(255,255,255,0.85);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.55);
+      line-height: 0;
+    }
+    #pip-box.visible { display: block; }
+    #pip-box img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    #pip-box .pip-live-tag {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.65);
+      color: #d4a843;
+      padding: 2px 7px;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+    /* Corners */
+    #pip-box.corner-tr { top: 18px; right: 18px; }
+    #pip-box.corner-tl { top: 18px; left: 18px; }
+    #pip-box.corner-br { bottom: 18px; right: 18px; }
+    #pip-box.corner-bl { bottom: 18px; left: 18px; }
+    /* Sizes — 16:9 keeps the camera aspect */
+    #pip-box.size-sm { width: 26vw; max-width: 360px; aspect-ratio: 16 / 9; }
+    #pip-box.size-md { width: 36vw; max-width: 500px; aspect-ratio: 16 / 9; }
+    #pip-box.size-lg { width: 48vw; max-width: 680px; aspect-ratio: 16 / 9; }
   </style>
 </head>
 <body>
@@ -62,6 +105,19 @@
   {% else %}
     <div id="text" class="blank">Custom Output</div>
   {% endif %}
+</div>
+
+<!-- Main projection mirror feed: mounts the actual main projection page
+     (ch1) so the custom output can reuse everything the congregation screen
+     is showing — lyrics, slides, media, themes. Hidden until the operator
+     clicks the button. -->
+<iframe id="main-mirror" title="Main projection" src="" allow="autoplay; fullscreen"
+        style="position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#000;"></iframe>
+
+<!-- Picture-in-Picture live box (hidden until a media:live push arrives) -->
+<div id="pip-box" class="corner-tr size-md">
+  <span class="pip-live-tag">LIVE</span>
+  <img id="pip-img" alt="">
 </div>
 </div>
 </div>
@@ -107,6 +163,44 @@
     _applyFont({});
   });
 
+  // ── Picture-in-Picture live overlay ────────────────────────────────────────
+  // The Live panel pushes media:live with pip_* settings; the server relays the
+  // whole payload verbatim to this channel room. Show/hide a small live box in a
+  // corner while the full-screen custom text keeps its spot.
+  const pipBox = document.getElementById('pip-box');
+  const pipImg = document.getElementById('pip-img');
+
+  socket.on('media:live', (data) => {
+    const cfg = data || {};
+    // Operator "Show/Hide feed" command → mirror/un-mirror the main projection.
+    if (cfg.mirror === 'on' || cfg.mirror === 'off') {
+      _setMirror(cfg.mirror === 'on');
+      return;
+    }
+    if (!pipBox || !pipImg) return;
+    const on   = cfg.pip_enable === true;
+    const idx  = cfg.source_index;
+    if (!on || idx === undefined || idx === null || idx === '') {
+      pipImg.src = '';
+      pipBox.classList.remove('visible');
+      return;
+    }
+    // Apply corner / size from the payload (safe defaults when absent).
+    const corner = ['tr', 'tl', 'br', 'bl'].indexOf(cfg.pip_corner) >= 0 ? cfg.pip_corner : 'tr';
+    const size   = ['sm', 'md', 'lg'].indexOf(cfg.pip_size) >= 0 ? cfg.pip_size : 'md';
+    ['corner-tr', 'corner-tl', 'corner-br', 'corner-bl'].forEach((c) => pipBox.classList.remove(c));
+    ['size-sm', 'size-md', 'size-lg'].forEach((s) => pipBox.classList.remove(s));
+    pipBox.classList.add('corner-' + corner);
+    pipBox.classList.add('size-' + size);
+    pipBox.classList.add('visible');
+    pipImg.src = 'http://' + window.location.hostname + ':5002/live/feed/' + encodeURIComponent(idx) + '.mjpeg';
+  });
+
+  // Live stop on this channel → blank the PiP again.
+  socket.on('slide:blank', (d) => {
+    if (pipBox && pipImg) { pipImg.src = ''; pipBox.classList.remove('visible'); }
+  });
+
   socket.on('roles:updated', (data) => {
     const newRole = (data.assignments || {})[CHANNEL];
     if (newRole && newRole !== '{{ role }}') { window.location.reload(); }
@@ -142,23 +236,26 @@
     _projResizeRaf = requestAnimationFrame(function () { _projApplyAspect(); });
   });
 </script>
-<div id="output-close" style="display:none;position:fixed;top:10px;right:14px;z-index:99999;opacity:.55;transition:opacity .3s;">
-  <button onclick="outputClose()" title="Close output" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1;cursor:pointer;">&#10005;</button>
+<div id="output-close" style="position:fixed;top:10px;right:14px;z-index:99999;display:flex;gap:8px;align-items:center;">
+  <button onclick="outputClose()" title="Close output" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.8);background:rgba(0,0,0,.75);color:#fff;font-size:18px;line-height:1;cursor:pointer;">&#10005;</button>
 </div>
 <script>
-  (function(){
-    if (location.search.indexOf('output=1') === -1) return;
-    var el = document.getElementById('output-close');
-    el.style.display = 'block';
-    var hideTimer;
-    function hide(){ el.style.opacity = '0'; }
-    function show(){ el.style.opacity = '.55'; }
-    el.addEventListener('mouseenter', show);
-    el.addEventListener('mouseleave', hide);
-    document.addEventListener('mousemove', function(){
-      show(); clearTimeout(hideTimer); hideTimer = setTimeout(hide, 4000);
-    });
-  })();
+  // Show or hide the mirrored main projection (ch1) feed. Triggered by the
+  // "Show feed"/"Hide feed" button on the operator console via a media:live
+  // command carrying { mirror: 'on' | 'off' } that the server relays verbatim.
+  function _setMirror(on) {
+    var frame = document.getElementById('main-mirror');
+    if (!frame) return;
+    if (on) {
+      frame.style.display = 'block';
+      frame.src = '/ch1';
+    } else {
+      frame.style.display = 'none';
+      frame.removeAttribute('src');
+    }
+  }
+</script>
+<script>
   function outputClose(){
     try {
       fetch('/api/output/close', {
@@ -169,6 +266,25 @@
     } catch(e){}
     setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
   }
+</script>
+<!-- Auto-reload when the server ships a new build (stale tabs self-heal). -->
+<script>
+(function () {
+  var seen = null;
+  function poll() {
+    fetch('/api/server_version?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.build) return;
+        var meta = document.querySelector('meta[name="x-build"]');
+        if (meta && meta.content && meta.content !== j.build) { location.reload(); return; }
+        if (!meta || !meta.content) { if (seen !== null && seen !== j.build) location.reload(); seen = j.build; }
+      })
+      .catch(function () {});
+    setTimeout(poll, 5000);
+  }
+  setTimeout(poll, 2000);
+})();
 </script>
 </body>
 </html>
