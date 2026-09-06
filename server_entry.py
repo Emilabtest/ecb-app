@@ -290,7 +290,7 @@ def wire_license_gate():
             return ''
         return (
             '<div class="divider">or pay online</div>'
-            '<label>Instant activation &mdash; &#8369;%d via GCash</label>'
+            '<label>Instant activation &mdash; &#8369;%d &middot; pay with GCash (scan QR)</label>'
             '<button id="pay" onclick="payActivate()">Pay &amp; Activate &mdash; &#8369;%d</button>'
             '<p class="hint">Requires internet. After paying, this page activates automatically.</p>'
             % (_price, _price)
@@ -367,7 +367,7 @@ def wire_license_gate():
                 headers=_pm_headers(_secret),
                 json={'data': {'attributes': {
                     'description': 'Leiturgia license for PC-%s' % _hw[:12],
-                    'payment_method_types': ['gcash'],
+                    'payment_method_types': ['qrph'],
                     'line_items': [{'currency': 'PHP', 'amount': _price * 100,
                                     'name': 'Leiturgia License', 'quantity': 1}],
                     'success_url': 'http://127.0.0.1:5001/api/pay/result?ok=1',
