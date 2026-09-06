@@ -76,6 +76,9 @@ def _ensure_config():
         'enable_self_update': True,
         'update_url': 'https://github.com/Emilabtest/ecb-app/releases/latest/download',
         'owner_email': '',
+        'paymongo_secret': '',
+        'paymongo_publishable': '',
+        'license_price_peso': 500,
         'log_level': 'INFO',
         'media_video_budget_gb': 2,
         'media_image_budget_gb': 1,
@@ -123,6 +126,8 @@ _ACT_HTML = r'''<!doctype html>
   .msg.err{background:#3a1b1f;color:#ffb4a8;display:block} .msg.ok{background:#14321f;color:#a8f0c3;display:block}
   .row{display:flex;gap:10px;margin-top:14px;width:100%}
   .row button{flex:1;margin-top:0;background:#1e2430;color:#e8e6e3;border:1px solid var(--line)}
+  .divider{text-align:center;color:var(--muted);margin:18px 0 2px;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase}
+  .hint{color:var(--muted);font-size:.78rem;margin-top:6px}
   code{color:var(--gold)}
 </style></head><body><div class="card">
   <h1>Leiturgia is not activated</h1>
@@ -137,6 +142,7 @@ _ACT_HTML = r'''<!doctype html>
     <button id="email" onclick="sendHWID()">Send HWID by email</button>
     <button id="copy" onclick="copyHWID()">Copy HWID</button>
   </div>
+  {{ pay_html }}
   <div class="msg" id="msg"></div>
   <div id="done" style="display:none">
     <div class="msg ok">Activated &mdash; loading Leiturgia&hellip;</div>
@@ -160,6 +166,39 @@ _ACT_HTML = r'''<!doctype html>
     var sub=encodeURIComponent('Leiturgia License Request');
     var body=encodeURIComponent('Please create a license key for this PC.\n\nHardware ID: ' + _hwid);
     location.href='mailto:'+owner+'?subject='+sub+'&body='+body;
+  }
+  async function payActivate(){
+    var msg=document.getElementById('msg'), btn=document.getElementById('pay');
+    msg.className='msg'; msg.textContent='';
+    btn.disabled=true; btn.textContent='Creating payment…';
+    try{
+      var r=await fetch('/api/pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      var d=await r.json();
+      if(!d.ok){ throw new Error(d.message||'create failed'); }
+      window.open(d.checkout_url,'_blank');
+      btn.textContent='Waiting for payment…';
+      var n=0;
+      var poll=setInterval(async function(){
+        n++;
+        try{
+          var r2=await fetch('/api/pay/status?id='+encodeURIComponent(d.id));
+          var d2=await r2.json();
+          if(d2.paid){
+            clearInterval(poll);
+            document.getElementById('done').style.display='block';
+            msg.className='msg ok'; msg.textContent='Payment received. Activating…';
+            setTimeout(function(){ location.href='/login'; }, 2000);
+          } else if(n>200){
+            clearInterval(poll);
+            msg.className='msg err'; msg.textContent='Payment has not arrived yet. If already paid, click Pay &amp; Activate again.';
+            btn.disabled=false; btn.textContent='Pay &amp; Activate';
+          }
+        }catch(e2){}
+      },3000);
+    }catch(e){
+      msg.className='msg err'; msg.textContent='Payment error: '+(e.message||'network error');
+      btn.disabled=false; btn.textContent='Pay &amp; Activate';
+    }
   }
 async function activate(){
   const key = document.getElementById('key').value.trim();
@@ -217,12 +256,21 @@ def wire_license_gate():
     from flask import request, jsonify, Response
 
     _lic_state['hwid'] = get_hardware_id()
+    _lic_state.setdefault('pay_session', {})
     try:
         import json as _json
         with open('config.json') as _f:
-            _lic_state['owner_email'] = (_json.load(_f) or {}).get('owner_email') or ''
+            _c = _json.load(_f) or {}
+        _lic_state['owner_email'] = _c.get('owner_email') or ''
+        _lic_state['paymongo_secret'] = _c.get('paymongo_secret') or ''
+        _lic_state['paymongo_publishable'] = _c.get('paymongo_publishable') or ''
+        try:
+            _lic_state['license_price_peso'] = int(_c.get('license_price_peso') or 0)
+        except Exception:
+            _lic_state['license_price_peso'] = 0
     except Exception:
-        _lic_state['owner_email'] = ''
+        _lic_state.update({'owner_email': '', 'paymongo_secret': '',
+                           'paymongo_publishable': '', 'license_price_peso': 0})
 
     try:
         from version import get_version as _gv
@@ -230,17 +278,38 @@ def wire_license_gate():
     except Exception:
         _ver = 'unknown'
 
+    def _pm_headers(_secret):
+        import base64
+        _tok = base64.b64encode((_secret + ':').encode('utf-8')).decode('ascii')
+        return {'Authorization': 'Basic ' + _tok}
+
+    def _pay_section_html():
+        _secret = (_lic_state.get('paymongo_secret') or '').strip()
+        _price = int(_lic_state.get('license_price_peso') or 0)
+        if not _secret or _price <= 0:
+            return ''
+        return (
+            '<div class="divider">or pay online</div>'
+            '<label>Instant activation &mdash; &#8369;%d via GCash</label>'
+            '<button id="pay" onclick="payActivate()">Pay &amp; Activate &mdash; &#8369;%d</button>'
+            '<p class="hint">Requires internet. After paying, this page activates automatically.</p>'
+            % (_price, _price)
+        )
+
     def _page_html(forced_hwid):
         _owner = (_lic_state.get('owner_email') or '').strip()
         _h = forced_hwid or 'UNAVAILABLE'
         return (_ACT_HTML.replace('{{ hwid }}', _h)
-                          .replace('{{ owner_email }}', _owner))
+                          .replace('{{ owner_email }}', _owner)
+                          .replace('{{ pay_html }}', _pay_section_html()))
 
     @app.before_request
     def _gate():
         if _lic_state['ok']:
             return None
         p = request.path
+        if p.startswith('/api/pay/'):
+            return None
         if p in ('/api/lic/status', '/api/lic/activate'):
             return None
         if p == '/api/health':
@@ -276,6 +345,85 @@ def wire_license_gate():
             return jsonify(ok=False, message='Could not write license.dat: %s' % e)
         _lic_state['ok'] = True
         return jsonify(ok=True, message='Activated.')
+
+    @app.route('/api/pay/create', methods=['POST'])
+    def _pay_create():
+        _sess = _lic_state.get('pay_session') or {}
+        if _lic_state['ok']:
+            return jsonify(ok=False, message='Already activated.')
+        _secret = (_lic_state.get('paymongo_secret') or '').strip()
+        _price = int(_lic_state.get('license_price_peso') or 0)
+        _hw = _lic_state.get('hwid') or ''
+        if not _secret:
+            return jsonify(ok=False, message='Online payment is not configured on this copy.')
+        if _price <= 0:
+            return jsonify(ok=False, message='License price is not set on this copy.')
+        if not _hw:
+            return jsonify(ok=False, message='Could not read this PC hardware ID.')
+        try:
+            import requests
+            _resp = requests.post(
+                'https://api.paymongo.com/v1/checkout_sessions',
+                headers=_pm_headers(_secret),
+                json={'data': {'attributes': {
+                    'description': 'Leiturgia license for PC-%s' % _hw[:12],
+                    'payment_method_types': ['gcash'],
+                    'line_items': [{'currency': 'PHP', 'amount': _price * 100,
+                                    'name': 'Leiturgia License', 'quantity': 1}],
+                    'success_url': 'http://127.0.0.1:5001/api/pay/result?ok=1',
+                    'cancel_url': 'http://127.0.0.1:5001/api/pay/result?ok=0',
+                    'metadata': {'hwid': _hw},
+                }}},
+                timeout=30,
+            )
+        except Exception as e:
+            return jsonify(ok=False, message='PayMongo connection error: %s' % e)
+        try:
+            _j = _resp.json()
+        except Exception:
+            return jsonify(ok=False, message='PayMongo bad response (%s)' % _resp.status_code)
+        if _resp.status_code >= 400:
+            _errs = _j.get('errors')
+            return jsonify(ok=False, message='PayMongo error: %s'
+                           % _json.dumps(_errs)[:400])
+        _d = (_j.get('data') or {}).get('attributes', {}) or {}
+        _pi = (_d.get('payment_intent') or {}).get('id')
+        _cs = (_j.get('data') or {}).get('id')
+        _sess.update({'checkout_id': _cs, 'payment_intent': _pi, 'hwid': _hw})
+        _lic_state['pay_session'] = _sess
+        return jsonify(ok=True, checkout_url=_d.get('checkout_url', ''), id=_cs)
+
+    @app.route('/api/pay/status')
+    def _pay_status():
+        _pid = request.args.get('id') or ''
+        if _lic_state['ok']:
+            return jsonify(paid=True, activated=True)
+        _secret = (_lic_state.get('paymongo_secret') or '').strip()
+        _sess = _lic_state.get('pay_session') or {}
+        if not _pid or _sess.get('checkout_id') != _pid:
+            return jsonify(paid=False, message='unknown session')
+        _pi = _sess.get('payment_intent')
+        if not _pi or not _secret:
+            return jsonify(paid=False, message='not ready')
+        try:
+            import requests
+            _r = requests.get('https://api.paymongo.com/v1/payment_intents/' + _pi,
+                              headers=_pm_headers(_secret), timeout=25)
+            _j = _r.json()
+            _st = ((_j.get('data') or {}).get('attributes') or {}).get('status', '')
+        except Exception:
+            return jsonify(paid=False, message='status check failed')
+        if _st in ('succeeded', 'paid'):
+            if _sess.get('hwid') == _lic_state.get('hwid'):
+                try:
+                    with open('license.dat', 'w') as f:
+                        f.write(make_licence(_lic_state['hwid']))
+                except OSError as e:
+                    return jsonify(paid=False, message='write failed: %s' % e)
+                _lic_state['ok'] = True
+                return jsonify(paid=True, activated=True)
+            return jsonify(paid=False, message='hardware mismatch')
+        return jsonify(paid=False, status=_st)
 
 
 # Import live_input BEFORE eventlet.monkey_patch() so its capture threads bind
