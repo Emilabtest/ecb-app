@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: leiturgia-pay-backend
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app --bind 0.0.0.0:10000 --workers 1"
+    healthCheckPath: /api/health
+    envVars:
+      - key: PM_SK_LIVE
+        sync: false
+      - key: PM_PK_LIVE
+        sync: false
+      - key: LICENSE_PRICE_PESO
+        value: "500"
+      - key: PM_BACKEND_AUTH
+        sync: false

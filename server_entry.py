@@ -268,13 +268,16 @@ def wire_license_gate():
         _lic_state['owner_email'] = _c.get('owner_email') or ''
         _lic_state['paymongo_secret'] = _c.get('paymongo_secret') or ''
         _lic_state['paymongo_publishable'] = _c.get('paymongo_publishable') or ''
+        _lic_state['paymongo_backend'] = _c.get('paymongo_backend') or ''
+        _lic_state['paymongo_backend_token'] = _c.get('paymongo_backend_token') or ''
         try:
             _lic_state['license_price_peso'] = int(_c.get('license_price_peso') or 0)
         except Exception:
             _lic_state['license_price_peso'] = 0
     except Exception:
         _lic_state.update({'owner_email': '', 'paymongo_secret': '',
-                           'paymongo_publishable': '', 'license_price_peso': 0})
+                           'paymongo_publishable': '', 'license_price_peso': 0,
+                           'paymongo_backend': '', 'paymongo_backend_token': ''})
 
     try:
         from version import get_version as _gv
@@ -289,8 +292,9 @@ def wire_license_gate():
 
     def _pay_section_html():
         _secret = (_lic_state.get('paymongo_secret') or '').strip()
+        _backend = (_lic_state.get('paymongo_backend') or '').strip()
         _price = int(_lic_state.get('license_price_peso') or 0)
-        if not _secret or _price <= 0:
+        if (not _secret and not _backend) or _price <= 0:
             return ''
         _is_test = _secret.startswith('sk_test_')
         _test_ctl = (
@@ -299,14 +303,21 @@ def wire_license_gate():
             '<iframe id="testframe" title="Authorize test payment" '
             'style="width:100&#37;;height:122px;border:1px dashed var(--line);border-radius:8px;background:#0b0e14"></iframe>'
             '</div>'
-        ) if _is_test else ''
-        _pay_hint = (
-            'You are in TEST mode. Scan the QR with any QR Ph / GCash app, '
-            'then press <b>Authorize Test Payment</b> inside the box below to finish.'
-        ) if _is_test else (
-            'Open <b>GCash</b> on your phone, scan this QR and approve. '
-            'This page refreshes automatically once paid.'
         )
+        if _is_test:
+            _pay_hint = (
+                'You are in TEST mode. Scan the QR with any QR Ph / GCash app, '
+                'then press <b>Authorize Test Payment</b> inside the box below to finish.'
+            )
+        elif _backend:
+            _pay_hint = (
+                'A payment box appears below. On success this page refreshes automatically once paid.'
+            )
+        else:
+            _pay_hint = (
+                'Open <b>GCash</b> on your phone, scan this QR and approve. '
+                'This page refreshes automatically once paid.'
+            )
         return (
             '<div class="divider">or pay online</div>'
             '<label>Instant activation &mdash; &#8369;%d &middot; pay with GCash (scan QR)</label>'
@@ -374,15 +385,38 @@ def wire_license_gate():
         if _lic_state['ok']:
             return jsonify(ok=False, message='Already activated.')
         _secret = (_lic_state.get('paymongo_secret') or '').strip()
+        _backend = (_lic_state.get('paymongo_backend') or '').strip()
         _price = int(_lic_state.get('license_price_peso') or 0)
         _hw = _lic_state.get('hwid') or ''
-        if not _secret:
+        if not _secret and not _backend:
             return jsonify(ok=False, message='Online payment is not configured on this copy.')
         if _price <= 0:
             return jsonify(ok=False, message='License price is not set on this copy.')
         if not _hw:
             return jsonify(ok=False, message='Could not read this PC hardware ID.')
         import requests
+        if _backend:
+            _tok = (_lic_state.get('paymongo_backend_token') or '').strip()
+            _bh = {'Content-Type': 'application/json'}
+            if _tok:
+                _bh['X-Auth'] = _tok
+            try:
+                _rb = requests.post(_backend.rstrip('/') + '/api/pay/create',
+                                    headers=_bh, json={'hwid': _hw}, timeout=35)
+                _jb = _rb.json()
+            except Exception as e:
+                return jsonify(ok=False, message='Payment backend error: %s' % e)
+            if not (isinstance(_jb, dict) and _jb.get('ok')):
+                return jsonify(ok=False, message=str((_jb or {}).get('message') or 'Backend refused (check token/hwid).'))
+            _pi = _jb.get('id')
+            _qr = _jb.get('qr_image')
+            _turl = _jb.get('test_url') or ''
+            if not _pi or not _qr:
+                return jsonify(ok=False, message='Could not start QR payment.')
+            _sess = _lic_state.get('pay_session') or {}
+            _sess.update({'checkout_id': _pi, 'payment_intent': _pi, 'hwid': _hw})
+            _lic_state['pay_session'] = _sess
+            return jsonify(ok=True, id=_pi, qr_image=_qr, test_url=_turl)
         _api = 'https://api.paymongo.com/v1'
         _hdr = _pm_headers(_secret)
         try:
@@ -431,11 +465,35 @@ def wire_license_gate():
         if _lic_state['ok']:
             return jsonify(paid=True, activated=True)
         _secret = (_lic_state.get('paymongo_secret') or '').strip()
+        _backend = (_lic_state.get('paymongo_backend') or '').strip()
         _sess = _lic_state.get('pay_session') or {}
         if not _pid or _sess.get('checkout_id') != _pid:
             return jsonify(paid=False, message='unknown session')
         _pi = _sess.get('payment_intent')
-        if not _pi or not _secret:
+        if not _pi:
+            return jsonify(paid=False, message='not ready')
+        if _backend:
+            import requests as _req
+            _tok = (_lic_state.get('paymongo_backend_token') or '').strip()
+            _bh = {'X-Auth': _tok} if _tok else {}
+            try:
+                _rb = _req.get(_backend.rstrip('/') + '/api/pay/status',
+                               params={'id': _pi}, headers=_bh, timeout=30)
+                _jb = _rb.json()
+            except Exception:
+                return jsonify(paid=False, message='backend status check failed')
+            if _jb.get('paid'):
+                if _sess.get('hwid') == _lic_state.get('hwid'):
+                    try:
+                        with open('license.dat', 'w') as f:
+                            f.write(make_licence(_lic_state['hwid']))
+                    except OSError as e:
+                        return jsonify(paid=False, message='write failed: %s' % e)
+                    _lic_state['ok'] = True
+                    return jsonify(paid=True, activated=True)
+                return jsonify(paid=False, message='hardware mismatch')
+            return jsonify(paid=False, status=_jb.get('status'))
+        if not _secret:
             return jsonify(paid=False, message='not ready')
         try:
             import requests
