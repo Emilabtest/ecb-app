@@ -175,7 +175,11 @@ _ACT_HTML = r'''<!doctype html>
       var r=await fetch('/api/pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
       var d=await r.json();
       if(!d.ok){ throw new Error(d.message||'create failed'); }
-      window.open(d.checkout_url,'_blank');
+      var hint=document.getElementById('payhint'); if(hint) hint.style.display='none';
+      document.getElementById('qr').src=d.qr_image;
+      var tc=document.getElementById('testctl');
+      if(d.test_url && tc){ tc.style.display='block'; document.getElementById('testframe').src=d.test_url; }
+      document.getElementById('paybox').style.display='block';
       btn.textContent='Waiting for payment…';
       var n=0;
       var poll=setInterval(async function(){
@@ -288,13 +292,32 @@ def wire_license_gate():
         _price = int(_lic_state.get('license_price_peso') or 0)
         if not _secret or _price <= 0:
             return ''
+        _is_test = _secret.startswith('sk_test_')
+        _test_ctl = (
+            '<div id="testctl" style="display:none;margin-top:12px">'
+            '<p class="hint" style="margin:0 0 6px"><b>TEST MODE</b> &mdash; simulate the phone approval below:</p>'
+            '<iframe id="testframe" title="Authorize test payment" '
+            'style="width:100&#37;;height:122px;border:1px dashed var(--line);border-radius:8px;background:#0b0e14"></iframe>'
+            '</div>'
+        ) if _is_test else ''
+        _pay_hint = (
+            'You are in TEST mode. Scan the QR with any QR Ph / GCash app, '
+            'then press <b>Authorize Test Payment</b> inside the box below to finish.'
+        ) if _is_test else (
+            'Open <b>GCash</b> on your phone, scan this QR and approve. '
+            'This page refreshes automatically once paid.'
+        )
         return (
             '<div class="divider">or pay online</div>'
             '<label>Instant activation &mdash; &#8369;%d &middot; pay with GCash (scan QR)</label>'
             '<button id="pay" onclick="payActivate()">Pay &amp; Activate &mdash; &#8369;%d</button>'
-            '<p class="hint">Requires internet. After paying, this page activates automatically.</p>'
-            % (_price, _price)
-        )
+            '<div id="paybox" style="display:none;margin-top:14px;text-align:center">'
+            '<img id="qr" alt="Payment QR" style="width:210px;height:210px;border-radius:10px;'
+            'border:1px solid var(--line);background:#fff;padding:8px">'
+            '<p class="hint" id="payhint" style="margin:8px 0 0;text-align:center">' + _pay_hint + '</p>'
+            + _test_ctl +
+            '</div>'
+        ) % (_price, _price)
 
     def _page_html(forced_hwid):
         _owner = (_lic_state.get('owner_email') or '').strip()
@@ -348,7 +371,6 @@ def wire_license_gate():
 
     @app.route('/api/pay/create', methods=['POST'])
     def _pay_create():
-        _sess = _lic_state.get('pay_session') or {}
         if _lic_state['ok']:
             return jsonify(ok=False, message='Already activated.')
         _secret = (_lic_state.get('paymongo_secret') or '').strip()
@@ -360,38 +382,48 @@ def wire_license_gate():
             return jsonify(ok=False, message='License price is not set on this copy.')
         if not _hw:
             return jsonify(ok=False, message='Could not read this PC hardware ID.')
+        import requests
+        _api = 'https://api.paymongo.com/v1'
+        _hdr = _pm_headers(_secret)
         try:
-            import requests
-            _resp = requests.post(
-                'https://api.paymongo.com/v1/checkout_sessions',
-                headers=_pm_headers(_secret),
-                json={'data': {'attributes': {
-                    'description': 'Leiturgia license for PC-%s' % _hw[:12],
-                    'payment_method_types': ['qrph'],
-                    'line_items': [{'currency': 'PHP', 'amount': _price * 100,
-                                    'name': 'Leiturgia License', 'quantity': 1}],
-                    'success_url': 'http://127.0.0.1:5001/api/pay/result?ok=1',
-                    'cancel_url': 'http://127.0.0.1:5001/api/pay/result?ok=0',
-                    'metadata': {'hwid': _hw},
-                }}},
-                timeout=30,
-            )
+            _rpi = requests.post(_api + '/payment_intents', headers=_hdr,
+                                 json={'data': {'attributes': {
+                                     'amount': _price * 100, 'currency': 'PHP',
+                                     'description': 'Leiturgia license for PC-%s' % _hw[:12],
+                                     'payment_method_allowed': ['qrph'],
+                                     'metadata': {'hwid': _hw},
+                                 }}}, timeout=30)
+            _jpi = _rpi.json()
+            if _rpi.status_code >= 400:
+                return jsonify(ok=False, message='PayMongo error: %s'
+                               % _json.dumps(_jpi.get('errors'))[:400])
+            _pi = (_jpi.get('data') or {}).get('id')
+            _ck = ((_jpi.get('data') or {}).get('attributes') or {}).get('client_key')
+            _rpm = requests.post(_api + '/payment_methods', headers=_hdr,
+                                 json={'data': {'attributes': {'type': 'qrph'}}}, timeout=30)
+            if _rpm.status_code >= 400:
+                return jsonify(ok=False, message='PayMongo error: %s'
+                               % _json.dumps(_rpm.json().get('errors'))[:400])
+            _pm = (_rpm.json().get('data') or {}).get('id')
+            _rat = requests.post(_api + '/payment_intents/%s/attach' % _pi, headers=_hdr,
+                                 json={'data': {'attributes': {'payment_method': _pm,
+                                                               'client_key': _ck}}}, timeout=30)
+            _jat = _rat.json()
+            if _rat.status_code >= 400:
+                return jsonify(ok=False, message='PayMongo error: %s'
+                               % _json.dumps(_jat.get('errors'))[:400])
+            _att = ((_jat.get('data') or {}).get('attributes') or {})
+            _code = ((_att.get('next_action') or {}).get('code') or {})
+            _qr = _code.get('image_url') or ''
+            _turl = _code.get('test_url') or ''
         except Exception as e:
             return jsonify(ok=False, message='PayMongo connection error: %s' % e)
-        try:
-            _j = _resp.json()
-        except Exception:
-            return jsonify(ok=False, message='PayMongo bad response (%s)' % _resp.status_code)
-        if _resp.status_code >= 400:
-            _errs = _j.get('errors')
-            return jsonify(ok=False, message='PayMongo error: %s'
-                           % _json.dumps(_errs)[:400])
-        _d = (_j.get('data') or {}).get('attributes', {}) or {}
-        _pi = (_d.get('payment_intent') or {}).get('id')
-        _cs = (_j.get('data') or {}).get('id')
-        _sess.update({'checkout_id': _cs, 'payment_intent': _pi, 'hwid': _hw})
+        if not _pi or not _qr:
+            return jsonify(ok=False, message='Could not start QR payment.')
+        _sess = _lic_state.get('pay_session') or {}
+        _sess.update({'checkout_id': _pi, 'payment_intent': _pi, 'hwid': _hw})
         _lic_state['pay_session'] = _sess
-        return jsonify(ok=True, checkout_url=_d.get('checkout_url', ''), id=_cs)
+        return jsonify(ok=True, id=_pi, qr_image=_qr, test_url=_turl)
 
     @app.route('/api/pay/status')
     def _pay_status():
