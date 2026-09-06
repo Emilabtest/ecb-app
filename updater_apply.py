@@ -109,7 +109,8 @@ def apply_update(install_dir, stage_dir, manifest_path):
     except OSError as e:
         _log('clear error: %s' % e)
 
-    for rel, size, sha in manifest['files']:
+    for entry in manifest['files']:
+        rel, size, sha = entry['path'], entry['size'], entry['sha256']
         parts = rel.split('/') if '/' in rel else rel.split('\\')
         src = os.path.join(stage_dir, *parts)
         dst = _rel_target(install_dir, rel)
