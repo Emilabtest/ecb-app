@@ -547,6 +547,13 @@ def _fix_asset_paths(app_obj):
         app_obj.template_folder = tpl
     if sta and os.path.isdir(sta):
         app_obj.static_folder = sta
+    # In a frozen onefile build app.root_path resolves to the temp extract dir
+    # (_MEIPASS), so Flask's send_from_directory() resolves relative media dirs
+    # (media_manager.videos_dir() -> 'media/videos', media/images) against the
+    # temp folder and every /media/* URL 404s. The app's data folders live next
+    # to the exe (cwd), so repoint root_path there. Templates/static are already
+    # pinned to absolute search paths above, so this only affects media serving.
+    app_obj.root_path = os.path.abspath('.')
 
 
 _fix_asset_paths(app)

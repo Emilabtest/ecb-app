@@ -819,7 +819,7 @@
     .media-bulk-delete-btn { color: #f0a0a0; border-color: #7a3030; }
     .media-bulk-delete-btn:hover { background: rgba(180,50,50,0.2); border-color: #7a3030; color: #f0a0a0; }
     .media-bulk-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .media-file-row.video-row { grid-template-columns: 18px 20px 1fr auto auto auto; }
+    .media-file-row.video-row { grid-template-columns: 18px 20px 1fr auto auto auto auto; }
     .media-file-checkbox { cursor: pointer; }
     .media-in-use-badge {
       display: inline-block; margin-left: 6px; padding: 1px 5px;
@@ -1327,50 +1327,6 @@
       border: 1px solid #1e2f52;
       overflow: hidden;
       position: relative;
-    }
-
-    /* Layer toggle rail — sits OUTSIDE the monitor, to its right */
-    .lp-layer-rail {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
-      padding: 5px 4px;
-      background: #0a1430;
-      border: 1px solid #1e2f52;
-      border-radius: 6px;
-    }
-    .lp-layer-btn {
-      width: 20px;
-      height: 20px;
-      line-height: 20px;
-      padding: 0;
-      border-radius: 4px;
-      border: 1px solid #33518a;
-      background: rgba(9, 18, 36, 0.84);
-      color: #8c9ab5;
-      font-size: 10px;
-      font-weight: 700;
-      font-family: sans-serif;
-      text-align: center;
-      cursor: pointer;
-      transition: background .12s, color .12s, border-color .12s;
-      user-select: none;
-    }
-    .lp-layer-btn:hover { border-color: #4f6faf; color: #c7d4ee; }
-    .lp-layer-btn.active {
-      background: #d4a843;
-      border-color: #d4a843;
-      color: #070f1f;
-    }
-    .lp-layer-btn[data-layer="background"]:not(.active) { color: #6b7c9c; font-size: 7px; }
-    /* Master OFF - destructive, so use red when the layers are actually off. */
-    .lp-layer-btn[data-layer="off"] { color: #b07070; font-size: 7px; }
-    .lp-layer-btn[data-layer="off"].active {
-      background: #c0392b;
-      border-color: #c0392b;
-      color: #fff;
     }
 
     .lp-part {
@@ -2311,25 +2267,10 @@
       <span id="live-status" class="live-status offline" title="Projection: disconnected"></span>
       <span class="rp-section-label" style="margin-bottom:0;">Live Projection</span>
     </div>
-    <!-- Monitor + layer rail side by side (rail sits OUTSIDE the monitor) -->
     <div style="display:flex;align-items:stretch;gap:6px;">
       <div class="live-preview-screen" id="livePreviewScreen">
         <iframe id="livePreviewFrame" src="/ch1" scrolling="no" tabindex="-1"
                 style="position:absolute;top:0;left:0;width:1920px;height:1080px;border:none;pointer-events:none;transform-origin:top left;"></iframe>
-      </div>
-      <!-- Layer toggle rail — outside the monitor so the whole preview is visible.
-           Stacking on screen (bottom → top): background < video < image <
-           message < announcement. OFF is the master kill-switch that hides all
-           content layers (V, I, T, A) at once while keeping the background.
-           Rendered top→down so OFF sits at the top of the rail and BG at the
-           bottom. -->
-      <div class="lp-layer-rail" id="lpLayerRail" title="Toggle projection layers">
-        <button type="button" class="lp-layer-btn" data-layer="off"          title="Turn OFF all content layers (V, I, T, A)">OFF</button>
-        <button type="button" class="lp-layer-btn" data-layer="announcement" title="Announcement">A</button>
-        <button type="button" class="lp-layer-btn" data-layer="message"      title="Message / lyrics">T</button>
-        <button type="button" class="lp-layer-btn" data-layer="image"        title="Image layer">I</button>
-        <button type="button" class="lp-layer-btn" data-layer="video"        title="Video layer">V</button>
-        <button type="button" class="lp-layer-btn"        data-layer="background"   title="Background / theme">BG</button>
       </div>
     </div>
   </div>
@@ -3944,10 +3885,9 @@
       const sel     = f.url === currentUrl ? ' selected' : '';
       const dirType = f.media_type === 'video' ? 'videos' : 'images';
 
-      // Video rows in a video-only list: checkbox for bulk select, "in use"
-      // badge, no per-row ✕ (deletion is bulk-only — TDD §5.5). Image rows
-      // (and any video row rendered outside a video-only list) keep the
-      // original single-row layout with per-row ✕ delete.
+      // Video rows carry the checkbox for bulk select plus a per-row ✕ so
+      // single videos can be removed without the bulk flow. Image rows (and
+      // any video row outside a video-only list) keep the same per-row ✕.
       if (isVideoList && f.media_type === 'video') {
         const checked = selected.has(f.name) ? ' checked' : '';
         const usedBy  = inUse[f.name];
@@ -3963,6 +3903,8 @@
           <span class="media-file-size">${f.size_label}</span>
           <button class="btn-media-use"
                   onclick="_setMediaItem(this.closest('.program-item'),'${f.url}','${f.media_type}');loadMediaListFor(this.closest('.program-item'),this.closest('.program-item').dataset.itemType)">Use</button>
+          <button class="btn-media-remove"
+                  onclick="deleteMediaFile('videos','${f.name}',this.closest('.program-item'))">✕</button>
         </div>`;
       }
       return `<div class="media-file-row${sel}">
@@ -5090,9 +5032,6 @@
         frame.contentWindow.renderState(data);
       }
     } catch (e) {}
-    // After rendering, reflect the projection's active layers onto the rail so
-    // the button(s) for the layer(s) in use turn yellow automatically.
-    _syncLayerRail();
   }
 
   // ── Stage-then-push: monitor FIRST, then the main channels ─────────────────
@@ -5147,7 +5086,6 @@
         frame.contentWindow.renderState(d);
       }
     } catch(e) {}
-    _syncLayerRail();
   });
   _socket.on('media:live',  function (d) {
     _updateChTile(d.channel || _getChannel(), Object.assign({}, d, { type: 'live' }));
@@ -5158,7 +5096,6 @@
         frame.contentWindow.renderState(Object.assign({}, d, { type: 'live' }));
       }
     } catch(e) {}
-    _syncLayerRail();
   });
   _socket.on('timer:show',   function (d) { _lpFrameRender(Object.assign({}, d, { type: 'timer' })); });
   _socket.on('timer:start',  function (d) { _lpFrameRender(Object.assign({}, d, { type: 'timer' })); });
@@ -5594,75 +5531,6 @@
   }
   window.addEventListener('resize', _scalePreviewFrame);
   _scalePreviewFrame();
-
-  // ── Layer toggle rail (right side of the operator monitor) ─────────────────
-  // Toggle a layer on the projection page that the preview iframe loads. The
-  // projection page exports _showLayer/_hideLayer/_activeLayers on window; we
-  // drive them directly (a "background" toggle flips the custom-bg wallpaper).
-  function _toggleLayer(name) {
-    const fw  = (document.getElementById('livePreviewFrame') || {}).contentWindow;
-    const btn = document.querySelector('.lp-layer-btn[data-layer="' + name + '"]');
-    if (!fw || !btn) return;
-    const shouldShow = !btn.classList.contains('active');
-    try {
-      if (name === 'off') {
-        // Master OFF: masks every content layer (V/I/T/A) at once. The DOM keeps
-        // the layers intact, so switching it off again restores everything.
-        fw.document.body.classList.toggle('layers-off', shouldShow);
-      } else if (name === 'background') {
-        const el = fw.document.getElementById('custom-bg');
-        if (el) el.classList.toggle('visible', shouldShow);
-        el && el.classList.toggle('active', shouldShow);
-        // Mask the whole background (theme colors + image) when BG is off.
-        fw.document.body.classList.toggle('bg-off', !shouldShow);
-        if (fw._activeLayers) { if (shouldShow) fw._activeLayers.add('background'); else fw._activeLayers.delete('background'); }
-      } else if (shouldShow) {
-        if (typeof fw._showLayer === 'function') fw._showLayer(name);
-      } else {
-        if (typeof fw._hideLayer === 'function') fw._hideLayer(name);
-      }
-      if (typeof fw._updateMessageBackdrop === 'function') fw._updateMessageBackdrop();
-      // Mirror the toggle to every projection channel via the server, so hiding
-      // a layer on the monitor also removes it from the real output screens.
-      _socket.emit('layer:set', { layer: name, show: shouldShow });
-    } catch(e) {}
-    btn.classList.toggle('active', shouldShow);
-  }
-
-  function _syncLayerRail() {
-    const fw  = (document.getElementById('livePreviewFrame') || {}).contentWindow;
-    if (!fw) return;
-    const active = fw._activeLayers;
-    document.querySelectorAll('.lp-layer-btn').forEach(function (btn) {
-      const n = btn.dataset.layer;
-      if (n === 'off') {
-        // Master OFF is active when the projection body is masked.
-        const fBody = fw.document.body;
-        btn.classList.toggle('active', !!(fBody && fBody.classList.contains('layers-off')));
-      } else if (n === 'background') {
-        const fBody = fw.document.body;
-        // The BG button reflects the whole background layer: on (theme color /
-        // image showing) unless masked to black via body.bg-off.
-        btn.classList.toggle('active', !!(fBody && !fBody.classList.contains('bg-off')));
-      } else if (active && active.has) {
-        btn.classList.toggle('active', active.has(n));
-      } else {
-        const el = fw.document.getElementById('layer-' + n);
-        btn.classList.toggle('active', !!(el && el.classList.contains('active')));
-      }
-    });
-  }
-
-  (function bindLayerRail() {
-    const rail = document.getElementById('lpLayerRail');
-    if (rail) rail.addEventListener('click', function (e) {
-      const btn = e.target.closest('.lp-layer-btn');
-      if (btn) _toggleLayer(btn.dataset.layer);
-    });
-  })();
-
-  // When the monitor iframe loads, reflect its active layers onto the rail.
-  document.getElementById('livePreviewFrame').addEventListener('load', _syncLayerRail);
 
   // ── Channel tile selection ─────────────────────────────────────────────────
   function selectChannel(ch) {

@@ -633,14 +633,11 @@
     applyTheme(state.theme_id || (state.data && state.data.theme_id));
     stopTimer();
 
-    // Remember which layers are currently active so rendering a new type does
-    // NOT clear them — layers are independent and additive. Only an explicit
-    // 'blank' (renderBlank) or a manual operator toggle removes a layer.
-    const savedLayers = new Set(_activeLayers);
-
-    // Non-media renders don't touch layer-video — clear the media dedupe key so
-    // the next video/live push always re-renders (no stale "same media" skip).
-    if (type !== 'video' && type !== 'live') _curMediaKey = null;
+    // One-at-a-time output: every new push replaces whatever is on screen, so
+    // the last sent item is the only thing visible (over the background). The
+    // old additive layer composition is dropped — that stacking is what made
+    // lyrics/videos/images pile up on one display.
+    _clearLayers();
 
     switch (type) {
       case 'text':         renderText(state.data || state);  break;
@@ -651,14 +648,6 @@
       case 'live':         renderLive(state.data || state);   break;
       case 'timer':        renderTimer(state.data || state);  break;
       default:             renderBlank();
-    }
-
-    // Re-apply any layers that were active before this render but which the
-    // render may have dropped (e.g. an announcement kept while a video plays).
-    if (type !== 'blank') {
-      savedLayers.forEach(function (nm) {
-        if (nm !== 'message') { _showLayer(nm); }
-      });
     }
   }
 
