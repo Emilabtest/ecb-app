@@ -5950,6 +5950,53 @@
         }
       }
 
+      // Multi-verse bible: add one thumb per verse (like song stanzas)
+      if (type === 'bible') {
+        const bref   = itemEl.querySelector('.item-bible-ref')?.value?.trim() || '';
+        const bibleText = (itemEl.querySelector('.item-bible-text')?.value || '').trim();
+        const verses = bibleText ? bibleText.split(/\n[ \t]*\n/).map(s => s.trim()).filter(Boolean) : [];
+        if (verses.length > 1) {
+          verses.forEach((vs, vi) => {
+            slideNum++;
+            const isActive = itemEl.id === _activeThumbItemId && vi === _activeThumbStanzaIdx;
+            const thumb = document.createElement('div');
+            thumb.className          = 'strip-thumb' + (isActive ? ' active' : '');
+            thumb.dataset.itemId     = itemEl.id;
+            thumb.dataset.stanzaIdx  = vi;
+            const vsLabel = (vs.match(/^\s*\d+\s*:\s*\d+/) || [vs.slice(0, 24)])[0].trim();
+            const vsBody  = vs.split('\n').map(l => _lpEsc(l)).join('<br>');
+            thumb.innerHTML = _makeThumbHTML(
+              `<div class="stp-title" style="color:#7aade8;font-size:18px;">${_lpEsc(bref)}</div><div class="stp-body">${vsBody}</div>`,
+              `<span class="badge badge-bible-s">${_lpEsc(vsLabel)}</span>`, slideNum
+            );
+            thumb.addEventListener('click', () => {
+              _projItem       = itemEl;
+              _projStanzas    = verses.map(t => ({ type: '__bible_para__', text: t }));
+              _projStanzaIdx  = vi;
+              _projContentMeta = {
+                font_size:      itemEl.querySelector('.item-font-size')?.value      || 'md',
+                text_align:     itemEl.querySelector('.item-text-align')?.value     || 'center',
+                part_font_size: itemEl.querySelector('.item-part-font-size')?.value || 'md',
+                participant:    itemEl.querySelector('.item-participant')?.value     || '',
+                title:          bref || itemEl.querySelector('.item-title')?.value  || '',
+                part:           itemEl.querySelector('.item-part')?.value           || '',
+                font_family:    itemEl.querySelector('.item-font-family')?.value    || 'default',
+                text_bold:      (itemEl.querySelector('.item-text-bold')?.value     || '0') === '1',
+                text_italic:    (itemEl.querySelector('.item-text-italic')?.value   || '0') === '1',
+                text_color:     itemEl.querySelector('.item-text-color')?.value     || '',
+              };
+              document.querySelectorAll('.btn-live.active').forEach(b => b.classList.remove('active'));
+              itemEl.querySelector('.btn-live')?.classList.add('active');
+              _activateStripThumb(itemEl, vi);
+              document.activeElement?.blur();
+              _sendCurrentContentPara(_getChannel());
+            });
+            strip.appendChild(thumb);
+          });
+          continue;
+        }
+      }
+
       // Single thumb (non-song, or song with no lyrics, or single-para content)
       slideNum++;
       let badge = '';
@@ -6204,24 +6251,39 @@
       const ref  = itemEl.querySelector('.item-bible-ref')?.value.trim() || '';
       const lang = itemEl.querySelector('.item-bible-lang')?.value || 'en';
       const text = (itemEl.querySelector('.item-bible-text')?.value || '').trim();
-      const sd   = { type: 'text', title: ref || 'Bible', part, channel: ch, theme_id: _getTheme(),
-                     item_id: itemEl.dataset.itemId, stanza_idx: null };
-      _itemFont(sd, itemEl);
-      if (ref) sd.bible_ref = ref;
-      sd.bible_lang = lang;
-      if (text) {
-        sd.body = text;
-      } else if (ref) {
+      const font_size      = itemEl.querySelector('.item-font-size')?.value      || 'md';
+      const text_align     = itemEl.querySelector('.item-text-align')?.value     || 'center';
+      const part_font_size = itemEl.querySelector('.item-part-font-size')?.value || 'md';
+      const font_family    = itemEl.querySelector('.item-font-family')?.value    || 'default';
+      const text_bold      = (itemEl.querySelector('.item-text-bold')?.value     || '0') === '1';
+      const text_italic    = (itemEl.querySelector('.item-text-italic')?.value   || '0') === '1';
+      const text_color     = itemEl.querySelector('.item-text-color')?.value     || '';
+      const bibleText = text || (async () => {
         try {
           const res  = await fetch(`/api/bible/verse?ref=${encodeURIComponent(ref)}&lang=${encodeURIComponent(lang)}`);
           const data = await res.json();
-          if (data.ok && data.verses && data.verses.length) {
-            sd.body = data.verses.map(v => v.text.trim()).join("\n\n");
-          }
-        } catch (e) { /* ignore */ }
+          return (data.ok && data.verses) ? data.verses.map(v => v.text.trim()).join("\n\n") : '';
+        } catch (e) { return ''; }
+      })();
+      const resolved = await Promise.resolve(bibleText);
+      const verses   = resolved ? resolved.split(/\n[ \t]*\n/).map(s => s.trim()).filter(Boolean) : [];
+      if (verses.length > 1) {
+        _projStanzas     = verses.map(t => ({ type: '__bible_para__', text: t }));
+        _projStanzaIdx   = startFromEnd ? _projStanzas.length - 1 : 0;
+        _projContentMeta = { font_size, text_align, part_font_size, participant: '', title: ref,
+                             part, font_family, text_bold, text_italic, text_color };
+        _activateStripThumb(itemEl, _projStanzaIdx);
+        _sendCurrentContentPara(ch);
+      } else {
+        const sd = { type: 'text', title: ref || 'Bible', part, channel: ch, theme_id: _getTheme(),
+                     item_id: itemEl.dataset.itemId, stanza_idx: null };
+        _itemFont(sd, itemEl);
+        if (ref) sd.bible_ref = ref;
+        sd.bible_lang = lang;
+        if (resolved) sd.body = resolved;
+        _stageThenPush('slide:show', sd);
+        renderLivePreview(sd);
       }
-      _stageThenPush('slide:show', sd);
-      renderLivePreview(sd);
     } else {
       _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
       const participant    = itemEl.querySelector('.item-participant')?.value     || '';
@@ -6434,7 +6496,7 @@
     if (_projStanzaIdx >= _projStanzas.length - 1) { _projNextItem(1); return; }
     _projStanzaIdx++;
     _activateStripThumb(_projItem, _projStanzaIdx);
-    if (_projStanzas[0]?.type === '__content_para__') {
+    if (_projStanzas[0]?.type === '__content_para__' || _projStanzas[0]?.type === '__bible_para__') {
       _sendCurrentContentPara(_getChannel());
     } else {
       _sendCurrentStanza(_getChannel(),
