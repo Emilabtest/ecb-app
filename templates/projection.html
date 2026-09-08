@@ -96,6 +96,17 @@
       white-space: nowrap;
     }
 
+    .slide-verse-ref {
+      font-family: var(--font-body);
+      font-size: clamp(1.2rem, 4vw, 3rem);
+      font-weight: 700;
+      color: var(--proj-gold);
+      letter-spacing: 0.1em;
+      text-align: center;
+      white-space: nowrap;
+      margin-bottom: 1.2rem;
+    }
+
 .slide-part {
       font-family: var(--font-heading);
       font-size: clamp(2.5rem, 10vw, 7.5rem);
@@ -850,6 +861,12 @@
         const pCol = (data.text_color || '').trim();
         const pSt = pCol ? `color:${pCol};` : '';
         html += `<div class="slide-header"><div class="slide-part-label" style="font-size:${pFsVal};${pSt}">${esc(data.part)}</div></div>`;
+      }
+      // Bible verse slides: show the book reference as a header line
+      if (data.is_bible_para && data.title) {
+        const bCol = (data.text_color || '').trim();
+        const bSt = bCol ? `color:${bCol};` : '';
+        html += `<div class="slide-verse-ref" style="${bSt}">${esc(data.title)}</div>`;
       }
       html += `<div class="slide-lines">`;
       (data.body || '').split('\n').forEach(l => {

@@ -5984,6 +5984,7 @@
                 text_bold:      (itemEl.querySelector('.item-text-bold')?.value     || '0') === '1',
                 text_italic:    (itemEl.querySelector('.item-text-italic')?.value   || '0') === '1',
                 text_color:     itemEl.querySelector('.item-text-color')?.value     || '',
+                is_bible_para:  true,
               };
               document.querySelectorAll('.btn-live.active').forEach(b => b.classList.remove('active'));
               itemEl.querySelector('.btn-live')?.classList.add('active');
@@ -6271,7 +6272,7 @@
         _projStanzas     = verses.map(t => ({ type: '__bible_para__', text: t }));
         _projStanzaIdx   = startFromEnd ? _projStanzas.length - 1 : 0;
         _projContentMeta = { font_size, text_align, part_font_size, participant: '', title: ref,
-                             part, font_family, text_bold, text_italic, text_color };
+                             part, font_family, text_bold, text_italic, text_color, is_bible_para: true };
         _activateStripThumb(itemEl, _projStanzaIdx);
         _sendCurrentContentPara(ch);
       } else {
@@ -6468,6 +6469,7 @@
       theme_id: _getTheme(), item_id: _projItem?.dataset.itemId || null,
       stanza_idx: _projStanzaIdx,
       is_content_para: true, para_idx: _projStanzaIdx,
+      is_bible_para: !!m.is_bible_para,
       fit_all: _fitAll(),
       body: para.text, font_size: m.font_size || 'md', text_align: m.text_align || 'center',
       font_family: m.font_family || 'default',
