@@ -152,7 +152,8 @@ def get_reference(reference, lang='en'):
         rows = cur.fetchall()
         if not rows:
             return None
-        verses = [{"chapter": r['chapter'], "verse": r['verse'], "text": r['text']} for r in rows]
+        verses = [{"chapter": r['chapter'], "verse": r['verse'],
+                   "text": "%d:%d %s" % (r['chapter'], r['verse'], r['text'])} for r in rows]
         return {"reference": ref, "verses": verses}
     except Exception:
         return None
