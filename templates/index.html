@@ -1425,42 +1425,6 @@
     .btn-rp-blank:hover { border-color: var(--error); color: var(--error); }
     .btn-rp-blank.feed-active { border-color: #4caf82; color: #4caf82; }
 
-    /* ── OBS-style Controls panel (operator console) ── */
-    .obs-controls {
-      background: #2f3340;
-      border: 1px solid #3a3f4d;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .obs-header {
-      height: 34px; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 8px; font-size: 13px; font-weight: 600; color: #ffffff;
-      background: #2a2e3a; border-bottom: 1px solid #262a35;
-    }
-    .obs-dock {
-      border: none; background: transparent; color: #aab0bf; cursor: pointer;
-      font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 4px;
-    }
-    .obs-dock:hover { color: #ffffff; background: #3a3f4d; }
-    .obs-body { padding: 5px; }
-    .obs-btn {
-      width: 100%; height: 32px; margin-top: 5px;
-      border: none; border-radius: 4px; background: #444856; color: #ffffff;
-      font-size: 13px; cursor: pointer; transition: background .12s;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .obs-btn:first-child { margin-top: 0; }
-    .obs-btn:hover { background: #4d5261; }
-    .obs-btn.active { background: #2855c5; }
-    .obs-camera-row { display: flex; gap: 5px; margin-top: 5px; }
-    .obs-camera-btn { flex: 1; margin-top: 0; }
-    .obs-gear {
-      width: 37px; height: 32px; border: none; border-radius: 4px;
-      background: #444856; color: #ffffff; font-size: 17px; cursor: pointer;
-      transition: background .12s; line-height: 1;
-    }
-    .obs-gear:hover { background: #4d5261; }
-
     /* ── Slide strip (docked footer row) ── */
     .slide-strip {
       flex: 0 0 130px;
@@ -2321,25 +2285,6 @@
 
 <!-- ── Right panel: Live Control ──────────────────────────────────────────── -->
 <aside class="right-panel">
-
-  <!-- OBS-style Controls panel -->
-  <div class="obs-controls">
-    <div class="obs-header">
-      <span>Controls</span>
-      <button class="obs-dock" title="Dock">▢</button>
-    </div>
-    <div class="obs-body">
-      <button type="button" class="obs-btn" data-obs="send-custom" onclick="obsActivate(this);sendCustomOutput()">▶ Send Custom Output</button>
-      <button type="button" class="obs-btn" data-obs="send-ann" onclick="obsActivate(this);sendAnnouncement()">▶ Send Announcement</button>
-      <div class="obs-camera-row">
-        <button type="button" class="obs-btn obs-camera-btn" data-obs="live" onclick="obsActivate(this);livePush()">Push Live Feed</button>
-        <button type="button" class="obs-gear" title="Live / PiP settings" onclick="document.getElementById('liveInputPanel').scrollIntoView({behavior:'smooth'});document.getElementById('pipEnable').focus();">⚙</button>
-      </div>
-      <button type="button" class="obs-btn" data-obs="blank" onclick="obsActivate(this);_projBlank()">■ Blank / Stop</button>
-      <button type="button" class="obs-btn" data-obs="timer" onclick="obsActivate(this);timerStart()">⏱ Start Timer</button>
-      <button type="button" class="obs-btn" data-obs="screen" onclick="obsActivate(this);openScreenConfig()">🔧 Screen Config</button>
-    </div>
-  </div>
 
   <!-- Live preview -->
   <div>
@@ -6553,15 +6498,6 @@
     const data = { channel: ch, seconds: _timerSecs(), type: 'timer' };
     _socket.emit('timer:reset', data);
     renderLivePreview(data);
-  }
-
-  // ── OBS-style Controls active state ─────────────────────────────────────────
-  // Only one action button shows the blue "active" highlight at a time. Clicking
-  // a button moves the highlight to it; a live "stop/blank" clears the highlight
-  // so the panel reflects that nothing is actively pushed.
-  function obsActivate(sel) {
-    document.querySelectorAll('.obs-btn').forEach(function (b) { b.classList.remove('active'); });
-    if (sel) sel.classList.add('active');
   }
 
   // ── Announcement ────────────────────────────────────────────────────────────
