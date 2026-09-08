@@ -5255,6 +5255,7 @@
   var _rpAssignments = {};
   var _rpAspects = {};
   var _rpMons = [];
+  var _rpEdge = false;
   var _projKnown = ['off', 'auto', '16:9', '4:3', '3:2', '1:1', '9:16'];
   var _projOptions = [
     ['off', 'Off'],
@@ -5370,20 +5371,18 @@
       var custVal = _rpCustomVal(ch);
       var outCtrl = '';
       if (/^ch\d+$/i.test(ch)) {
-        var monOpts = '<option value="">Select monitor</option>';
-        (_rpMons || []).forEach(function(m) {
-          var primary = m.primary ? ' (primary)' : '';
-          var lbl = m.label + ' · ' + m.width + '×' + m.height + primary;
-          monOpts += '<option value="' + m.index + '">' + lbl + '</option>';
-        });
+        var defMode = _rpDefaultMode();
+        var selExtend = (defMode === 'extend') ? ' selected' : '';
+        var selWeb    = (defMode === 'web') ? ' selected' : '';
+        var selBoth   = (defMode === 'both') ? ' selected' : '';
         outCtrl = '<div class="rp-out-row">' +
                     '<span class="rp-aspect-tag">Output</span>' +
                     '<select class="rp-mode-sel" data-ch="' + ch + '" onchange="rpModeChange(this, this.closest(\'.rp-ch-row\'))">' +
-                      '<option value="web">Web (browser tab)</option>' +
-                      '<option value="extend">Extend (fullscreen)</option>' +
-                      '<option value="both">Both</option>' +
+                      '<option value="extend"' + selExtend + '>Extend (fullscreen)</option>' +
+                      '<option value="web"' + selWeb + '>Web (browser tab)</option>' +
+                      '<option value="both"' + selBoth + '>Both</option>' +
                     '</select>' +
-                    '<select class="rp-mon-sel" data-ch="' + ch + '" style="display:none;">' + monOpts + '</select>' +
+                    '<select class="rp-mon-sel" data-ch="' + ch + '" style="display:' + (defMode === 'web' ? 'none' : 'block') + ';">' + _rpMonOpts(_rpDefaultMon()) + '</select>' +
                     '<button class="rp-btn-web" data-ch="' + ch + '" title="Open this channel on its own display" onclick="rpPush(this)">&#128279; Open</button>' +
                   '</div>';
       }
@@ -5472,11 +5471,28 @@
     }
   }
 
+  // Default output mode + monitor that PRIORITIZE the extended display:
+  // when there is more than one screen and Edge is available, channels open
+  // fullscreen on the extra (non-primary) monitor instead of a browser tab.
+  function _rpDefaultMon() {
+    if (!_rpMons || !_rpMons.length) return '';
+    var nonPrimary = _rpMons.filter(function(m){ return !m.primary; });
+    var pool = nonPrimary.length ? nonPrimary : _rpMons;
+    var best = pool[0];
+    for (var i = 1; i < pool.length; i++) {
+      if (pool[i].width * pool[i].height > best.width * best.height) best = pool[i];
+    }
+    return best.index;
+  }
+  function _rpDefaultMode() {
+    return (_rpMons.length > 1 && _rpEdge) ? 'extend' : 'web';
+  }
   function _rpMonOpts(selVal) {
+    var def = (selVal === '' || selVal === undefined || selVal === null) ? _rpDefaultMon() : selVal;
     var html = '<option value="">Select monitor</option>';
     (_rpMons || []).forEach(function(m) {
-      var primary = m.primary ? ' (primary)' : '';
-      var sel = (String(m.index) === String(selVal)) ? ' selected' : '';
+      var primary = m.primary ? ' (primary)' : ' (extended)';
+      var sel = (String(m.index) === String(def)) ? ' selected' : '';
       html += '<option value="' + m.index + '"' + sel + '>' + m.label + ' · ' + m.width + '×' + m.height + primary + '</option>';
     });
     return html;
@@ -5500,8 +5516,9 @@
     }
   }
   function _rpFetchMonitors(forceOpts) {
-    fetch('/api/output/monitors').then(function(r){ return r.json(); }).then(function(d) {
+    return fetch('/api/output/monitors').then(function(r){ return r.json(); }).then(function(d) {
       var next = (d && d.monitors) || [];
+      _rpEdge = !!(d && d.edge);
       if (_rpMonsEqual(_rpMons, next) && !forceOpts) return;
       _rpMons = next;
       _rpRefreshMonSelects();
@@ -5521,8 +5538,9 @@
   var _rpMonPoll = null;
   function openScreenConfig() {
     document.getElementById('screenConfigModal').classList.add('open');
-    _rpFetchMonitors(true);
-    _rpFetchChannels();
+    // Load monitors first so the channel grid inherits the extend-screen
+    // defaults (mode + monitor) instead of rendering with no display info.
+    _rpFetchMonitors(true).then(function(){ _rpFetchChannels(); });
     if (_rpMonPoll) clearInterval(_rpMonPoll);
     _rpMonPoll = setInterval(function(){ _rpFetchMonitors(); }, 3000);
   }

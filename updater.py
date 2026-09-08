@@ -184,8 +184,12 @@ def fetch_manifest(base_url, timeout=30):
 
 
 def _join(base_url, rel):
-    rel = rel.lstrip("/").replace("\\", "/")
-    return base_url.rstrip("/") + "/" + rel
+    # GitHub release assets are always served FLAT from the release root
+    # (e.g. .../download/v1.4.1/update.json). The manifest keeps the on-disk
+    # layout in each file path (e.g. data\bible_en.db), so downloads must fetch
+    # each asset by its basename — the subdirectory-shaped URL would 404.
+    name = rel.replace("\\", "/").split("/")[-1]
+    return base_url.rstrip("/") + "/" + name
 
 
 def version_tuple(v):
