@@ -1625,6 +1625,7 @@
     .badge-video-s  { background: #2a1a3a; color: #c07ae8; }
     .badge-image-s  { background: #1a2a1a; color: #7ae87a; }
     .badge-live-s   { background: #3a1a10; color: #e8a07a; }
+    .badge-bible-s  { background: #1a2a3a; color: #7aade8; }
 
     .strip-thumb-title {
       font-size: 11px;
@@ -5962,6 +5963,8 @@
         badge  = `<span class="badge badge-image-s">I</span>`;
       } else if (type === 'live') {
         badge  = `<span class="badge badge-live-s">L</span>`;
+      } else if (type === 'bible') {
+        badge  = `<span class="badge badge-bible-s">B</span>`;
       } else {
         badge  = `<span class="badge badge-part-s">P</span>`;
       }
@@ -6001,6 +6004,11 @@
         stpInner = `<div class="stp-body">${_lpEsc(bodyVal.split('\n')[0] || title)}</div>`;
       } else if (type === 'song') {
         stpInner = `<div class="stp-title" style="color:#8C9AB5;font-size:22px;">no lyrics</div>`;
+      } else if (type === 'bible') {
+        const bref = itemEl.querySelector('.item-bible-ref')?.value?.trim() || '';
+        const bt   = (itemEl.querySelector('.item-bible-text')?.value || '').trim();
+        const bio  = bt ? `<div class="stp-body">${_lpEsc(bt.split('\n')[0])}</div>` : '';
+        stpInner = `<div class="stp-title" style="color:#7aade8;font-size:20px;">${_lpEsc(bref)}</div>${bio}`;
       } else {
         // participant
         const partLabel = itemEl.querySelector('.item-part')?.value || '';
