@@ -1726,14 +1726,14 @@
     <div class="logo-text">Lei<span>turgia</span></div>
   </div>
   <div class="header-actions">
-    <!-- Open main display (ch1) -->
-    <a href="/ch1" target="_blank" class="hdr-icon-btn hdr-display-btn" title="Open main display (ch1)">
+    <!-- Open main display (ch1) — fullscreen on the extended screen -->
+    <button class="hdr-icon-btn hdr-display-btn" title="Open main display (ch1) fullscreen on the extended screen" onclick="openMainDisplay()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
         <polyline points="14 8 17 8 17 11"/><line x1="13" y1="11" x2="17" y2="8"/>
       </svg>
       DISPLAY
-    </a>
+    </button>
     <!-- QR Remote -->
     <button class="hdr-icon-btn" title="Open Remote QR" onclick="openQrModal()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -5375,15 +5375,17 @@
         var selExtend = (defMode === 'extend') ? ' selected' : '';
         var selWeb    = (defMode === 'web') ? ' selected' : '';
         var selBoth   = (defMode === 'both') ? ' selected' : '';
+        var webUrl    = window.location.origin + '/' + ch.toLowerCase() + '?output=1';
         outCtrl = '<div class="rp-out-row">' +
                     '<span class="rp-aspect-tag">Output</span>' +
                     '<select class="rp-mode-sel" data-ch="' + ch + '" onchange="rpModeChange(this, this.closest(\'.rp-ch-row\'))">' +
                       '<option value="extend"' + selExtend + '>Extend (fullscreen)</option>' +
-                      '<option value="web"' + selWeb + '>Web (browser tab)</option>' +
+                      '<option value="web"' + selWeb + '>Web (link)</option>' +
                       '<option value="both"' + selBoth + '>Both</option>' +
                     '</select>' +
                     '<select class="rp-mon-sel" data-ch="' + ch + '" style="display:' + (defMode === 'web' ? 'none' : 'block') + ';">' + _rpMonOpts(_rpDefaultMon()) + '</select>' +
-                    '<button class="rp-btn-web" data-ch="' + ch + '" title="Open this channel on its own display" onclick="rpPush(this)">&#128279; Open</button>' +
+                    '<button class="rp-btn-web" data-ch="' + ch + '" title="Open fullscreen on the chosen monitor, or copy the web link" onclick="rpPush(this)">&#128279; Open</button>' +
+                    '<input class="rp-web-url" type="text" readonly spellcheck="false" value="' + webUrl + '" onclick="this.select();" style="display:' + (defMode === 'web' ? 'block' : 'none') + ';flex:1;min-width:150px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;color:var(--fg);">' +
                   '</div>';
       }
       html += '<div class="rp-ch-row">' +
@@ -5401,8 +5403,11 @@
   }
 
   function rpModeChange(sel, row) {
+    var mode = sel.value;
     var mon = row && row.querySelector('.rp-mon-sel');
-    if (mon) mon.style.display = (sel.value === 'web') ? 'none' : 'block';
+    var url = row && row.querySelector('.rp-web-url');
+    if (mon) mon.style.display = (mode === 'web') ? 'none' : 'block';
+    if (url) url.style.display = (mode === 'extend') ? 'none' : 'block';
   }
 
   function rpPush(btn) {
@@ -5410,7 +5415,7 @@
     if (!ch) return;
     var row = btn.closest('.rp-ch-row');
     var mode = (row && (row.querySelector('.rp-mode-sel') || {}).value) || 'web';
-    var url = window.location.origin + '/' + ch.toLowerCase();
+    var url = window.location.origin + '/' + ch.toLowerCase() + '?output=1';
     if (mode === 'extend' || mode === 'both') {
       var monSel = row && row.querySelector('.rp-mon-sel');
       var monVal = (monSel && monSel.value) || '';
@@ -5424,14 +5429,15 @@
       }).catch(function(){ alert('Failed to open extend display.'); });
     }
     if (mode === 'web' || mode === 'both') {
-      // Open this channel in its own dedicated output window (named per channel,
-      // so pressing again reuses/brings it forward).
-      var features = 'resizable=yes,scrollbars=no,menubar=no,toolbar=no,location=no,status=no';
-      var w = window.open(url, 'leiturgia_output_' + ch.toLowerCase(), features);
-      if (!w) {
-        var a = document.createElement('a');
-        a.href = url; a.target = '_blank'; a.rel = 'noopener';
-        document.body.appendChild(a); a.click(); a.remove();
+      // Web mode only hands over the channel link — a small textbox with the
+      // URL ready to copy (no auto-opened tab / popup).
+      var urlEl = row && row.querySelector('.rp-web-url');
+      if (urlEl) {
+        urlEl.style.display = 'block';
+        urlEl.value = url;
+        urlEl.focus();
+        urlEl.select();
+        try { navigator.clipboard.writeText(urlEl.value); } catch (e) {}
       }
     }
   }
@@ -5483,6 +5489,46 @@
       if (pool[i].width * pool[i].height > best.width * best.height) best = pool[i];
     }
     return best.index;
+  }
+  function _defaultExtendMon(mons) {
+    if (!mons || !mons.length) return null;
+    var nonPrimary = mons.filter(function(m){ return !m.primary; });
+    var pool = nonPrimary.length ? nonPrimary : mons;
+    var best = pool[0];
+    for (var i = 1; i < pool.length; i++) {
+      if (pool[i].width * pool[i].height > best.width * best.height) best = pool[i];
+    }
+    return best;
+  }
+  // Header DISPLAY button: show ch1 fullscreen on the extended (non-primary)
+  // monitor when an extra display + Edge are available; fall back to a normal
+  // web tab otherwise.
+  function openMainDisplay() {
+    var fallback = function() {
+      var u = window.location.origin + '/ch1?output=1';
+      var w = window.open(u, 'leiturgia_output_ch1');
+      if (!w) {
+        var a = document.createElement('a');
+        a.href = u; a.target = '_blank'; a.rel = 'noopener';
+        document.body.appendChild(a); a.click(); a.remove();
+      }
+    };
+    fetch('/api/output/monitors').then(function(r){ return r.json(); }).then(function(d) {
+      var mons = (d && d.monitors) || [];
+      var edge = !!(d && d.edge);
+      var mon = _defaultExtendMon(mons);
+      if (mons.length > 1 && edge && mon) {
+        fetch('/api/output/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel: 'ch1', monitor: mon.index }),
+        }).then(function(r){ return r.json().catch(function(){ return {}; }); }).then(function(dd) {
+          if (dd && dd.status !== 'ok') alert((dd && dd.message) || 'Failed to open extend display.');
+        }).catch(function(){ alert('Failed to open extend display.'); });
+        return;
+      }
+      fallback();
+    }).catch(fallback);
   }
   function _rpDefaultMode() {
     return (_rpMons.length > 1 && _rpEdge) ? 'extend' : 'web';
