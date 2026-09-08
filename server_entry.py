@@ -590,6 +590,10 @@ wire_license_gate()
 # Register the server-side Live Input endpoints (additive; app.pyc untouched).
 live_input.init_app(app)
 
+# Register the Bible verse search endpoints (additive; app.pyc untouched).
+import bible
+bible.init_app(app)
+
 
 def _spawn_stream_child():
     """Launch the dedicated live-stream daemon as a SEPARATE process.

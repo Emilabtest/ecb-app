@@ -94,7 +94,7 @@ def build_bundle(version, dry_dir, stage_dir, manifest_name=MANIFEST_NAME):
     os.makedirs(stage_dir, exist_ok=True)
 
     # Which top-level source files/folders become part of the bundle.
-    include_files = ("Leiturgia.exe", "LeiturgiaServer.exe", "config.json")
+    include_files = ("Leiturgia.exe", "LeiturgiaServer.exe", "config.json", "app.version")
     include_dirs = ("data", "media", "output")
 
     staging = os.path.join(stage_dir, "__src")

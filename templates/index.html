@@ -703,6 +703,7 @@
     .badge-video   { background: #2a1a3a; color: #c07ae8; border: 1px solid #3a1e52; }
     .badge-image   { background: #1a2a1a; color: #7ae87a; border: 1px solid #1e3a1e; }
     .badge-live    { background: #2a1a12; color: #e8a07a; border: 1px solid #4a2818; }
+    .badge-bible   { background: #1a2a3a; color: #7aade8; border: 1px solid #1e3560; }
 
     /* ── Content item formatting toolbar ── */
     .content-toolbar {
@@ -1424,6 +1425,42 @@
     .btn-rp-blank:hover { border-color: var(--error); color: var(--error); }
     .btn-rp-blank.feed-active { border-color: #4caf82; color: #4caf82; }
 
+    /* ── OBS-style Controls panel (operator console) ── */
+    .obs-controls {
+      background: #2f3340;
+      border: 1px solid #3a3f4d;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .obs-header {
+      height: 34px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 8px; font-size: 13px; font-weight: 600; color: #ffffff;
+      background: #2a2e3a; border-bottom: 1px solid #262a35;
+    }
+    .obs-dock {
+      border: none; background: transparent; color: #aab0bf; cursor: pointer;
+      font-size: 15px; line-height: 1; padding: 2px 6px; border-radius: 4px;
+    }
+    .obs-dock:hover { color: #ffffff; background: #3a3f4d; }
+    .obs-body { padding: 5px; }
+    .obs-btn {
+      width: 100%; height: 32px; margin-top: 5px;
+      border: none; border-radius: 4px; background: #444856; color: #ffffff;
+      font-size: 13px; cursor: pointer; transition: background .12s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .obs-btn:first-child { margin-top: 0; }
+    .obs-btn:hover { background: #4d5261; }
+    .obs-btn.active { background: #2855c5; }
+    .obs-camera-row { display: flex; gap: 5px; margin-top: 5px; }
+    .obs-camera-btn { flex: 1; margin-top: 0; }
+    .obs-gear {
+      width: 37px; height: 32px; border: none; border-radius: 4px;
+      background: #444856; color: #ffffff; font-size: 17px; cursor: pointer;
+      transition: background .12s; line-height: 1;
+    }
+    .obs-gear:hover { background: #4d5261; }
+
     /* ── Slide strip (docked footer row) ── */
     .slide-strip {
       flex: 0 0 130px;
@@ -1858,6 +1895,7 @@
         {% set _is_video = _type == "video" %}
         {% set _is_image = _type == "image" %}
         {% set _is_live = _type == "live" %}
+        {% set _is_bible = _type == "bible" %}
         <div class="program-item{{ '' if item.get('enabled', True) else ' disabled' }}" data-index="{{ loop.index0 }}" data-item-type="{{ _type }}" data-item-id="{{ item.get('item_id', '') }}" id="{{ sp.id }}-item-{{ sp_idx.n }}">
         {% set sp_idx.n = sp_idx.n + 1 %}
           <div class="item-header" onclick="selectItem(this)">
@@ -1874,11 +1912,13 @@
                 <div class="item-detail-text">Image{% if item.get('url') %} — {{ item['url'].split('/')[-1] }}{% endif %}</div>
               {% elif _is_live %}
                 <div class="item-detail-text">Live input</div>
+              {% elif _is_bible %}
+                <div class="item-detail-text">{{ item.get('bible_ref','') }}{% if item.get('bible_lang') %} ({{ item.bible_lang }}){% endif %}</div>
               {% else %}
                 {% if item.get('participant') %}<div class="item-detail-text">{{ item.participant }}</div>{% endif %}
               {% endif %}
             </div>
-            <span class="item-type-badge {{ 'badge-song' if _is_song else ('badge-content' if _is_content else ('badge-video' if _is_video else ('badge-image' if _is_image else ('badge-live' if _is_live else 'badge-participant')))) }}">{{ 'Song' if _is_song else ('Content' if _is_content else ('Video' if _is_video else ('Image' if _is_image else ('Live' if _is_live else 'Participant')))) }}</span>
+            <span class="item-type-badge {{ 'badge-song' if _is_song else ('badge-content' if _is_content else ('badge-video' if _is_video else ('badge-image' if _is_image else ('badge-live' if _is_live else ('badge-bible' if _is_bible else 'badge-participant'))))) }}">{{ 'Song' if _is_song else ('Content' if _is_content else ('Video' if _is_video else ('Image' if _is_image else ('Live' if _is_live else ('Bible' if _is_bible else 'Participant'))))) }}</span>
             <button class="duplicate-hint" onclick="event.stopPropagation();duplicateItem(this.closest('.program-item'))" title="Duplicate item">⧉</button>
             <label class="item-enabled-toggle" onclick="event.stopPropagation()" title="Enable/disable this item">
               <input type="checkbox" class="item-enabled" {{ 'checked' if item.get('enabled', True) else '' }}>
@@ -2023,6 +2063,26 @@
             </div>
             <input type="hidden" class="item-title" value="{{ item.title }}">
             <input type="hidden" class="lyrics-key" value="">
+            {% elif _is_bible %}
+            <div class="field" style="margin-bottom:8px">
+              <label>Reference</label>
+              <input type="text" class="item-bible-ref" value="{{ item.get('bible_ref','') }}" placeholder="e.g. John 3:16">
+            </div>
+            <div class="bible-search-row" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
+              <select class="bible-lang-select" data-lang="{{ item.get('bible_lang','en') }}" style="flex:0 0 auto;">
+                <option value="en" {{ 'selected' if item.get('bible_lang','en')=='en' else '' }}>English</option>
+                <option value="tl" {{ 'selected' if item.get('bible_lang')=='tl' else '' }}>Tagalog</option>
+              </select>
+              <input type="text" class="bible-query" placeholder="Bible reference… e.g. John 3:16"
+                     value="" oninput="bibleSuggest(this)" onblur="closeBibleSuggest(this)" onkeydown="bibleSuggestKeydown(event, this)"
+                     style="flex:1;background:var(--card);color:var(--white);border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-size:11px;">
+              <div class="hymnal-suggest"></div>
+              <button class="btn btn-outline" onclick="insertBibleVerse(this)" style="height:38px;white-space:nowrap">Insert Verse</button>
+            </div>
+            <div class="song-lyrics-label" style="display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;">Verse text</div>
+            <textarea class="item-bible-text" rows="10" placeholder="Insert a Bible verse above, or type/paste the text here." style="width:100%;resize:vertical;background:var(--card);color:var(--white);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:inherit;font-size:11px;line-height:1.6;">{{ item.get('bible_text','') }}</textarea>
+            <input type="hidden" class="item-bible-lang" value="{{ item.get('bible_lang','en') }}">
+            <input type="hidden" class="item-bible-ref-saved" value="{{ item.get('bible_ref','') }}">
             {% elif _is_song %}
             <div class="field" style="margin-bottom:8px">
               <label>Part</label>
@@ -2250,6 +2310,7 @@
         <button onclick="addProgramItem('{{ sp.id }}', 'content')">+ Content</button>
         <button onclick="addProgramItem('{{ sp.id }}', 'video')">+ Video</button>
         <button onclick="addProgramItem('{{ sp.id }}', 'image')">+ Image</button>
+        <button onclick="addProgramItem('{{ sp.id }}', 'bible')">+ Bible</button>
       </div>
   </div>
   {% endfor %}
@@ -2260,6 +2321,25 @@
 
 <!-- ── Right panel: Live Control ──────────────────────────────────────────── -->
 <aside class="right-panel">
+
+  <!-- OBS-style Controls panel -->
+  <div class="obs-controls">
+    <div class="obs-header">
+      <span>Controls</span>
+      <button class="obs-dock" title="Dock">▢</button>
+    </div>
+    <div class="obs-body">
+      <button type="button" class="obs-btn" data-obs="send-custom" onclick="obsActivate(this);sendCustomOutput()">▶ Send Custom Output</button>
+      <button type="button" class="obs-btn" data-obs="send-ann" onclick="obsActivate(this);sendAnnouncement()">▶ Send Announcement</button>
+      <div class="obs-camera-row">
+        <button type="button" class="obs-btn obs-camera-btn" data-obs="live" onclick="obsActivate(this);livePush()">Push Live Feed</button>
+        <button type="button" class="obs-gear" title="Live / PiP settings" onclick="document.getElementById('liveInputPanel').scrollIntoView({behavior:'smooth'});document.getElementById('pipEnable').focus();">⚙</button>
+      </div>
+      <button type="button" class="obs-btn" data-obs="blank" onclick="obsActivate(this);_projBlank()">■ Blank / Stop</button>
+      <button type="button" class="obs-btn" data-obs="timer" onclick="obsActivate(this);timerStart()">⏱ Start Timer</button>
+      <button type="button" class="obs-btn" data-obs="screen" onclick="obsActivate(this);openScreenConfig()">🔧 Screen Config</button>
+    </div>
+  </div>
 
   <!-- Live preview -->
   <div>
@@ -2654,6 +2734,27 @@
           <textarea class="item-content" rows="3" placeholder="Free-form text displayed on the slide…" style="width:100%; resize:vertical; min-height:220px;background:var(--card); color:var(--white); border:1px solid var(--border); border-radius:6px; padding:8px; font-family:inherit; font-size:11px;"></textarea>
         </div>
         <input type="hidden" class="lyrics-key" value="">`;
+    } else if (type === "bible") {
+      badgeClass = "badge-bible"; badgeLabel = "Bible";
+      bodyInner = `
+        <div class="form-row single">
+          <div class="field"><label>Reference</label><input type="text" class="item-bible-ref" value="" placeholder="e.g. John 3:16"></div>
+        </div>
+        <div class="bible-search-row" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
+          <select class="bible-lang-select" data-lang="en" style="flex:0 0 auto;">
+            <option value="en">English</option>
+            <option value="tl">Tagalog</option>
+          </select>
+          <input type="text" class="bible-query" placeholder="Bible reference… e.g. John 3:16"
+                 value="" oninput="bibleSuggest(this)" onblur="closeBibleSuggest(this)" onkeydown="bibleSuggestKeydown(event, this)"
+                 style="flex:1;background:var(--card);color:var(--white);border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-size:11px;">
+          <div class="hymnal-suggest"></div>
+          <button class="btn btn-outline" onclick="insertBibleVerse(this)" style="height:38px;white-space:nowrap">Insert Verse</button>
+        </div>
+        <div class="song-lyrics-label" style="display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px;">Verse text <span style="color:var(--muted);font-weight:400">(insert above, then edit if needed)</span></div>
+        <textarea class="item-bible-text" rows="10" placeholder="Insert a Bible verse above, or type/paste the text here." style="width:100%;resize:vertical;background:var(--card);color:var(--white);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:inherit;font-size:11px;line-height:1.6;"></textarea>
+        <input type="hidden" class="item-bible-lang" value="en">
+        <input type="hidden" class="item-bible-ref-saved" value="">`;
     } else if (type === "video") {
       badgeClass = "badge-video"; badgeLabel = "Video";
       bodyInner = `
@@ -3235,6 +3336,14 @@
       const sourceRaw = el.querySelector(".item-live-source")?.value?.trim() || "";
       const source_index = sourceRaw !== "" ? parseInt(sourceRaw, 10) : null;
       return _base({ type: "live", title, device_id, source_index });
+    } else if (type === "bible") {
+      const ref   = el.querySelector(".item-bible-ref")?.value.trim() || "";
+      const text  = (el.querySelector(".item-bible-text")?.value || "").trim();
+      const lang  = el.querySelector(".item-bible-lang")?.value || "en";
+      const savedRef = el.querySelector(".item-bible-ref-saved")?.value || "";
+      const item = { type: "bible", title: ref || savedRef || "Bible", bible_ref: ref || savedRef,
+                     bible_lang: lang, bible_text: text };
+      return _base(item);
     } else {
       const part        = el.querySelector(".item-part")?.value        || "";
       const participant = el.querySelector(".item-participant")?.value || "";
@@ -4837,6 +4946,98 @@
     dateInput.value = today.toISOString().split("T")[0];
   }
 
+  // ── Bible reference autocomplete ──────────────────────────────────────────
+  let _bibleTimer = null;
+
+  function bibleSuggest(input) {
+    const row  = input.closest(".bible-search-row");
+    const drop = row.querySelector(".hymnal-suggest");
+    const q    = input.value.trim();
+    clearTimeout(_bibleTimer);
+    if (!q) { drop.classList.remove("open"); return; }
+
+    _bibleTimer = setTimeout(async () => {
+      const lang = row.querySelector(".bible-lang-select")?.value || "en";
+      const res  = await fetch(`/api/bible/search?q=${encodeURIComponent(q)}&lang=${lang}`);
+      const data = await res.json();
+      if (!data.length) { drop.classList.remove("open"); return; }
+
+      drop.innerHTML = data.map(b => `
+        <div class="hymnal-suggest-item" onmousedown="pickBible(this)"
+             data-name="${b.name}" data-osis="${b.osis}" data-number="${b.number}">
+          <span class="hymnal-suggest-num">${b.number}</span>
+          <span class="hymnal-suggest-title">${b.name}</span>
+        </div>`).join("");
+
+      const rect = input.getBoundingClientRect();
+      drop.style.top   = `${rect.bottom + 4}px`;
+      drop.style.left  = `${rect.left}px`;
+      drop.style.width = `${Math.max(rect.width, 280)}px`;
+      drop.classList.add("open");
+    }, 250);
+  }
+
+  function pickBible(item) {
+    const row   = item.closest(".bible-search-row");
+    const input = row.querySelector(".bible-query");
+    const drop  = row.querySelector(".hymnal-suggest");
+    input.value = item.dataset.name;
+    drop.classList.remove("open");
+  }
+
+  function closeBibleSuggest(input) {
+    setTimeout(() => {
+      const drop = input.closest(".bible-search-row").querySelector(".hymnal-suggest");
+      drop.classList.remove("open");
+    }, 200);
+  }
+
+  function bibleSuggestKeydown(e, input) {
+    if (e.key !== "Enter") return;
+    const drop  = input.closest(".bible-search-row").querySelector(".hymnal-suggest");
+    const first = drop.querySelector(".hymnal-suggest-item");
+    if (drop.classList.contains("open") && first) {
+      e.preventDefault();
+      pickBible(first);
+    }
+  }
+
+  async function insertBibleVerse(btn) {
+    const row  = btn.closest(".bible-search-row");
+    const input = row.querySelector(".bible-query");
+    const lang  = row.querySelector(".bible-lang-select")?.value || "en";
+    const ref   = input.value.trim();
+    if (!ref) return;
+
+    const itemEl  = btn.closest(".program-item");
+    const refEl   = itemEl?.querySelector(".item-bible-ref");
+    const textEl  = itemEl?.querySelector(".item-bible-text");
+    const langEl  = itemEl?.querySelector(".item-bible-lang");
+    const savedEl = itemEl?.querySelector(".item-bible-ref-saved");
+    if (!textEl) return;
+
+    btn.disabled = true;
+    try {
+      const res  = await fetch(`/api/bible/verse?ref=${encodeURIComponent(ref)}&lang=${lang}`);
+      const data = await res.json();
+      if (!data.ok) { toast(data.message || "Verse not found", "error"); return; }
+      const text = data.verses.map(v => v.text.trim()).join("\n\n");
+      if (refEl) refEl.value = ref;
+      if (savedEl) savedEl.value = ref;
+      if (langEl) langEl.value = lang;
+      textEl.value = text;
+      if (itemEl) {
+        const titleEl = itemEl.querySelector(".item-title-text");
+        if (titleEl) titleEl.textContent = ref;
+      }
+      toast(`${data.reference} inserted (${data.verses.length} verse${data.verses.length > 1 ? "s" : ""})`, "ok");
+    } catch (err) {
+      toast("Failed to fetch verse", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   // ── Hymnal title autocomplete ─────────────────────────────────────────────
   let _suggestTimer = null;
 
@@ -6045,6 +6246,17 @@
       if (sourceRaw !== '') sd.source_index = parseInt(sourceRaw, 10);
       _stageThenPush('media:live', sd);
       renderLivePreview({ type: 'live', data: sd });
+    } else if (type === 'bible') {
+      _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
+      const ref  = itemEl.querySelector('.item-bible-ref')?.value.trim() || '';
+      const text = (itemEl.querySelector('.item-bible-text')?.value || '').trim();
+      const sd   = { type: 'text', title: ref || 'Bible', part, channel: ch, theme_id: _getTheme(),
+                     item_id: itemEl.dataset.itemId, stanza_idx: null };
+      _itemFont(sd, itemEl);
+      if (ref) sd.bible_ref = ref;
+      if (text) { sd.body = text; }
+      _stageThenPush('slide:show', sd);
+      renderLivePreview(sd);
     } else {
       _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
       const participant    = itemEl.querySelector('.item-participant')?.value     || '';
@@ -6341,6 +6553,15 @@
     const data = { channel: ch, seconds: _timerSecs(), type: 'timer' };
     _socket.emit('timer:reset', data);
     renderLivePreview(data);
+  }
+
+  // ── OBS-style Controls active state ─────────────────────────────────────────
+  // Only one action button shows the blue "active" highlight at a time. Clicking
+  // a button moves the highlight to it; a live "stop/blank" clears the highlight
+  // so the panel reflects that nothing is actively pushed.
+  function obsActivate(sel) {
+    document.querySelectorAll('.obs-btn').forEach(function (b) { b.classList.remove('active'); });
+    if (sel) sel.classList.add('active');
   }
 
   // ── Announcement ────────────────────────────────────────────────────────────
