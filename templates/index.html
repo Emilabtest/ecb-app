@@ -6194,12 +6194,24 @@
     } else if (type === 'bible') {
       _projItem = itemEl; _projStanzas = []; _projStanzaIdx = 0;
       const ref  = itemEl.querySelector('.item-bible-ref')?.value.trim() || '';
+      const lang = itemEl.querySelector('.item-bible-lang')?.value || 'en';
       const text = (itemEl.querySelector('.item-bible-text')?.value || '').trim();
       const sd   = { type: 'text', title: ref || 'Bible', part, channel: ch, theme_id: _getTheme(),
                      item_id: itemEl.dataset.itemId, stanza_idx: null };
       _itemFont(sd, itemEl);
       if (ref) sd.bible_ref = ref;
-      if (text) { sd.body = text; }
+      sd.bible_lang = lang;
+      if (text) {
+        sd.body = text;
+      } else if (ref) {
+        try {
+          const res  = await fetch(`/api/bible/verse?ref=${encodeURIComponent(ref)}&lang=${encodeURIComponent(lang)}`);
+          const data = await res.json();
+          if (data.ok && data.verses && data.verses.length) {
+            sd.body = data.verses.map(v => v.text.trim()).join("\n\n");
+          }
+        } catch (e) { /* ignore */ }
+      }
       _stageThenPush('slide:show', sd);
       renderLivePreview(sd);
     } else {
