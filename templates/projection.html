@@ -1082,6 +1082,16 @@
                 e.target.unMute();
                 e.target.setVolume(100);
                 socket.emit('media:status', { channel: CHANNEL, audio: 'ok' });
+                // Like the local <video> path: unmuting inside a context
+                // without sound-autoplay permission can pause playback.
+                // Recover by going muted and resuming the picture.
+                setTimeout(function () {
+                  if (e.target.getPlayerState && e.target.getPlayerState() === YT.PlayerState.PAUSED) {
+                    e.target.mute();
+                    e.target.playVideo();
+                    socket.emit('media:status', { channel: CHANNEL, audio: 'muted' });
+                  }
+                }, 250);
               }
             },
             onError: function (e) {
@@ -1107,10 +1117,29 @@
       vid.style.cssText = 'width:100%;height:100%;object-fit:contain;background:transparent;';
       slide.appendChild(vid);
 
+      const wantAudio = (data.mute !== true);
       vid.play()
         .then(() => {
+          if (!wantAudio) {
+            // Explicitly muted — keep it silent and playing.
+            socket.emit('media:status', { channel: CHANNEL, audio: 'muted' });
+            return;
+          }
           vid.muted = false;
-          socket.emit('media:status', { channel: CHANNEL, audio: 'ok' });
+          // Chrome pauses playback when unmuting inside a context without
+          // sound-autoplay permission (e.g. /ch1 embedded in the custom
+          // output iframe). If that happens, fall back to muted playback so
+          // the video keeps playing instead of freezing.
+          setTimeout(function () {
+            if (vid.paused && !vid.ended) {
+              vid.muted = true;
+              vid.play()
+                .then(() => socket.emit('media:status', { channel: CHANNEL, audio: 'muted' }))
+                .catch(() => socket.emit('media:status', { channel: CHANNEL, audio: 'blocked' }));
+              return;
+            }
+            socket.emit('media:status', { channel: CHANNEL, audio: 'ok' });
+          }, 250);
         })
         .catch(() => {
           // Stay muted — video still plays silently (acceptable on Smart TVs)
