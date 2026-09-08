@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="330 90 460 460" role="img" aria-label="ECB Worship App">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0B1F3A"/>
+      <stop offset="1" stop-color="#274D76"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#FFF4C7" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#D8AD4C" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(600 280)">
+    <circle r="190" fill="url(#sky)"/>
+    <circle cy="-25" r="150" fill="url(#glow)"/>
+    <path d="M0-128v105M-49-76h98" stroke="#FFF4C7" stroke-width="15" stroke-linecap="round"/>
+    <path d="M0-128v105M-49-76h98" stroke="#D8AD4C" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-120 77c18-25 44-25 62-7 13-35 66-35 79 0 19-20 52-17 66 7 25-10 55 8 55 34h-317c0-25 27-42 55-34z" fill="#FFFFFF"/>
+    <path d="M-110 111h220" stroke="#D8AD4C" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+    <path d="M-119-7l8 15 17 2-13 11 4 17-16-8-15 8 3-17-12-11 17-2zM116-7l7 15 17 2-13 11 4 17-15-8-16 8 3-17-12-11 17-2z" fill="#FFF4C7"/>
+  </g>
+</svg>

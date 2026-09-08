@@ -1,0 +1,30 @@
+# Runtime / machine-specific
+config.json
+license.dat
+cert/
+media/
+output/
+data/broadcast.json
+
+# Build artifacts
+build/
+dist/
+stage_*/
+recovery_build/
+__pycache__/
+*.py[cod]
+*.log
+
+# Recovery / dev-only scripts
+_x*
+_app_test*
+_boottest*
+_diag*
+_eio_test*
+_ep_test*
+dump_env.py
+clean_templates/
+
+# Packaging
+LeiturgiaServer.original.exe
+*.spec

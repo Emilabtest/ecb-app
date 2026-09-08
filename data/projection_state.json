@@ -1,0 +1,21 @@
+{
+  "ch1": {
+    "type": "text",
+    "data": {
+      "type": "text",
+      "title": "Opening Prayer",
+      "part": "Opening Prayer",
+      "channel": "ch1",
+      "theme_id": "default",
+      "item_id": "sp-001",
+      "stanza_idx": null,
+      "font_size": "lg",
+      "text_align": "center",
+      "font_family": "default",
+      "text_bold": false,
+      "text_italic": false,
+      "part_font_size": "md"
+    },
+    "theme_id": "default"
+  }
+}

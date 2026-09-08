@@ -1,0 +1,15 @@
+{
+  "main": [
+    "ch1"
+  ],
+  "order_of_service": [
+    "ch2"
+  ],
+  "timer": [
+    "ch3"
+  ],
+  "announcement": [
+    "ch4"
+  ],
+  "custom": []
+}

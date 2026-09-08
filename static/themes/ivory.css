@@ -1,0 +1,11 @@
+﻿:root {
+  --proj-bg: #f7f3e8;
+  --proj-dark: #ece4d0;
+  --proj-white: #2c2c26;
+  --proj-off-white: #3a3a32;
+  --proj-gold: #9a7b2f;
+  --proj-gold-lt: #b8973f;
+  --proj-muted: #6f6a58;
+  --font-body: "Segoe UI", Arial, sans-serif;
+  --font-heading: "Segoe UI", Arial, sans-serif;
+}

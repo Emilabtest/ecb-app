@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Custom Output — {{ channel }}</title>
+  <script src="/static/socket.io.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: #000000;
+      color: #ffffff;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #proj-frame {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #000; overflow: hidden;
+    }
+    #proj-content {
+      width: 100vw; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      transform-origin: center center;
+    }
+
+    #content {
+      max-width: 85%;
+      text-align: center;
+    }
+
+    #text {
+      font-size: clamp(2rem, 5.5vw, 7rem);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      transition: opacity 0.4s;
+    }
+
+    #text.blank {
+      font-size: clamp(1rem, 2vw, 2rem);
+      opacity: 0.2;
+      color: #d4a843;
+      letter-spacing: 0.1em;
+      font-style: italic;
+    }
+
+    /* ── Picture-in-Picture live box ──
+       Text stays full-screen; the live feed mounts in a small fixed-size box in
+       a corner. Config (on/off, corner, size) rides along the media:live data
+       sent by the Live panel — the server relays it verbatim. */
+    #pip-box {
+      position: absolute;
+      z-index: 100;
+      display: none;
+      background: #000;
+      border: 2px solid rgba(255,255,255,0.85);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.55);
+      line-height: 0;
+    }
+    #pip-box.visible { display: block; }
+    #pip-box img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    #pip-box .pip-live-tag {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.65);
+      color: #d4a843;
+      padding: 2px 7px;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+    /* Corners */
+    #pip-box.corner-tr { top: 18px; right: 18px; }
+    #pip-box.corner-tl { top: 18px; left: 18px; }
+    #pip-box.corner-br { bottom: 18px; right: 18px; }
+    #pip-box.corner-bl { bottom: 18px; left: 18px; }
+    /* Sizes — 16:9 keeps the camera aspect */
+    #pip-box.size-sm { width: 26vw; max-width: 360px; aspect-ratio: 16 / 9; }
+    #pip-box.size-md { width: 36vw; max-width: 500px; aspect-ratio: 16 / 9; }
+    #pip-box.size-lg { width: 48vw; max-width: 680px; aspect-ratio: 16 / 9; }
+
+    /* ── Studio controls (right-hand panel) ── */
+    #controls-btn {
+      position: fixed; bottom: 20px; right: 16px; z-index: 99998;
+      width: auto; height: 42px; padding: 0 16px;
+      border-radius: 22px; border: 1px solid rgba(255,255,255,.8);
+      background: rgba(0,0,0,.78); color: #fff;
+      font-size: 13px; letter-spacing: .06em; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0,0,0,.45);
+    }
+    #controls-btn:hover { background: rgba(0,0,0,.9); }
+    #controls-btn.open { background: #d4a843; color: #111923; border-color: #d4a843; }
+    #controls-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 305px; z-index: 99990;
+      background: rgba(12,16,24,0.97);
+      border-left: 1px solid #344252;
+      color: #e8edf3;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 14px 14px 24px;
+      overflow-y: auto;
+      transform: translateX(105%);
+      transition: transform .18s ease;
+    }
+    #controls-panel.open { transform: translateX(0); }
+    .cp-label { color: #91a0b2; font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 800; margin: 14px 0 9px; }
+    .cp-label:first-child { margin-top: 4px; }
+    .cp-section { padding-bottom: 10px; margin-bottom: 6px; border-bottom: 1px solid #23303f; }
+    .cp-section:last-child { border: 0; }
+    .cp-row { display: flex; justify-content: space-between; align-items: center; color: #c9d3de; padding: 7px 0; }
+    .cp-st { color: #45c58a; } .cp-st.bad { color: #f06a5f; }
+    .cp-btn { border: 1px solid #344252; background: #1f2733; color: #e8edf3; padding: 9px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
+    .cp-btn:hover { background: #2a3545; }
+    .cp-btn.gold { background: #d8ad4c; color: #111923; border-color: #d8ad4c; }
+    .cp-btn.red { background: #57252b; border-color: #87404a; }
+    .cp-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cp-btns.one { grid-template-columns: 1fr; }
+    .cp-dest { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
+    .cp-dest button { border: 1px solid #344252; background: #1f2733; color: #91a0b2; padding: 8px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; }
+    .cp-dest button.active { background: #d8ad4c; color: #111923; border-color: #d8ad4c; }
+    .cp-field { display: grid; gap: 4px; margin-bottom: 8px; }
+    .cp-field input { width: 100%; padding: 8px 9px; border: 1px solid #344252; border-radius: 6px; background: #10151d; color: #e8edf3; font: inherit; font-size: 12px; }
+    .cp-field label { color: #91a0b2; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+    .cp-brow { display: flex; gap: 8px; align-items: center; }
+    .cp-brow .cp-btn { flex: 1; }
+    #cpBcastGo.live { background: #57252b; border-color: #87404a; }
+    .cp-pill { border-radius: 20px; padding: 3px 10px; font-size: 10px; font-weight: 800; letter-spacing: .1em; white-space: nowrap; }
+    .cp-pill.idle { background: #3a3f4d; color: #cfd6e0; }
+    .cp-pill.connecting { background: #4a3d1f; color: #e8c06a; }
+    .cp-pill.live { background: #1f4a2a; color: #7fe0a8; }
+    .cp-note { color: #91a0b2; font-size: 10px; line-height: 1.5; margin-top: 9px; }
+  </style>
+</head>
+<body>
+
+<div id="proj-frame">
+<div id="proj-content">
+<div id="content">
+  {% if announcement %}
+    <div id="text">{{ announcement }}</div>
+  {% else %}
+    <div id="text" class="blank">Custom Output</div>
+  {% endif %}
+</div>
+
+<!-- Main projection mirror feed: mounts the actual main projection page
+     (ch1) so the custom output can reuse everything the congregation screen
+     is showing — lyrics, slides, media, themes. Hidden until the operator
+     clicks the button. -->
+<iframe id="main-mirror" title="Main projection" src="" allow="autoplay; fullscreen"
+        style="position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#000;"></iframe>
+
+<!-- Picture-in-Picture live box (hidden until a media:live push arrives) -->
+<div id="pip-box" class="corner-tr size-md">
+  <span class="pip-live-tag">LIVE</span>
+  <img id="pip-img" alt="">
+</div>
+</div>
+</div>
+
+<script>
+  const CHANNEL = "{{ channel }}";
+  const socket  = io();
+
+  const textEl = document.getElementById('text');
+
+  const _FAM_MAP = {
+    default: undefined,
+    serif:   "'Georgia', 'Times New Roman', serif",
+    sans:    "'Segoe UI', Arial, sans-serif",
+    script:  "'Brush Script MT', 'Segoe Script', cursive",
+  };
+
+  function _applyFont(data) {
+    const ffVal = _FAM_MAP[data.font_family];
+    const fwVal = data.text_bold ? 'bold' : 'normal';
+    const fiVal = data.text_italic ? 'italic' : 'normal';
+    textEl.style.fontWeight = fwVal;
+    textEl.style.fontStyle = fiVal;
+    if (ffVal) textEl.style.fontFamily = ffVal;
+    else textEl.style.removeProperty('font-family');
+    if (data.text_color) textEl.style.color = data.text_color;
+    else textEl.style.removeProperty('color');
+  }
+
+  socket.on('connect', () => {
+    socket.emit('join', { channel: CHANNEL });
+  });
+
+  socket.on('custom:update', (data) => {
+    textEl.textContent = data.text || '';
+    textEl.classList.remove('blank');
+    _applyFont(data);
+  });
+
+  socket.on('custom:blank', () => {
+    textEl.textContent = 'Custom Output';
+    textEl.classList.add('blank');
+    _applyFont({});
+  });
+
+  // ── Picture-in-Picture live overlay ────────────────────────────────────────
+  // The Live panel pushes media:live with pip_* settings; the server relays the
+  // whole payload verbatim to this channel room. Show/hide a small live box in a
+  // corner while the full-screen custom text keeps its spot.
+  const pipBox = document.getElementById('pip-box');
+  const pipImg = document.getElementById('pip-img');
+
+  socket.on('media:live', (data) => {
+    const cfg = data || {};
+    // Operator "Show/Hide feed" command → mirror/un-mirror the main projection.
+    if (cfg.mirror === 'on' || cfg.mirror === 'off') {
+      _setMirror(cfg.mirror === 'on');
+      return;
+    }
+    if (!pipBox || !pipImg) return;
+    const on   = cfg.pip_enable === true;
+    const idx  = cfg.source_index;
+    if (!on || idx === undefined || idx === null || idx === '') {
+      pipImg.src = '';
+      pipBox.classList.remove('visible');
+      return;
+    }
+    // Apply corner / size from the payload (safe defaults when absent).
+    const corner = ['tr', 'tl', 'br', 'bl'].indexOf(cfg.pip_corner) >= 0 ? cfg.pip_corner : 'tr';
+    const size   = ['sm', 'md', 'lg'].indexOf(cfg.pip_size) >= 0 ? cfg.pip_size : 'md';
+    ['corner-tr', 'corner-tl', 'corner-br', 'corner-bl'].forEach((c) => pipBox.classList.remove(c));
+    ['size-sm', 'size-md', 'size-lg'].forEach((s) => pipBox.classList.remove(s));
+    pipBox.classList.add('corner-' + corner);
+    pipBox.classList.add('size-' + size);
+    pipBox.classList.add('visible');
+    pipImg.src = 'http://' + window.location.hostname + ':5002/live/feed/' + encodeURIComponent(idx) + '.mjpeg';
+  });
+
+  // Live stop on this channel → blank the PiP again.
+  socket.on('slide:blank', (d) => {
+    if (pipBox && pipImg) { pipImg.src = ''; pipBox.classList.remove('visible'); }
+  });
+
+  socket.on('roles:updated', (data) => {
+    const newRole = (data.assignments || {})[CHANNEL];
+    if (newRole && newRole !== '{{ role }}') { window.location.reload(); }
+  });
+
+  // ── Projection aspect ratio ──────────────────────────────────────────
+  var _projAspect = '{{ aspect }}';
+
+  function _projApplyAspect(aspect) {
+    if (aspect !== undefined) _projAspect = aspect;
+    var c = document.getElementById('proj-content');
+    if (!c) return;
+    c.style.width = '';
+    c.style.height = '';
+    if (!_projAspect || _projAspect === 'off' || _projAspect === 'auto') return;
+    var m = /(\d+)\s*[:xX]\s*(\d+)/.exec(String(_projAspect));
+    if (!m) return;
+    var w = +m[1], h = +m[2];
+    var W = Math.min(window.innerWidth, window.innerHeight * w / h);
+    var H = W * h / w;
+    c.style.width = W + 'px';
+    c.style.height = H + 'px';
+  }
+  _projApplyAspect();
+
+  socket.on('aspect:update', function (data) {
+    _projApplyAspect(data && data.aspect);
+  });
+
+  var _projResizeRaf;
+  window.addEventListener('resize', function () {
+    cancelAnimationFrame(_projResizeRaf);
+    _projResizeRaf = requestAnimationFrame(function () { _projApplyAspect(); });
+  });
+</script>
+<div id="output-close" style="position:fixed;top:10px;right:14px;z-index:99999;display:flex;gap:8px;align-items:center;">
+  <button onclick="outputClose()" title="Close output" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.8);background:rgba(0,0,0,.75);color:#fff;font-size:18px;line-height:1;cursor:pointer;">&#10005;</button>
+</div>
+<button onclick="toggleControls()" id="controls-btn" title="Toggle Studio controls">&#9881; Controls</button>
+<script>
+  // Show or hide the mirrored main projection (ch1) feed. Triggered by the
+  // "Show feed"/"Hide feed" button on the operator console via a media:live
+  // command carrying { mirror: 'on' | 'off' } that the server relays verbatim.
+  function _setMirror(on) {
+    var frame = document.getElementById('main-mirror');
+    if (!frame) return;
+    if (on) {
+      frame.style.display = 'block';
+      frame.src = '/ch1';
+    } else {
+      frame.style.display = 'none';
+      frame.removeAttribute('src');
+    }
+  }
+</script>
+<script>
+  function outputClose(){
+    try {
+      fetch('/api/output/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: CHANNEL })
+      }).catch(function(){});
+    } catch(e){}
+    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+  }
+</script>
+<!-- Auto-reload when the server ships a new build (stale tabs self-heal). -->
+<script>
+(function () {
+  var seen = null;
+  function poll() {
+    fetch('/api/server_version?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.build) return;
+        var meta = document.querySelector('meta[name="x-build"]');
+        if (meta && meta.content && meta.content !== j.build) { location.reload(); return; }
+        if (!meta || !meta.content) { if (seen !== null && seen !== j.build) location.reload(); seen = j.build; }
+      })
+      .catch(function () {});
+    setTimeout(poll, 5000);
+  }
+  setTimeout(poll, 2000);
+})();
+</script>
+<div id="controls-panel">
+  <div class="cp-section">
+    <div class="cp-label">Live controls</div>
+    <div class="cp-btns">
+      <button class="cp-btn gold" id="cpGoLive">&#9654; Go live</button>
+      <button class="cp-btn red" id="cpBlackout">Blackout</button>
+    </div>
+  </div>
+  <div class="cp-section">
+    <div class="cp-label">Broadcast · Facebook / YouTube</div>
+    <div class="cp-dest">
+      <button class="active" data-dest="facebook" id="cpDestFb">Facebook</button>
+      <button data-dest="youtube" id="cpDestYt">YouTube</button>
+    </div>
+    <div class="cp-field"><label>Broadcast title</label><input id="cpBcastTitle" type="text" placeholder="e.g. Saturday Worship Service"></div>
+    <div class="cp-field"><label>RTMP server URL</label><input id="cpBcastRtmp" type="text" placeholder="rtmps://live-api-s.facebook.com:443/rtmp"></div>
+    <div class="cp-field"><label>Stream key</label><input id="cpBcastKey" type="password" placeholder="Paste stream key from the platform"></div>
+    <div class="cp-brow">
+      <button class="cp-btn gold" id="cpBcastGo">&#9654; Start broadcast</button>
+      <span class="cp-pill idle" id="cpBcastPill">OFFLINE</span>
+    </div>
+    <div class="cp-note">TEST MODE — simulated broadcast status pa lang. RTMP + stream key ay para sa real push (OBS / ffmpeg) mamaya.</div>
+  </div>
+  <div class="cp-section">
+    <div class="cp-label">Stream status</div>
+    <div class="cp-row"><span>Connection</span><b id="cpConn" class="cp-st bad">Offline</b></div>
+    <div class="cp-row"><span>Source</span><b class="cp-st">Custom Output (ch1)</b></div>
+    <div class="cp-row"><span>Audio</span><b class="cp-st">Connected</b></div>
+  </div>
+  <div class="cp-section">
+    <div class="cp-label">Current slide</div>
+    <div class="cp-row"><span>Title</span><b id="cpCurTitle">&mdash;</b></div>
+    <div class="cp-row"><span>Slot</span><b id="cpCurType">&mdash;</b></div>
+    <div class="cp-btns one"><button class="cp-btn" onclick="window.open('/','ecb_console')">Open console &amp; edit</button></div>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+
+  function toast(msg) {
+    var el = document.createElement('div');
+    el.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#2a3340;border:1px solid #344252;color:#e8edf3;padding:9px 16px;border-radius:6px;z-index:99999;font-family:\'Segoe UI\',Arial,sans-serif;font-size:12px;';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 2200);
+  }
+
+  window.toggleControls = function () {
+    var panel = $('controls-panel');
+    var btn = $('controls-btn');
+    var open = panel.classList.toggle('open');
+    if (btn) { btn.classList.toggle('open', open); btn.textContent = open ? '✕ Close' : '⚙ Controls'; }
+  };
+
+  // ── Broadcast (custom output → Facebook / YouTube) ────────────────────────
+  const RTMP_DEFAULTS = {
+    facebook: 'rtmps://live-api-s.facebook.com:443/rtmp',
+    youtube:  'rtmp://a.rtmp.youtube.com/live2',
+  };
+  const destBtns = { facebook: $('cpDestFb'), youtube: $('cpDestYt') };
+  let curDest = 'facebook';
+  let bcState = 'idle';
+
+  function setDest(d) {
+    curDest = (d === 'youtube') ? 'youtube' : 'facebook';
+    Object.keys(destBtns).forEach(function (k) { destBtns[k].classList.toggle('active', k === curDest); });
+    var rtmpEl = $('cpBcastRtmp');
+    var v = (rtmpEl.value || '').trim();
+    if (!v || v === RTMP_DEFAULTS.facebook || v === RTMP_DEFAULTS.youtube) rtmpEl.value = RTMP_DEFAULTS[curDest];
+  }
+
+  function paintBroadcast(s) {
+    bcState = s.state || 'idle';
+    var live = bcState === 'live';
+    var connecting = bcState === 'connecting';
+    $('cpBcastGo').textContent = live ? '■ Stop broadcast' : '▶ Start broadcast';
+    $('cpBcastGo').classList.toggle('live', live);
+    var dest = (s.destination === 'youtube') ? 'YouTube' : 'Facebook';
+    if (live) { $('cpBcastPill').textContent = '● LIVE · ' + dest; $('cpBcastPill').className = 'cp-pill live'; }
+    else if (connecting) { $('cpBcastPill').textContent = 'CONNECTING…'; $('cpBcastPill').className = 'cp-pill connecting'; }
+    else { $('cpBcastPill').textContent = 'OFFLINE'; $('cpBcastPill').className = 'cp-pill idle'; }
+  }
+
+  async function loadBroadcast() {
+    try {
+      const r = await fetch('/api/broadcast/config');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const c = await r.json();
+      setDest(c.destination);
+      $('cpBcastTitle').value = c.title || '';
+      $('cpBcastRtmp').value = c.rtmp_url || RTMP_DEFAULTS[curDest];
+      if (c.stream_key_set) {
+        $('cpBcastKey').placeholder = 'Key saved (ends \u2026' + (c.key_tail || '') + ') — leave blank to keep';
+      }
+    } catch (e) { toast('Broadcast config: ' + e.message); }
+  }
+
+  async function saveBroadcast() {
+    try {
+      const payload = {
+        destination: curDest,
+        title: $('cpBcastTitle').value || '',
+        rtmp_url: $('cpBcastRtmp').value || '',
+        stream_key: $('cpBcastKey').value || '',
+      };
+      const r = await fetch('/api/broadcast/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if ($('cpBcastKey').value) {
+        $('cpBcastKey').value = '';
+        $('cpBcastKey').placeholder = 'Key saved — leave blank to keep';
+      }
+      return true;
+    } catch (e) { toast('Save failed: ' + e.message); return false; }
+  }
+
+  async function pollBroadcast() {
+    try {
+      const r = await fetch('/api/broadcast/status?t=' + Date.now());
+      if (!r.ok) return;
+      paintBroadcast(await r.json());
+    } catch (e) {}
+  }
+
+  async function toggleBroadcast() {
+    if (bcState === 'live') {
+      try { await fetch('/api/broadcast/stop', { method: 'POST' }); } catch (e) {}
+      pollBroadcast();
+      return;
+    }
+    if (!(await saveBroadcast())) return;
+    $('cpBcastPill').textContent = 'CONNECTING…';
+    $('cpBcastPill').className = 'cp-pill connecting';
+    try {
+      const r = await fetch('/api/broadcast/start', { method: 'POST' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      toast('Broadcast started (simulated)');
+      setTimeout(pollBroadcast, 1200);
+    } catch (e) { toast('Broadcast start failed: ' + e.message); pollBroadcast(); }
+  }
+
+  // ── Go live / blackout (push the active slide to ch1) ────────────────────
+  const T_NAME = { participant: 'Participant', song: 'Song', bible: 'Scripture', media: 'Media', content: 'Content', live: 'Live' };
+
+  function sdForItem(item, programId) {
+    const base = { channel: 'ch1', theme_id: 'default', item_id: item.item_id, stanza_idx: null };
+    if (item.type === 'media') {
+      if (!item.url) return null;
+      const isVideo = item.media_type === 'video';
+      return {
+        event: isVideo ? 'media:video' : 'media:image',
+        sd: Object.assign({}, base, { type: isVideo ? 'video' : 'image', url: item.url, autoplay: true, loop: !!item.loop, mute: !!item.mute }),
+      };
+    }
+    const title = item.title || '';
+    let part = '';
+    if (item.type === 'song' && item.hymn_number) part = 'Hymn ' + item.hymn_number;
+    else if (item.type === 'bible') part = item.bible_ref || 'Scripture';
+    else part = item.part || '';
+    return { event: 'slide:show', sd: Object.assign({}, base, { type: 'text', title: title, part: part }) };
+  }
+
+  async function goLiveCustom() {
+    try {
+      const act = await fetch('/api/active-item').then(function (r) { return r.json(); }).then(function (j) { return j.item; });
+      if (!act || !act.item_id) { toast('No active slide yet — push one from the console first'); return; }
+      const prog = await fetch('/api/program').then(function (r) { return r.json(); });
+      let item = null;
+      (prog.service_programs || []).forEach(function (sp) {
+        if (sp.id !== act.program_id) return;
+        (sp.items || []).forEach(function (it) { if (!item && it.item_id === act.item_id) item = it; });
+      });
+      if (!item) { toast('Active slide not found in program'); return; }
+      const r = sdForItem(item, act.program_id);
+      if (!r) { toast('Media has no file url — add it in the console'); return; }
+      socket.emit(r.event, r.sd);
+      refreshActiveSlide();
+      toast('Go live: ' + (item.title || T_NAME[item.type] || item.type));
+    } catch (e) { toast('Go live failed: ' + e.message); }
+  }
+
+  function blackoutCustom() {
+    socket.emit('slide:blank', { channel: 'ch1', type: 'blank' });
+    toast('Blackout on CH1');
+  }
+
+  async function refreshActiveSlide() {
+    try {
+      const j = await fetch('/api/active-item').then(function (r) { return r.json(); });
+      const it = j && j.item;
+      $('cpCurTitle').textContent = (it && it.title) || '\u2014';
+      $('cpCurType').textContent = (it && it.participant) ? it.participant : ((it && it.slot) ? it.slot : '\u2014');
+    } catch (e) {}
+  }
+
+  // ── Wire up ───────────────────────────────────────────────────────────────
+  $('cpGoLive').onclick = goLiveCustom;
+  $('cpBlackout').onclick = blackoutCustom;
+  $('cpDestFb').onclick = function () { setDest('facebook'); saveBroadcast(); };
+  $('cpDestYt').onclick = function () { setDest('youtube'); saveBroadcast(); };
+  $('cpBcastGo').onclick = toggleBroadcast;
+  socket.on('connect', function () { $('cpConn').textContent = 'Online'; $('cpConn').className = 'cp-st'; });
+  socket.on('disconnect', function () { $('cpConn').textContent = 'Offline'; $('cpConn').className = 'cp-st bad'; });
+
+  loadBroadcast();
+  refreshActiveSlide();
+  pollBroadcast();
+  setInterval(pollBroadcast, 5000);
+  setInterval(refreshActiveSlide, 8000);
+})();
+</script>
+</body>
+</html>
