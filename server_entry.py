@@ -111,7 +111,7 @@ if '--stream' in sys.argv:
 
 _ACT_HTML = r'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Leiturgia &mdash; Device Activation</title>
+<title>LIGHT WORSHIP APP &mdash; Device Activation</title>
 <style>
   :root{--gold:#d4af37;--bg:#0f1117;--card:#181b24;--line:#2a2f3d;--txt:#e8e6e3;--muted:#9aa0ae}
   *{box-sizing:border-box} body{margin:0;font-family:Segoe UI,system-ui,sans-serif;background:var(--bg);color:var(--txt);display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
@@ -130,8 +130,8 @@ _ACT_HTML = r'''<!doctype html>
   .hint{color:var(--muted);font-size:.78rem;margin-top:6px}
   code{color:var(--gold)}
 </style></head><body><div class="card">
-  <h1>Leiturgia is not activated</h1>
-  <p>This copy needs a license key for <b>this PC</b>. Send your Hardware ID below to your Leiturgia provider,
+  <h1>LIGHT WORSHIP APP is not activated</h1>
+  <p>This copy needs a license key for <b>this PC</b>. Send your Hardware ID below to your LIGHT WORSHIP APP provider,
      paste the license key you receive, then press <b>Activate device</b>.</p>
   <label>Hardware ID &mdash; send this to your provider</label>
   <div class="hwid">{{ hwid }}</div>
@@ -145,7 +145,7 @@ _ACT_HTML = r'''<!doctype html>
   {{ pay_html }}
   <div class="msg" id="msg"></div>
   <div id="done" style="display:none">
-    <div class="msg ok">Activated &mdash; loading Leiturgia&hellip;</div>
+    <div class="msg ok">Activated &mdash; loading LIGHT WORSHIP APP&hellip;</div>
     <p>Your default sign-in PIN is <code>1234</code> &mdash; change it afterwards.</p>
   </div>
 </div>
@@ -163,7 +163,7 @@ _ACT_HTML = r'''<!doctype html>
   function sendHWID(){
     var owner='{{ owner_email }}';
     if(!owner){ copyHWID(); return; }
-    var sub=encodeURIComponent('Leiturgia License Request');
+    var sub=encodeURIComponent('LIGHT WORSHIP APP License Request');
     var body=encodeURIComponent('Please create a license key for this PC.\n\nHardware ID: ' + _hwid);
     location.href='mailto:'+owner+'?subject='+sub+'&body='+body;
   }
@@ -230,7 +230,7 @@ async function activate(){
 def _write_licence_error(reason):
     os.makedirs('data', exist_ok=True)
     with open(os.path.join('data', 'license_error.log'), 'w') as f:
-        f.write('Leiturgia is locked to a specific machine.\n')
+        f.write('LIGHT WORSHIP APP is locked to a specific machine.\n')
         f.write('Reason: %s\n' % reason)
         f.write('This copy is not licensed for this PC. Contact the owner.\n')
 
@@ -423,7 +423,7 @@ def wire_license_gate():
             _rpi = requests.post(_api + '/payment_intents', headers=_hdr,
                                  json={'data': {'attributes': {
                                      'amount': _price * 100, 'currency': 'PHP',
-                                     'description': 'Leiturgia license for PC-%s' % _hw[:12],
+                                     'description': 'LIGHT WORSHIP APP license for PC-%s' % _hw[:12],
                                      'payment_method_allowed': ['qrph'],
                                      'metadata': {'hwid': _hw},
                                  }}}, timeout=30)

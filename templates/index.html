@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/static/ecb-worship-icon.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leiturgia</title>
+  <title>LIGHT WORSHIP APP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -12,9 +13,9 @@
       --surface:   #111f3a;
       --card:      #162240;
       --border:    #1e2f52;
-      --gold:      #d4a843;
-      --gold-lt:   #e8c06a;
-      --gold-dim:  #8a6820;
+--gold:      #8abd8f;
+--gold-lt:   #a8d3ac;
+--gold-dim:  #55805c;
       --white:     #f0f2f8;
       --muted:     #6b7fa0;
       --success:   #4caf82;
@@ -83,7 +84,7 @@
       background: var(--gold); border-color: var(--gold); color: var(--bg);
       font-size: 11px; font-weight: 700; letter-spacing: .05em;
     }
-    .hdr-display-btn:hover { background: var(--gold-lt, #e0c070); border-color: var(--gold-lt, #e0c070); color: var(--bg); }
+    .hdr-display-btn:hover { background: var(--gold-lt, #a8d3ac); border-color: var(--gold-lt, #a8d3ac); color: var(--bg); }
 
     /* ── Buttons ── */
     .btn {
@@ -1332,7 +1333,7 @@
 
     .lp-part {
       font-size: 6px;
-      color: #D4A843;
+      color: #8abd8f;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       text-align: center;
@@ -1343,7 +1344,7 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: 11px;
       font-weight: 700;
-      color: #D4A843;
+      color: #8abd8f;
       text-align: center;
       line-height: 1.3;
       width: 100%;
@@ -1388,7 +1389,7 @@
     }
     .lp-announce-label {
       font-size: 6px;
-      color: #D4A843;
+      color: #8abd8f;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       margin-bottom: 4px;
@@ -1501,7 +1502,7 @@
     .stp-song-title {
       font-family: Calibri, 'DM Sans', sans-serif;
       font-size: 13px;
-      color: #D4A843;
+      color: #8abd8f;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       text-align: center;
@@ -1532,7 +1533,7 @@
       font-family: Calibri, 'DM Sans', sans-serif;
       font-size: 14px;
       font-weight: 700;
-      color: #D4A843;
+      color: #8abd8f;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       text-align: center;
@@ -1567,7 +1568,7 @@
     .stp-announce-label {
       font-family: Calibri, 'DM Sans', sans-serif;
       font-size: 12px;
-      color: #D4A843;
+      color: #8abd8f;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       margin-bottom: 10px;
@@ -1722,8 +1723,8 @@
 
 <header>
   <div class="logo">
-    <div class="logo-icon">✦</div>
-    <div class="logo-text">Lei<span>turgia</span></div>
+    <div class="logo-icon"><img src="/static/ecb-worship-icon.svg" alt="LIGHT WORSHIP APP"></div>
+    <div class="logo-text">LIGHT <span>WORSHIP APP</span></div>
   </div>
   <div class="header-actions">
     <!-- Open main display (ch1) — fullscreen on the extended screen -->
@@ -3013,7 +3014,10 @@
     ta.style.fontFamily = famMap[ff] || '';
     ta.style.fontWeight = bold ? 'bold' : 'normal';
     ta.style.fontStyle  = italic ? 'italic' : 'normal';
-    ta.style.color      = color || '';
+    // Only the live font-editor previews the projection color; the program
+    // item edit box stays on the theme text color so lyrics stay readable
+    // even if the saved slide text color is dark.
+    ta.style.color      = containerEl.classList.contains('rp-font-editor') ? (color || '') : '';
     if (containerEl.classList.contains('program-item')) {
       const fs = containerEl.querySelector('.item-font-size')?.value || 'md';
       // Scaled-down edit-box preview: reflect the number but keep it compact
@@ -3753,7 +3757,7 @@
 
   function switchPanelSection(val) {
     _activeProgram = val;
-    localStorage.setItem('leiturgia_active_program', val);
+    localStorage.setItem('LIGHT WORSHIP APP_active_program', val);
     // Highlight active nav item
     document.querySelectorAll('.program-nav-item').forEach(el => {
       el.classList.toggle('active', el.dataset.programId === val);
@@ -4618,7 +4622,7 @@
 
   // Initialise active program — restore from localStorage or fall back to first
   (function () {
-    const saved  = localStorage.getItem('leiturgia_active_program');
+    const saved  = localStorage.getItem('LIGHT WORSHIP APP_active_program');
     const target = saved && document.querySelector(`.program-nav-item[data-program-id="${saved}"]`)
                    ? saved
                    : document.querySelector('.program-nav-item')?.dataset.programId;
@@ -5466,7 +5470,7 @@
     // so pressing again reuses/brings it forward). The operator can drag each
     // output window onto a different physical monitor in extended desktop mode.
     var features = 'resizable=yes,scrollbars=no,menubar=no,toolbar=no,location=no,status=no';
-    var w = window.open(url, 'leiturgia_output_' + ch.toLowerCase(), features);
+    var w = window.open(url, 'LIGHT WORSHIP APP_output_' + ch.toLowerCase(), features);
     if (w) {
       try { w.focus(); } catch (e) {}
     } else {
@@ -5506,7 +5510,7 @@
   function openMainDisplay() {
     var fallback = function() {
       var u = window.location.origin + '/ch1?output=1';
-      var w = window.open(u, 'leiturgia_output_ch1');
+      var w = window.open(u, 'LIGHT WORSHIP APP_output_ch1');
       if (!w) {
         var a = document.createElement('a');
         a.href = u; a.target = '_blank'; a.rel = 'noopener';
@@ -7160,7 +7164,7 @@
     if (document.getElementById('buildToast')) return;
     var t = document.createElement('div');
     t.id = 'buildToast';
-    t.setAttribute('style', 'position:fixed;z-index:99999;top:14px;left:50%;transform:translateX(-50%);background:#0c1526;border:1px solid #c9a84c;color:#e8ecf3;padding:10px 18px;border-radius:10px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);white-space:nowrap');
+    t.setAttribute('style', 'position:fixed;z-index:99999;top:14px;left:50%;transform:translateX(-50%);background:#0c1526;border:1px solid #55805c;color:#e8ecf3;padding:10px 18px;border-radius:10px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);white-space:nowrap');
     t.innerHTML = 'May bagong update ang server. <a href="#" id="buildToastReload" style="color:#ffd76a;font-weight:600">I-reload ngayon</a>';
     document.body.appendChild(t);
     document.getElementById('buildToastReload').addEventListener('click', function (e) { e.preventDefault(); location.reload(); });

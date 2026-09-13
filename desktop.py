@@ -94,7 +94,7 @@ def main():
     if server_proc is None:
         # A server is already running — open the console without stopping it.
         import webview
-        webview.create_window('Leiturgia', BASE_URL)
+        webview.create_window('LIGHT WORSHIP APP', BASE_URL)
         webview.start()
         return
 
@@ -103,7 +103,7 @@ def main():
         return
 
     import webview
-    webview.create_window('Leiturgia', BASE_URL)
+    webview.create_window('LIGHT WORSHIP APP', BASE_URL)
     webview.start()
     # Window closed — stop the server we started.
     _terminate_tree(server_proc)

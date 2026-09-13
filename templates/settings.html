@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/static/ecb-worship-icon.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leiturgia — Settings</title>
+  <title>LIGHT WORSHIP APP — Settings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -254,7 +255,7 @@
       <div class="field">
         <label for="update-url">Update server URL</label>
         <div class="input-row">
-          <input type="text" id="update-url" value="{{ update_url }}" placeholder="https://updates.example.com/leiturgia">
+          <input type="text" id="update-url" value="{{ update_url }}" placeholder="https://updates.example.com/light-worship-app">
           <button class="btn btn-outline" onclick="saveUpdateUrl()">Save</button>
         </div>
       </div>
@@ -298,7 +299,7 @@
 <!-- ── Update Confirm Modal ─────────────────────────────────────────────── -->
 <div id="update-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:100; align-items:center; justify-content:center;">
   <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.75rem; max-width:400px; width:90%; margin:1rem;">
-    <p style="font-size:1rem; font-weight:500; margin-bottom:0.4rem; color:var(--white);" id="update-modal-title">Update Leiturgia</p>
+    <p style="font-size:1rem; font-weight:500; margin-bottom:0.4rem; color:var(--white);" id="update-modal-title">Update LIGHT WORSHIP APP</p>
     <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem;" id="update-modal-body"></p>
 
     <div class="field">
@@ -448,7 +449,7 @@
   function showUpdateModal() {
     if (!_updateTargetTag) return;
     document.getElementById('update-modal-body').textContent =
-      `This will update Leiturgia to ${_updateTargetTag} and restart the service. The app will be briefly unavailable.`;
+      `This will update LIGHT WORSHIP APP to ${_updateTargetTag} and restart the service. The app will be briefly unavailable.`;
     document.getElementById('update-pin').value = '';
     document.getElementById('update-modal-msg').className = 'msg';
     document.getElementById('update-modal').style.display = 'flex';
