@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>ECB Worship App Remote</title>
+  <title>LIGHT WORSHIP APP Remote</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -12,8 +12,8 @@
       --surface: #1a2a3a;
       --card:    #223040;
       --border:  #2a3a4a;
-      --gold:    #c9a84c;
-      --gold-lt: #e0c070;
+      --accent:    #2DD4BF;
+      --accent-lt: #5EEAD4;
       --white:   #f0f4f8;
       --muted:   #6b7f93;
       --error:   #e05555;
@@ -44,7 +44,7 @@
       padding: 0 14px;
       font-size: 13px;
       font-weight: 700;
-      color: var(--gold);
+      color: var(--accent);
       white-space: nowrap;
     }
     .nav-tabs {
@@ -65,8 +65,8 @@
       letter-spacing: .03em;
     }
     .nav-tab.active {
-      color: var(--gold);
-      border-bottom-color: var(--gold);
+      color: var(--accent);
+      border-bottom-color: var(--accent);
     }
     .nav-status {
       width: 8px; height: 8px;
@@ -172,7 +172,7 @@
     }
     .btn-prev:active, .btn-next:active { opacity: .8; transform: scale(.97); }
     .btn-prev { background: var(--card); color: var(--white); border: 1px solid var(--border); }
-    .btn-next { background: var(--gold); color: var(--navy); }
+    .btn-next { background: var(--accent); color: var(--navy); }
 
     /* ── Channel Switch mode ── */
     #mode-channels {
@@ -388,6 +388,10 @@
     } catch(e) {}
   }
 
+  // Saved iframe renderers (captured on Next-frame load before the live
+  // entry points above are neutralised). renderNextSlide uses ONLY these.
+  let _fwRenderText = null, _fwRenderImage = null;
+
   function renderNextSlide(data) {
     const frame = document.getElementById('remoteNextFrame');
     if (!frame || !frame.contentWindow) return;
@@ -398,6 +402,10 @@
       const waiting = fw.document.getElementById('waiting');
       if (!slide) return;
       if (waiting) waiting.classList.remove('visible');
+      // Always reset first: any failure below must leave a neutral box,
+      // never a stale live mirror of the current projection.
+      slide.className = 'type-blank';
+      slide.innerHTML = '';
 
       if (!nextData) {
         slide.className = 'type-text';
@@ -408,12 +416,12 @@
       const type   = nextData.type || 'blank';
       const slData = nextData.data || {};
 
-      if (type === 'text' && typeof fw.renderText === 'function') {
+      if (type === 'text' && typeof _fwRenderText === 'function') {
         // renderText calls fitLyricsToSlide so the font scales correctly
-        fw.renderText(slData);
+        _fwRenderText(slData);
 
-      } else if (type === 'image' && typeof fw.renderImage === 'function') {
-        fw.renderImage(slData);
+      } else if (type === 'image' && typeof _fwRenderImage === 'function') {
+        _fwRenderImage(slData);
 
       } else if (type === 'video') {
         // Render a static icon — do NOT call fw.renderVideo (it autoplays)
@@ -486,6 +494,24 @@
       // Neutralise renderState so live socket events don't overwrite our next-slide content.
       // projection.html uses const socket so we cannot disconnect it.
       if (typeof fw.renderState === 'function') fw.renderState = function() {};
+      // Capture the pure renderers for our own explicit preview paints...
+      if (typeof fw.renderText === 'function') _fwRenderText = fw.renderText.bind(fw);
+      if (typeof fw.renderImage === 'function') _fwRenderImage = fw.renderImage.bind(fw);
+      // ...then neutralise every other live entry point, so NOTHING but our
+      // explicit paint below can ever change this box -- it can never become
+      // a live mirror (duplicate) of the current projection.
+      ['renderText','renderImage','renderVideo','handleLive','handlePip',
+       '_remoteShow','_remoteFrame','_remoteHide','renderTimer','startTimer',
+       'renderLive','_mountPip','_hidePip'].forEach(function(fn){
+        try { if (typeof fw[fn] === 'function') fw[fn] = function(){}; } catch(e) {}
+      });
+      // Start from a clean slate, never the live /ch1 content.
+      try {
+        const slide0 = fw.document.getElementById('slide');
+        if (slide0) { slide0.className = 'type-blank'; slide0.innerHTML = ''; }
+        const waiting0 = fw.document.getElementById('waiting');
+        if (waiting0) waiting0.classList.remove('visible');
+      } catch(e) {}
     } catch(e) {}
     renderNextSlide(currentSync || {});
   });

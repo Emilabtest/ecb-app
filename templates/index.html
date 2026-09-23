@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ECB Worship App</title>
+  <title>LIGHT WORSHIP APP</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -12,9 +12,9 @@
       --surface:   #2a2e3a;
       --card:      #2f3340;
       --border:    #3a3f4d;
-      --gold:      #d4a843;
-      --gold-lt:   #e8c06a;
-      --gold-dim:  #8a6820;
+      --accent:      #14B8A6;
+      --accent-lt:   #2DD4BF;
+      --accent-dim:  #0F766E;
       --white:     #f2f4f8;
       --muted:     #9aa0ae;
       --success:   #4caf82;
@@ -60,7 +60,7 @@
     .logo-icon img { width: 36px; height: 36px; display: block; }
 
     .logo-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; letter-spacing: 0.02em; }
-    .logo-text span { color: var(--gold); }
+    .logo-text span { color: var(--accent); }
     .header-actions { display: flex; gap: 6px; align-items: center; }
     .hdr-icon-btn {
       width: 34px; height: 34px;
@@ -72,14 +72,14 @@
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
-    .hdr-icon-btn:hover { border-color: var(--border); color: var(--gold); background: var(--card); }
+    .hdr-icon-btn:hover { border-color: var(--border); color: var(--accent); background: var(--card); }
     .hdr-icon-btn svg { display: block; }
     .hdr-display-btn {
       width: auto; padding: 0 10px; gap: 6px;
-      background: var(--gold); border-color: var(--gold); color: var(--bg);
+      background: var(--accent); border-color: var(--accent); color: var(--bg);
       font-size: 11px; font-weight: 700; letter-spacing: .05em;
     }
-    .hdr-display-btn:hover { background: var(--gold-lt, #e0c070); border-color: var(--gold-lt, #e0c070); color: var(--bg); }
+    .hdr-display-btn:hover { background: var(--accent-lt, #2DD4BF); border-color: var(--accent-lt, #2DD4BF); color: var(--bg); }
 
     /* ── Buttons ── */
     .btn {
@@ -93,11 +93,11 @@
       text-decoration: none;
     }
 
-    .btn-gold  { background: var(--gold); color: var(--bg); }
-    .btn-gold:hover { background: var(--gold-lt); }
+    .btn-gold  { background: var(--accent); color: var(--bg); }
+    .btn-gold:hover { background: var(--accent-lt); }
 
     .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--white); }
-    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
 
     .btn-ghost { background: transparent; color: var(--muted); padding: 6px 10px; }
     .btn-ghost:hover { color: var(--white); }
@@ -140,7 +140,7 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 6px;
-      color: var(--gold);
+      color: var(--accent);
       font-family: 'DM Sans', sans-serif;
       font-size: 11px;
       font-weight: 700;
@@ -153,15 +153,15 @@
       background-repeat: no-repeat;
       background-position: right 10px center;
     }
-    .panel-switcher select:focus { outline: none; border-color: var(--gold); }
+    .panel-switcher select:focus { outline: none; border-color: var(--accent); }
 
     .btn-add-program {
       width: 100%;
       margin-top: 7px;
       background: transparent;
-      border: 1px dashed var(--gold-dim);
+      border: 1px dashed var(--accent-dim);
       border-radius: 6px;
-      color: var(--gold-dim);
+      color: var(--accent-dim);
       font-family: 'DM Sans', sans-serif;
       font-size: 11px;
       font-weight: 500;
@@ -170,7 +170,7 @@
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s;
     }
-    .btn-add-program:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-add-program:hover { border-color: var(--accent); color: var(--accent); }
 
     .btn-delete-program {
       width: 100%;
@@ -272,7 +272,7 @@
       font-size: 13px;
       color: var(--white);
     }
-    .radio-option input[type="radio"] { accent-color: var(--gold); cursor: pointer; }
+    .radio-option input[type="radio"] { accent-color: var(--accent); cursor: pointer; }
  
     .outline-cat-header {
       padding: 10px 12px 6px;
@@ -280,7 +280,7 @@
       font-weight: 700;
       letter-spacing: 0.10em;
       text-transform: uppercase;
-      color: var(--gold);
+      color: var(--accent);
       border-bottom: 1px solid var(--border);
       margin-bottom: 4px;
       background: #2a2e3a;
@@ -309,7 +309,7 @@
     .program-nav-item:hover { background: #0f1e3a; }
     .program-nav-item.active {
       background: var(--card);
-      border-left-color: var(--gold);
+      border-left-color: var(--accent);
     }
     .program-nav-name {
       font-size: 12px;
@@ -318,22 +318,22 @@
       color: var(--white);
       cursor: text;
     }
-    .program-nav-item.active .program-nav-name { color: var(--gold-lt); }
+    .program-nav-item.active .program-nav-name { color: var(--accent-lt); }
     .program-nav-name-input {
       font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.04em;
       color: var(--white);
       background: rgba(255,255,255,0.08);
-      border: 1px solid var(--gold);
+      border: 1px solid var(--accent);
       border-radius: 3px;
       padding: 1px 5px;
       width: 120px;
       outline: none;
     }
     .program-nav-item.dragging { opacity: 0.35; }
-    .program-nav-item.drop-above { border-top: 2px solid var(--gold); }
-    .program-nav-item.drop-below { border-bottom: 2px solid var(--gold); }
+    .program-nav-item.drop-above { border-top: 2px solid var(--accent); }
+    .program-nav-item.drop-below { border-bottom: 2px solid var(--accent); }
     .program-nav-drag {
       color: var(--muted);
       font-size: 13px;
@@ -351,7 +351,7 @@
       cursor: default;
       margin-top: 0;
     }
-    .panel-program-header.active { color: var(--gold-lt); }
+    .panel-program-header.active { color: var(--accent-lt); }
     .btn-delete-prog-inline {
       background: transparent;
       border: none;
@@ -378,7 +378,7 @@
       transition: background 0.12s;
     }
     .outline-item:hover { background: #0f1e3a; }
-    .outline-item.active { background: var(--card); border-left: 2px solid var(--gold); padding-left: 8px; }
+    .outline-item.active { background: var(--card); border-left: 2px solid var(--accent); padding-left: 8px; }
 
     .outline-thumb {
       width: 36px;
@@ -395,7 +395,7 @@
       color: var(--muted);
       flex-shrink: 0;
     }
-    .outline-item.song .outline-thumb { border-color: var(--gold-dim); color: var(--gold); }
+    .outline-item.song .outline-thumb { border-color: var(--accent-dim); color: var(--accent); }
 
     .outline-info { flex: 1; min-width: 0; }
 
@@ -449,7 +449,7 @@
       text-align: left;
       transition: border-color 0.12s, color 0.12s;
     }
-    .panel-add-buttons button:hover { border-color: var(--gold-dim); color: var(--white); }
+    .panel-add-buttons button:hover { border-color: var(--accent-dim); color: var(--white); }
 
     .items-add-bar {
       display: flex;
@@ -469,7 +469,7 @@
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s;
     }
-    .items-add-bar button:hover { border-color: var(--gold); color: var(--gold); }
+    .items-add-bar button:hover { border-color: var(--accent); color: var(--accent); }
 
     .main-content {
       flex: 1;
@@ -491,15 +491,15 @@
     .status-dot {
       width: 8px; height: 8px;
       border-radius: 50%;
-      background: var(--gold);
-      box-shadow: 0 0 0 3px rgba(212,168,67,0.2);
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(20,184,166,0.2);
       flex-shrink: 0;
     }
     .status-dot.inactive { background: var(--muted); box-shadow: none; }
 
     .status-text { font-size: 12px; color: var(--muted); }
     .status-text strong { color: var(--white); font-weight: 500; font-size: 11px; }
-    .status-label { font-size: 10px; color: var(--gold); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .status-label { font-size: 10px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 
     /* ── Section ── */
     .section {
@@ -523,12 +523,12 @@
 
     .section-time {
       font-size: 12px;
-      color: var(--gold);
+      color: var(--accent);
       font-weight: 500;
-      background: rgba(212,168,67,0.1);
+      background: rgba(20,184,166,0.1);
       padding: 3px 10px;
       border-radius: 20px;
-      border: 1px solid rgba(212,168,67,0.2);
+      border: 1px solid rgba(20,184,166,0.2);
     }
 
     .section-body { padding: 1.4rem; }
@@ -560,7 +560,7 @@
       width: 100%;
     }
 
-    input:focus { outline: none; border-color: var(--gold); }
+    input:focus { outline: none; border-color: var(--accent); }
     input::placeholder { color: var(--muted); }
 
     /* ── Program items ── */
@@ -587,8 +587,8 @@
       border-color: #2a3f68;
     }
     .program-item.item-editing {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 2px rgba(212,168,67,0.15);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(20,184,166,0.15);
       cursor: default;
     }
     .program-item.item-editing .item-header {
@@ -605,17 +605,17 @@
 
     .item-number {
       width: 24px; height: 24px;
-      background: var(--gold-dim);
+      background: var(--accent-dim);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-size: 11px; font-weight: 700;
-      color: var(--gold-lt);
+      color: var(--accent-lt);
       flex-shrink: 0;
     }
 
     .item-title-text { font-weight: 500; flex: 1; }
     .item-subtitle-text { font-size: 12px; color: var(--muted); }
-    .item-detail-text { font-size: 12px; color: var(--gold-dim); margin-top: 1px; }
+    .item-detail-text { font-size: 12px; color: var(--accent-dim); margin-top: 1px; }
 
     /* Long titles (e.g. video file names) must NOT push the action buttons on
        the program strip. Let the title column shrink and ellipsize instead. */
@@ -646,15 +646,15 @@
       cursor: pointer; user-select: none;
       transition: color 0.15s;
     }
-    .back-bar:hover { color: var(--gold); }
+    .back-bar:hover { color: var(--accent); }
     .item-chevron { color: var(--muted); transition: transform 0.2s; font-size: 11px; opacity: 1; }
     .item-chevron.open { transform: rotate(180deg); }
 
     .outline-item { cursor: grab; }
     .outline-item:active { cursor: grabbing; }
     .outline-item.dragging { opacity: 0.35; }
-    .outline-item.drop-above { border-top: 2px solid var(--gold); }
-    .outline-item.drop-below { border-bottom: 2px solid var(--gold); }
+    .outline-item.drop-above { border-top: 2px solid var(--accent); }
+    .outline-item.drop-below { border-bottom: 2px solid var(--accent); }
 
     .item-delete {
       opacity: 0.45;
@@ -672,22 +672,22 @@
 
     .edit-hint { display: none; }
     .duplicate-hint { font-size: 13px; color: var(--muted); cursor: pointer; padding: 2px 6px; border-radius: 3px; background: none; border: none; }
-    .duplicate-hint:hover { color: var(--gold); }
+    .duplicate-hint:hover { color: var(--accent); }
     .program-item.item-editing .duplicate-hint { display: none; }
 
     .reorder-btns { display: flex; flex-direction: column; gap: 1px; opacity: 0; transition: opacity 0.15s; margin-left: auto; flex-shrink: 0; }
     .outline-item:hover .reorder-btns { opacity: 1; }
     @media (hover: none) { .reorder-btns { opacity: 1; } }
     .btn-reorder { background: none; border: none; color: var(--muted); font-size: 8px; line-height: 1; padding: 2px 4px; border-radius: 3px; cursor: pointer; transition: color 0.12s; }
-    .btn-reorder:hover:not(:disabled) { color: var(--gold); }
+    .btn-reorder:hover:not(:disabled) { color: var(--accent); }
     .btn-reorder:disabled { opacity: 0.2; cursor: not-allowed; }
 
     .drag-handle { color: var(--muted); font-size: 16px; cursor: grab; flex-shrink: 0; padding: 0 4px; user-select: none; letter-spacing: -1px; }
-    .drag-handle:hover { color: var(--gold); }
+    .drag-handle:hover { color: var(--accent); }
     .program-item.item-editing .drag-handle { display: none; }
     .program-item.dragging { opacity: 0.35; }
-    .program-item.drop-above { border-top: 2px solid var(--gold); }
-    .program-item.drop-below { border-bottom: 2px solid var(--gold); }
+    .program-item.drop-above { border-top: 2px solid var(--accent); }
+    .program-item.drop-below { border-bottom: 2px solid var(--accent); }
 
     .item-type-badge {
       font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
@@ -720,8 +720,8 @@
       padding: 3px 7px; cursor: pointer; transition: all 0.12s; line-height: 1.3;
       font-family: 'DM Sans', sans-serif;
     }
-    .ctb-btn:hover { border-color: var(--gold); color: var(--gold); }
-    .ctb-btn.active { background: rgba(212,168,67,0.15); border-color: var(--gold); color: var(--gold); }
+    .ctb-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .ctb-btn.active { background: rgba(20,184,166,0.15); border-color: var(--accent); color: var(--accent); }
     .ctb-sel {
       background: rgba(0,0,0,0.3); color: var(--white); border: 1px solid var(--border);
       border-radius: 4px; font-size: 11px; padding: 3px 5px; cursor: pointer; max-width: 110px;
@@ -753,15 +753,15 @@
       border-radius: 4px; font-size: 12px; color: var(--text);
     }
     .media-file-row:hover { background: rgba(255,255,255,0.04); }
-    .media-file-row.selected { background: rgba(212,168,67,0.12); }
+    .media-file-row.selected { background: rgba(20,184,166,0.12); }
     .media-file-icon { font-size: 13px; text-align: center; }
     .media-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .media-file-dur, .media-file-size { font-size: 11px; color: var(--muted); white-space: nowrap; }
     .btn-media-use {
       font-size: 11px; padding: 2px 8px; border-radius: 4px;
-      background: var(--gold-dim); color: var(--bg); cursor: pointer; border: none;
+      background: var(--accent-dim); color: var(--bg); cursor: pointer; border: none;
     }
-    .btn-media-use:hover { background: var(--gold); }
+    .btn-media-use:hover { background: var(--accent); }
     .btn-media-remove {
       font-size: 11px; padding: 2px 6px; border-radius: 4px;
       background: transparent; color: var(--muted); cursor: pointer;
@@ -788,12 +788,12 @@
       border: 1px solid var(--border); border-radius: 3px; overflow: hidden;
     }
     .media-usage-fill {
-      height: 100%; width: 0%; background: var(--gold-dim);
+      height: 100%; width: 0%; background: var(--accent-dim);
       border-radius: 3px; transition: width 0.3s ease;
     }
     .media-usage-fill.warn { background: #b8860b; }
     .media-usage-fill.full { background: var(--error); }
-    .media-settings-link { font-size: 11px; color: var(--gold); text-decoration: none; white-space: nowrap; }
+    .media-settings-link { font-size: 11px; color: var(--accent); text-decoration: none; white-space: nowrap; }
     .media-settings-link:hover { text-decoration: underline; }
     .media-warn-banner {
       display: none; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -821,7 +821,7 @@
     .media-in-use-badge {
       display: inline-block; margin-left: 6px; padding: 1px 5px;
       font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
-      background: rgba(212,168,67,0.18); color: var(--gold); border-radius: 3px;
+      background: rgba(20,184,166,.18); color: var(--accent); border-radius: 3px;
     }
 
     /* ── USB export modal (media-storage-budget TDD §5.5) ── */
@@ -830,7 +830,7 @@
       display: flex; align-items: center; gap: 8px; cursor: pointer;
       padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--white);
     }
-    .export-target-row:hover { border-color: var(--gold-dim); }
+    .export-target-row:hover { border-color: var(--accent-dim); }
     .export-target-label { flex: 1; }
     .export-target-free { font-size: 11px; color: var(--muted); white-space: nowrap; }
     .export-progress-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--white); }
@@ -839,7 +839,7 @@
       flex: 1; height: 6px; background: var(--card); border: 1px solid var(--border);
       border-radius: 3px; overflow: hidden;
     }
-    .export-progress-fill { height: 100%; width: 0%; background: var(--gold-dim); border-radius: 3px; transition: width 0.2s ease; }
+    .export-progress-fill { height: 100%; width: 0%; background: var(--accent-dim); border-radius: 3px; transition: width 0.2s ease; }
     .export-progress-pct { width: 36px; text-align: right; color: var(--muted); font-size: 11px; }
 
     .item-body { padding: 14px; border-top: 1px solid var(--border); display: none; }
@@ -921,11 +921,11 @@
     .platform-warn-text { flex: 1; color: #c8a227; }
     .btn-use-downloaded {
       font-size: 11px; padding: 2px 8px; border-radius: 4px;
-      background: var(--gold-dim); color: var(--bg);
+      background: var(--accent-dim); color: var(--bg);
       cursor: pointer; border: none; display: none;
     }
     .btn-use-downloaded.visible { display: inline-block; }
-    .btn-use-downloaded:hover { background: var(--gold); }
+    .btn-use-downloaded:hover { background: var(--accent); }
 
     /* ── Participants ── */
     .participants { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -937,7 +937,7 @@
     }
 
     .role-label {
-      font-size: 11px; color: var(--gold);
+      font-size: 11px; color: var(--accent);
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -962,21 +962,21 @@
     .subsection-title {
       font-family: 'Cormorant Garamond', serif;
       font-size: 15px; font-weight: 600;
-      color: var(--gold-lt);
+      color: var(--accent-lt);
       letter-spacing: 0.03em;
     }
 
     .subsection-line {
       flex: 1;
       height: 1px;
-      background: linear-gradient(to right, var(--gold-dim), transparent);
+      background: linear-gradient(to right, var(--accent-dim), transparent);
     }
 
     /* ── Lesson study ── */
     .ls-header {
       font-family: 'Cormorant Garamond', serif;
       font-size: 15px; font-weight: 600;
-      color: var(--gold-lt);
+      color: var(--accent-lt);
       padding: 10px 0 8px;
       display: flex; align-items: center; gap: 10px;
     }
@@ -1028,7 +1028,7 @@
     /* ── Rule ── */
     .rule {
       height: 1px;
-      background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+      background: linear-gradient(to right, transparent, var(--accent-dim), transparent);
       margin: 1.2rem 0;
     }
 
@@ -1059,7 +1059,7 @@
       display: flex; gap: 10px; align-items: baseline;
     }
     .hymnal-suggest-item:hover { background: var(--border); }
-    .hymnal-suggest-num { color: var(--gold); font-size: 11px; min-width: 28px; }
+    .hymnal-suggest-num { color: var(--accent); font-size: 11px; min-width: 28px; }
     .hymnal-suggest-title { color: var(--white); }
     .hymn-lang-select { height: 38px; padding: 0 6px; background: var(--surface); color: var(--white); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; cursor: pointer; }
 
@@ -1083,29 +1083,29 @@
     }
     #lyrics-modal-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 20px; color: var(--gold); flex-shrink: 0;
+      font-size: 20px; color: var(--accent); flex-shrink: 0;
     }
     #lyrics-modal-body {
       overflow-y: auto; display: flex; flex-direction: column; gap: 18px;
     }
     .lyrics-stanza { display: flex; flex-direction: column; gap: 4px; }
     .lyrics-stanza-repeat {
-      background: rgba(212,168,67,.07); border-left: 3px solid var(--gold);
+      background: rgba(20,184,166,.07); border-left: 3px solid var(--accent);
       padding: 8px 10px; border-radius: 4px;
     }
     .lyrics-stanza-label {
       font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
       color: var(--muted); font-weight: 500;
     }
-    .lyrics-stanza-repeat .lyrics-stanza-label { color: var(--gold); }
+    .lyrics-stanza-repeat .lyrics-stanza-label { color: var(--accent); }
     .lyrics-stanza-line { font-size: 14px; color: var(--white); line-height: 1.6; }
     #lyrics-modal-footer { flex-shrink: 0; display: flex; justify-content: flex-end; }
     #lyrics-modal-close {
-      padding: 8px 20px; background: var(--gold); color: #1b1e27;
+      padding: 8px 20px; background: var(--accent); color: #1b1e27;
       border: none; border-radius: 6px; font-weight: 600;
       cursor: pointer; font-size: 13px;
     }
-    #lyrics-modal-close:hover { background: var(--gold-lt); }
+    #lyrics-modal-close:hover { background: var(--accent-lt); }
 
     /* ── Responsive ── */
     @media (max-width: 700px) {
@@ -1134,13 +1134,13 @@
       cursor: pointer;
       height: 34px;
     }
-    .channel-select:focus { outline: none; border-color: var(--gold); }
+    .channel-select:focus { outline: none; border-color: var(--accent); }
 
     .btn-live {
       padding: 3px 9px;
       background: transparent;
-      border: 1px solid var(--gold-dim);
-      color: var(--gold);
+      border: 1px solid var(--accent-dim);
+      color: var(--accent);
       border-radius: 4px;
       font-size: 11px;
       font-weight: 500;
@@ -1149,8 +1149,8 @@
       transition: all 0.15s;
       flex-shrink: 0;
     }
-    .btn-live:hover { background: var(--gold); color: var(--bg); border-color: var(--gold); }
-    .btn-live.active { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+    .btn-live:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .btn-live.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
     .item-enabled-toggle { display: flex; align-items: center; flex-shrink: 0; }
     .program-item.disabled .item-header { opacity: 0.45; }
     .program-item.disabled .btn-live { pointer-events: none; cursor: not-allowed; }
@@ -1162,13 +1162,13 @@
       max-width: 70px;
       padding: 2px 4px;
       background: transparent;
-      border: 1px solid var(--gold-dim);
-      color: var(--gold);
+      border: 1px solid var(--accent-dim);
+      color: var(--accent);
       border-radius: 4px;
       font-size: 11px;
       text-align: center;
     }
-    .allotted-input::placeholder { color: var(--gold-dim); }
+    .allotted-input::placeholder { color: var(--accent-dim); }
     .timed-row {
       display: flex;
       align-items: center;
@@ -1233,12 +1233,12 @@
     }
     .rp-ch-link {
       display: inline-flex; align-items: center;
-      background: var(--gold); color: var(--bg) !important;
+      background: var(--accent); color: var(--bg) !important;
       border-radius: 4px; padding: 2px 5px;
       text-decoration: none;
       transition: background 0.15s;
     }
-    .rp-ch-link:hover { background: var(--gold-lt); }
+    .rp-ch-link:hover { background: var(--accent-lt); }
     .rp-ch-role-btns {
       display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; flex: 1;
     }
@@ -1261,12 +1261,12 @@
     .rp-btn-web {
       flex: 0 0 auto; min-height: 22px;
       display: inline-flex; align-items: center; gap: 4px;
-      background: var(--surface); color: var(--gold); border: 1px solid var(--border);
+      background: var(--surface); color: var(--accent); border: 1px solid var(--border);
       border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: .03em;
       cursor: pointer; padding: 2px 8px; white-space: nowrap;
       transition: background .15s, color .15s, border-color .15s;
     }
-    .rp-btn-web:hover { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+    .rp-btn-web:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
     .rp-out-row {
       display: flex; align-items: center; gap: 5px;
       border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px;
@@ -1300,11 +1300,11 @@
     }
     .rp-aspect-save {
       flex: 0 0 auto;
-      background: var(--gold); color: var(--bg); border: none; border-radius: 4px;
+      background: var(--accent); color: var(--bg); border: none; border-radius: 4px;
       font-size: 10px; font-weight: 700; padding: 5px 8px; cursor: pointer;
       transition: background .15s;
     }
-    .rp-aspect-save:hover { background: var(--gold-lt); }
+    .rp-aspect-save:hover { background: var(--accent-lt); }
 
     .rp-section-label {
       font-size: 9px;
@@ -1328,7 +1328,7 @@
 
     .lp-part {
       font-size: 6px;
-      color: #D4A843;
+      color: #14B8A6;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       text-align: center;
@@ -1339,7 +1339,7 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: 11px;
       font-weight: 700;
-      color: #D4A843;
+      color: #14B8A6;
       text-align: center;
       line-height: 1.3;
       width: 100%;
@@ -1384,7 +1384,7 @@
     }
     .lp-announce-label {
       font-size: 6px;
-      color: #D4A843;
+      color: #14B8A6;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       margin-bottom: 4px;
@@ -1548,7 +1548,7 @@
     .stp-song-title {
       font-family: Calibri, 'DM Sans', sans-serif;
       font-size: 13px;
-      color: #D4A843;
+      color: #14B8A6;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       text-align: center;
@@ -1579,7 +1579,7 @@
       font-family: Calibri, 'DM Sans', sans-serif;
       font-size: 14px;
       font-weight: 700;
-      color: #D4A843;
+      color: #14B8A6;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       text-align: center;
@@ -1614,7 +1614,7 @@
     .stp-announce-label {
       font-family: Calibri, 'DM Sans', sans-serif;
       font-size: 12px;
-      color: #D4A843;
+      color: #14B8A6;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       margin-bottom: 10px;
@@ -1650,8 +1650,8 @@
       min-height: 20px;
     }
     .strip-thumb-footer .strip-thumb-num { margin-bottom: 0; }
-    .strip-thumb:hover { border-color: var(--gold-dim); }
-    .strip-thumb.active { border-color: var(--gold); }
+    .strip-thumb:hover { border-color: var(--accent-dim); }
+    .strip-thumb.active { border-color: var(--accent); }
 
     .strip-thumb-num {
       font-size: 9px;
@@ -1709,9 +1709,9 @@
       transition: border-color 0.15s;
       text-align: center;
     }
-    .ch-tile:hover { border-color: var(--gold-dim); }
-    .ch-tile.selected { border-color: var(--gold); }
-    .ch-tile-name { font-size: 10px; font-weight: 700; color: var(--gold); letter-spacing: 0.05em; }
+    .ch-tile:hover { border-color: var(--accent-dim); }
+    .ch-tile.selected { border-color: var(--accent); }
+    .ch-tile-name { font-size: 10px; font-weight: 700; color: var(--accent); letter-spacing: 0.05em; }
     .ch-tile-state { font-size: 8px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ch-audio-badge { font-size: 10px; margin-top: 2px; }
 
@@ -1725,7 +1725,7 @@
       flex-direction: column;
       gap: 6px;
     }
-    .custom-slot.active { border-color: var(--gold); }
+    .custom-slot.active { border-color: var(--accent); }
     .custom-slot-head {
       display: flex; align-items: center; justify-content: space-between;
     }
@@ -1737,7 +1737,7 @@
       border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px;
     }
     .custom-slot.active .custom-slot-active {
-      color: var(--gold); border-color: var(--gold);
+      color: var(--accent); border-color: var(--accent);
     }
     .custom-slot-preview {
       height: 64px;
@@ -1769,8 +1769,8 @@
 
 <header>
   <div class="logo">
-    <div class="logo-icon"><img src="/static/ecb-worship-icon.svg" alt="ECB Worship App"></div>
-    <div class="logo-text">ECB <span>WORSHIP</span> APP</div>
+    <div class="logo-icon"><img src="/static/ecb-worship-icon.svg" alt="LIGHT WORSHIP APP"></div>
+    <div class="logo-text">LIGHT <span>WORSHIP</span> APP</div>
   </div>
   <div class="header-actions">
     <!-- Open main display (ch1) — fullscreen on the extended screen -->
@@ -2016,7 +2016,7 @@
                         onclick="_useDownloadedVersion(this.closest('.program-item'))">Use downloaded ↓</button>
               </div>
             </div>
-            <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--gold)">
+            <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--accent)">
               {% if item.get('url') %}{{ item.get('media_type','').capitalize() }}: {{ item['url'].split('/')[-1] }}{% endif %}
             </div>
             <input type="hidden" class="item-media-type" value="{{ item.get('media_type','') }}">
@@ -2065,12 +2065,12 @@
                      onfocus="this.select()"
                      oninput="onMediaUrlInput(this.closest('.program-item'))">
             </div>
-            <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--gold)">
+            <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--accent)">
               {% if item.get('url') %}Image: {{ item['url'].split('/')[-1] }}{% endif %}
             </div>
             <input type="hidden" class="lyrics-key" value="">
             {% elif _is_live %}
-            <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--gold)">
+            <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--accent)">
               Live input is controlled from the Live panel (right rail). Please remove this item from the program.
             </div>
             <input type="hidden" class="item-title" value="{{ item.title }}">
@@ -2350,9 +2350,9 @@
 
   <!-- Theme selector -->
   <div>
-    <div class="rp-section-label">Theme</div>
-    <select id="themeSelect" class="channel-select" style="width:100%;">
-      <option value="default">Default (Navy/Gold)</option>
+    <div class="rp-section-label" style="color:#5aa9f0;font-weight:800;">🎨 Theme</div>
+    <select id="themeSelect" class="channel-select" style="width:100%;background:#1c3a5e;border:1px solid #3f7bd0;color:#eaf3ff;font-weight:700;">
+      <option value="default">Default (Navy/Teal)</option>
       <option value="midnight">Midnight</option>
       <option value="forest">Forest</option>
       <option value="ivory">Ivory (Light)</option>
@@ -2422,45 +2422,14 @@
       <button class="obs-dock" title="Dock">▢</button>
     </div>
     <div class="obs-body">
-      <button type="button" class="obs-btn" data-obs="screen" onclick="obsActivate(this);openScreenConfig()">🔧 Screen Config</button>
-      <button type="button" class="obs-btn" data-obs="blank" onclick="obsActivate(this);_projBlank()">■ Blank / Stop</button>
-      <div class="obs-camera-row">
-        <button type="button" class="obs-btn obs-camera-btn" data-obs="timer" onclick="obsActivate(this);timerStart()">⏱ Start Timer</button>
-        <button type="button" class="obs-btn obs-camera-btn obs-quick" onclick="timerAddFive()" title="+5:00 sa countdown">+5:00</button>
-      </div>
-      <div class="obs-camera-row" style="margin-top:7px;gap:5px;">
-        <span class="obs-label">Live input</span>
-      </div>
-      <div class="obs-camera-row">
-        <select id="obsLiveSource" class="obs-select">
-          <option value="">Select source…</option>
-        </select>
-        <button type="button" class="obs-gear" title="I-re-scan ang mga device" onclick="liveLoadSources(true)">↺</button>
-      </div>
-      <div class="obs-camera-row">
-        <button type="button" class="obs-ch-btn live-ch-btn" data-ch="ch1">ch1</button>
-        <button type="button" class="obs-ch-btn live-ch-btn" data-ch="ch2">ch2</button>
-        <button type="button" class="obs-ch-btn live-ch-btn" data-ch="ch3">ch3</button>
-        <button type="button" class="obs-ch-btn live-ch-btn" data-ch="ch4">ch4</button>
-        <button type="button" class="obs-ch-btn live-ch-btn" data-ch="ch5">ch5</button>
-      </div>
-      <div class="obs-camera-row">
-        <button type="button" class="obs-btn obs-camera-btn" data-obs="live" onclick="obsActivate(this);livePush()">Push Live Feed</button>
-        <button type="button" class="obs-gear" title="Live / PiP settings" onclick="document.getElementById('liveInputPanel').scrollIntoView({behavior:'smooth'});document.getElementById('pipEnable').focus();">⚙</button>
-      </div>
-      <button type="button" class="obs-btn" data-obs="send-ann" onclick="obsActivate(this);sendAnnouncement()">▶ Send Announcement</button>
-      <button type="button" class="obs-btn" data-obs="send-custom" onclick="obsActivate(this);sendCustomOutput()">▶ Send Custom Output</button>
-    </div>
-  </div>
-
-  <!-- Screen Config (opens modal) -->
+<!-- Screen Config (opens modal) -->
   <div>
     <div class="rp-section-label">Screen Config</div>
-    <button class="btn-rp-blank" onclick="openScreenConfig()" style="width:100%;justify-content:center;">🔧 Configure Screens &amp; Resolutions</button>
+    <button class="btn-rp-blank" onclick="openScreenConfig()" style="width:100%;justify-content:center;background:#1e6fd9;color:#fff;border-color:#1e6fd9;font-weight:700;">🔧 Configure Screens &amp; Resolutions</button>
   </div>
 
   <!-- Blank button -->
-  <button class="btn-rp-blank" onclick="_projBlank()">■ Blank Screen</button>
+  <button class="btn-rp-blank" onclick="_projBlank()" style="background:#37414f;color:#e8edf3;border-color:#4a5568;font-weight:700;">■ Blank Screen</button>
 
   <!-- Live input (server-side capture) -->
   <div id="liveInputPanel">
@@ -2505,9 +2474,44 @@
       <img id="liveThumbImg" alt="" style="width:100%;height:100%;object-fit:contain;display:block;">
     </div>
     <div style="display:flex;gap:5px;">
-      <button class="btn-rp-blank" style="flex:1;color:#4caf82;border-color:#4caf82;" onclick="livePush()">▶ Push</button>
-      <button class="btn-rp-blank" style="flex:1;" onclick="liveStop()">■ Stop</button>
+      <button class="btn-rp-blank" style="flex:1;background:#1f8a4c;color:#fff;border-color:#1f8a4c;font-weight:700;" onclick="livePush()">▶ Push</button>
+      <button class="btn-rp-blank" style="flex:1;background:#b03a3a;color:#fff;border-color:#b03a3a;font-weight:700;" onclick="liveStop()">■ Stop</button>
     </div>
+    <div style="display:flex;gap:5px;margin-top:5px;">
+      <button class="btn-rp-blank" style="flex:1;background:#2e6b4f;color:#fff;border-color:#2e6b4f;font-weight:700;" onclick="pipShow()" title="Ipakita ang PiP live box (broadcast lang)">PiP ON</button>
+      <button class="btn-rp-blank" style="flex:1;background:#555;color:#fff;border-color:#555;font-weight:700;" onclick="pipHide()" title="Itago ang PiP live box">PiP OFF</button>
+    </div>
+    <div style="margin-top:6px;">
+      <div class="rp-section-label" style="margin-bottom:3px;">Screen share (presenters)</div>
+      <div id="presenterList" style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:11px;color:var(--muted);">No presenter connected.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio input (standalone: moved out of Stream Settings) -->
+  <div>
+    <div class="rp-section-label" style="margin-bottom:3px;">Audio input (AUX / USB) — lahat kasama</div>
+    <div id="audioChecksRow" style="display:none;">
+      <div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px;">
+        <div id="audioInputChecks" style="flex:1;display:flex;flex-direction:column;gap:3px;max-height:88px;overflow-y:auto;">
+          <span style="font-size:11px;color:var(--muted);">Loading…</span>
+        </div>
+        <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 10px;flex:none;"
+                onclick="audioLoadInputs(true)" title="Re-scan audio devices">↺</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:5px;">
+      <button class="btn-rp-blank" style="flex:1;font-weight:700;" onclick="audioSelect()" title="Use for broadcast (next start)">Use in broadcast</button>
+      <button class="btn-rp-blank" id="audioMonBtn" style="flex:1;font-weight:700;" onclick="audioMonitorToggle()" title="Hear the input on PC speakers">🔊 Monitor: OFF</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:5px;" title="Live input level of the selected device">
+      <div style="flex:1;height:10px;background:#111;border:1px solid var(--border);border-radius:5px;overflow:hidden;">
+        <div id="audioLevelBar" style="height:100%;width:0%;background:#2e9e5b;transition:width .15s;"></div>
+      </div>
+      <span id="audioLevelDb" style="font-size:10px;color:var(--muted);min-width:46px;text-align:right;">— dB</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:3px;">Broadcast source applies on next broadcast start.</div>
   </div>
 
   <!-- Timer controls -->
@@ -2523,10 +2527,10 @@
         style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:5px 7px;font-size:11px;">
     </div>
     <div style="display:flex;gap:5px;">
-      <button class="btn-rp-blank" style="flex:1;" onclick="timerShow()">Set</button>
-      <button class="btn-rp-blank" style="flex:1;color:#4caf82;border-color:#4caf82;" onclick="timerStart()">▶</button>
-      <button class="btn-rp-blank" style="flex:1;" onclick="timerPause()">⏸</button>
-      <button class="btn-rp-blank" style="flex:1;" onclick="timerReset()">↺</button>
+      <button class="btn-rp-blank" style="flex:1;background:#c4761a;color:#fff;border-color:#c4761a;font-weight:700;" onclick="timerShow()">Set</button>
+      <button class="btn-rp-blank" style="flex:1;background:#1f8a4c;color:#fff;border-color:#1f8a4c;font-weight:700;" onclick="timerStart()">▶</button>
+      <button class="btn-rp-blank" style="flex:1;background:#e8c146;color:#111923;border-color:#e8c146;font-weight:700;" onclick="timerPause()">⏸</button>
+      <button class="btn-rp-blank" style="flex:1;background:#b03a3a;color:#fff;border-color:#b03a3a;font-weight:700;" onclick="timerReset()">↺</button>
     </div>
   </div>
 
@@ -2562,7 +2566,7 @@
         style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--white);padding:7px 9px;font-family:inherit;font-size:12px;resize:vertical;"></textarea>
     </div>
     <div style="display:flex;gap:6px;margin-top:6px;">
-      <button class="btn-rp-blank" style="flex:1;" onclick="sendAnnouncement()">▶ Send Announcement</button>
+      <button class="btn-rp-blank" style="flex:1;background:#0e8f86;color:#fff;border-color:#0e8f86;font-weight:700;" onclick="sendAnnouncement()">▶ Send Announcement</button>
     </div>
   </div>
 
@@ -2598,8 +2602,47 @@
         style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--white);padding:7px 9px;font-family:inherit;font-size:12px;resize:vertical;"></textarea>
     </div>
     <div style="display:flex;gap:6px;margin-top:6px;">
-      <button class="btn-rp-blank" style="flex:1;" onclick="sendCustomOutput()">▶ Send Custom</button>
-      <button class="btn-rp-blank" style="flex:0 0 auto;" id="customFeedBtn" onclick="toggleCustomFeed()" title="Show/hide the main projection feed inside the custom output">Show feed</button>
+      <button class="btn-rp-blank" style="flex:1;background:#6d4bc4;color:#fff;border-color:#6d4bc4;font-weight:700;" onclick="sendCustomOutput()">▶ Send Custom</button>
+      <button class="btn-rp-blank" style="flex:0 0 auto;width:auto;padding:2px 6px;font-size:11px;line-height:1.1;border-radius:4px;background:#e8c146;color:#111923;border-color:#e8c146;font-weight:700;" id="customFeedBtn" onclick="toggleCustomFeed()" title="Show/hide the main projection feed inside the custom output">Show feed</button>
+    </div>
+  </div>
+
+  <!-- Direct output (network receiver) -->
+  <div>
+    <button class="btn-rp-blank" style="width:100%;justify-content:center;background:#0e8f86;color:#fff;border-color:#0e8f86;font-weight:700;" onclick="openNetOutput()">🌐 Direct Output (IP)</button>
+  </div>
+
+  <!-- Stream settings (collapsible button) -->
+  <div>
+    <button class="btn-rp-blank" style="width:100%;justify-content:center;background:#1e6fd9;color:#fff;border-color:#1e6fd9;font-weight:700;" onclick="toggleStreamSettings()">📡 Stream Settings</button>
+    <div id="streamSettingsBody" style="display:none;margin-top:6px;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+        <select id="streamDest" class="ctb-sel" style="flex:1;">
+          <option value="facebook">Facebook</option>
+          <option value="youtube">YouTube</option>
+        </select>
+        <span class="cp-pill idle" id="streamPill" style="font-size:10px;">OFFLINE</span>
+      </div>
+      <div style="margin-bottom:6px;">
+        <div class="rp-section-label" style="margin-bottom:3px;">Broadcast title</div>
+        <input id="streamTitle" type="text" placeholder="e.g. Saturday Worship Service"
+          style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:6px 8px;font-size:12px;">
+      </div>
+      <div style="margin-bottom:6px;">
+        <div class="rp-section-label" style="margin-bottom:3px;">RTMP server URL</div>
+        <input id="streamRtmp" type="text" placeholder="rtmps://live-api-s.facebook.com:443/rtmp"
+          style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:6px 8px;font-size:12px;">
+      </div>
+      <div style="margin-bottom:6px;">
+        <div class="rp-section-label" style="margin-bottom:3px;">Stream key</div>
+        <input id="streamKey" type="password" placeholder="Paste stream key from the platform"
+          style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--white);padding:6px 8px;font-size:12px;">
+      </div>
+      <div style="display:flex;gap:5px;">
+        <button class="btn-rp-blank" id="streamGoBtn" style="flex:1;background:#1f8a4c;color:#fff;border-color:#1f8a4c;font-weight:700;" onclick="toggleStream()">▶ Start broadcast</button>
+      </div>
+    </div>
+  </div>
     </div>
   </div>
 
@@ -2859,7 +2902,7 @@
                     onclick='_useDownloadedVersion(this.closest(".program-item"))'>Use downloaded ↓</button>
           </div>
         </div>
-        <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--gold)"></div>
+        <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--accent)"></div>
         <input type="hidden" class="item-media-type" value="video">
         <div class="media-video-options" style="margin-top:10px;display:block">
           <label style="margin-bottom:6px">Playback options</label>
@@ -2904,7 +2947,7 @@
                  onfocus="this.select()"
                  oninput="onMediaUrlInput(this.closest('.program-item'))">
         </div>
-        <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--gold)"></div>
+        <div class="media-selected-info" style="margin-top:6px;font-size:11px;color:var(--accent)"></div>
         <input type="hidden" class="lyrics-key" value="">`;
     } else {
       badgeClass = "badge-participant"; badgeLabel = "Participant";
@@ -4923,7 +4966,7 @@
         if (!contentItems.length) return "";
         const rows = contentItems.map(it =>
           `<tr>
-            <td style="padding:5px 10px;color:var(--gold);font-size:12px;">${it.part || it.title}</td>
+            <td style="padding:5px 10px;color:var(--accent);font-size:12px;">${it.part || it.title}</td>
             <td style="padding:5px 10px;color:var(--white);font-size:13px;">${it.participant}</td>
           </tr>`
         ).join("");
@@ -5962,6 +6005,93 @@
     toast('Live stopped on ' + sd.channel, 'ok');
   }
 
+  // Dedicated PiP overlay command -- independent of any content push. Shows or
+  // hides the small live box on the broadcast render without touching the
+  // full-screen content underneath.
+  function _pipCommandPayload(show) {
+    const sels = _liveSourceEls();
+    const sel = sels.find(function (s) { return s.value; }) || sels[0];
+    const idx = sel ? sel.value : '';
+    if (show && !idx) { toast('Select a live source first', 'error'); return null; }
+    return {
+      channel: _liveSelectedCh,
+      show: show === true,
+      source_index: idx === '' ? null : parseInt(idx, 10),
+      pip_corner: document.getElementById('pipCorner')?.value || 'tr',
+      pip_size:   document.getElementById('pipSize')?.value   || 'md',
+    };
+  }
+
+  function pipShow() {
+    const sd = _pipCommandPayload(true);
+    if (!sd) return;
+    _socket.emit('pip:set', sd);
+    toast('PiP ON (source ' + sd.source_index + ') → ' + sd.channel, 'ok');
+  }
+
+  function pipHide() {
+    const sd = _pipCommandPayload(false) || { channel: _liveSelectedCh, show: false };
+    _socket.emit('pip:set', sd);
+    toast('PiP OFF on ' + sd.channel, 'ok');
+  }
+
+  // Screen-share presenters (from /share sender PCs). The server broadcasts
+  // the connected-presenter list; the operator picks which one each channel
+  // shows (target = the Live panel's selected channel buttons).
+  let _presenterSources = {};
+  let _presenterSelection = {};
+
+  function _renderPresenterList() {
+    const box = document.getElementById('presenterList');
+    if (!box) return;
+    const sids = Object.keys(_presenterSources || {});
+    if (!sids.length) {
+      box.innerHTML = '<div style="font-size:11px;color:var(--muted);">No presenter connected.</div>';
+      return;
+    }
+    box.innerHTML = '';
+    sids.forEach(function (sid) {
+      const info = _presenterSources[sid] || {};
+      const name = info.name || 'Presenter';
+      const shownOn = Object.keys(_presenterSelection || {}).filter(function (ch) {
+        return _presenterSelection[ch] === sid;
+      });
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:5px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:5px;padding:4px 6px;';
+      const label = document.createElement('span');
+      label.style.cssText = 'flex:1;font-size:11px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      label.textContent = name + (shownOn.length ? '  (→ ' + shownOn.join(',') + ')' : '');
+      const btn = document.createElement('button');
+      btn.className = 'btn-rp-blank';
+      btn.style.cssText = 'flex:none;background:#1e6fd9;color:#fff;border-color:#1e6fd9;font-weight:700;font-size:11px;padding:3px 10px;';
+      btn.textContent = 'Show';
+      btn.title = 'Show this presenter on ' + _liveSelectedCh;
+      btn.onclick = function () { presenterShow(sid); };
+      row.appendChild(label);
+      row.appendChild(btn);
+      box.appendChild(row);
+    });
+  }
+
+  function presenterShow(sid) {
+    _socket.emit('live:select', { channel: _liveSelectedCh, source: sid });
+    toast('Presenter → ' + _liveSelectedCh, 'ok');
+  }
+
+  function presenterStop() {
+    _socket.emit('live:stop', { channel: _liveSelectedCh });
+    toast('Share stopped on ' + _liveSelectedCh, 'ok');
+  }
+
+  _socket.on('live:sources', function (d) {
+    _presenterSources = d || {};
+    _renderPresenterList();
+  });
+  _socket.on('live:selection', function (d) {
+    _presenterSelection = d || {};
+    _renderPresenterList();
+  });
+
   function _bindLivePanel() {
     const sels = _liveSourceEls();
     sels.forEach(function (sel) {
@@ -6645,6 +6775,16 @@
     if (m.text_color) sd.text_color = m.text_color;
     if (m.part) sd.part_font_size = m.part_font_size || 'md';
     if (m.participant) sd.participants = [{ role: m.part || '', name: m.participant }];
+    // Attach the next paragraph/verse (same contract as song stanzas): the
+    // program item holds no verse text (fetched live), so without this the
+    // remote Next preview falls through to the next sequence item instead of
+    // the upcoming verse. At the last paragraph nothing is attached and the
+    // next-item preview applies, matching song behavior.
+    const nextPara = _projStanzas[_projStanzaIdx + 1] || null;
+    if (nextPara) {
+      const nextLines = String(nextPara.text || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+      if (nextLines.length) sd.next_stanza = { lines: nextLines };
+    }
     _stageThenPush('slide:show', sd);
     renderLivePreview(sd);
   }
@@ -6681,7 +6821,7 @@
     if (_projStanzaIdx > 0) {
       _projStanzaIdx--;
       _activateStripThumb(_projItem, _projStanzaIdx);
-      if (_projStanzas[0]?.type === '__content_para__') {
+      if (_projStanzas[0]?.type === '__content_para__' || _projStanzas[0]?.type === '__bible_para__') {
         _sendCurrentContentPara(_getChannel());
       } else {
         _sendCurrentStanza(_getChannel(),
@@ -6826,6 +6966,248 @@
     }
     return 'ch2';
   }
+
+  // ── Stream Settings (broadcast to FB / YouTube) ──────────────────────────
+  const _RTMP_DEFAULTS = {
+    facebook: 'rtmps://live-api-s.facebook.com:443/rtmp',
+    youtube:  'rtmp://a.rtmp.youtube.com/live2',
+  };
+  let _bcDest = 'facebook';
+  let _bcState = 'idle';
+
+  function _streamEl(id) { return document.getElementById(id); }
+
+  function _paintStream() {
+    const pill = _streamEl('streamPill');
+    const go   = _streamEl('streamGoBtn');
+    if (!pill || !go) return;
+    if (_bcState === 'live') {
+      go.textContent = '■ Stop broadcast';
+      go.style.background = '#b03a3a'; go.style.color = '#fff'; go.style.borderColor = '#b03a3a';
+      pill.textContent = '● LIVE · ' + (_bcDest === 'youtube' ? 'YouTube' : 'Facebook');
+      pill.style.background = '#1f4a2a'; pill.style.color = '#7fe0a8';
+    } else if (_bcState === 'connecting') {
+      go.textContent = '▶ Start broadcast';
+      go.style.background = '#c4761a'; go.style.color = '#fff'; go.style.borderColor = '#c4761a';
+      pill.textContent = 'CONNECTING…';
+      pill.style.background = '#4a3d1f'; pill.style.color = '#e8c06a';
+    } else {
+      go.textContent = '▶ Start broadcast';
+      go.style.background = '#1f8a4c'; go.style.color = '#fff'; go.style.borderColor = '#1f8a4c';
+      pill.textContent = 'OFFLINE';
+      pill.style.background = '#3a3f4d'; pill.style.color = '#cfd6e0';
+    }
+  }
+
+  function _setStreamDest(d) {
+    _bcDest = (d === 'youtube') ? 'youtube' : 'facebook';
+    const sel = _streamEl('streamDest');
+    if (sel) sel.value = _bcDest;
+    const rtmp = _streamEl('streamRtmp');
+    if (rtmp) {
+      const v = (rtmp.value || '').trim();
+      if (!v || v === _RTMP_DEFAULTS.facebook || v === _RTMP_DEFAULTS.youtube) {
+        rtmp.value = _RTMP_DEFAULTS[_bcDest];
+      }
+    }
+  }
+
+  async function _loadStreamConfig() {
+    try {
+      const r = await fetch('/api/broadcast/config');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const c = await r.json();
+      _setStreamDest(c.destination);
+      if (_streamEl('streamTitle')) _streamEl('streamTitle').value = c.title || '';
+      if (_streamEl('streamRtmp')) _streamEl('streamRtmp').value = c.rtmp_url || _RTMP_DEFAULTS[_bcDest];
+      if (c.stream_key_set && _streamEl('streamKey')) {
+        _streamEl('streamKey').placeholder = 'Key saved (ends …' + (c.key_tail || '') + ') — blank to keep';
+      }
+    } catch (e) { /* console only */ }
+  }
+
+  async function _saveStreamConfig() {
+    try {
+      const payload = {
+        destination: _bcDest,
+        title: _streamEl('streamTitle') ? (_streamEl('streamTitle').value || '') : '',
+        rtmp_url: _streamEl('streamRtmp') ? (_streamEl('streamRtmp').value || '') : '',
+        stream_key: _streamEl('streamKey') ? (_streamEl('streamKey').value || '') : '',
+      };
+      const r = await fetch('/api/broadcast/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const k = _streamEl('streamKey');
+      if (k && k.value) { k.value = ''; k.placeholder = 'Key saved — blank to keep'; }
+      return true;
+    } catch (e) { return false; }
+  }
+
+  async function _pollStream() {
+    try {
+      const r = await fetch('/api/broadcast/status?t=' + Date.now());
+      if (!r.ok) return;
+      const c = await r.json();
+      _bcState = c.state || 'idle';
+      if (c.destination) _bcDest = c.destination === 'youtube' ? 'youtube' : 'facebook';
+      _paintStream();
+    } catch (e) {}
+  }
+
+  async function toggleStream() {
+    if (_bcState === 'live') {
+      try { await fetch('/api/broadcast/stop', { method: 'POST' }); } catch (e) {}
+      _pollStream();
+      return;
+    }
+    if (!(await _saveStreamConfig())) return;
+    _bcState = 'connecting';
+    _paintStream();
+    try {
+      const r = await fetch('/api/broadcast/start', { method: 'POST' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      setTimeout(_pollStream, 1200);
+    } catch (e) { _pollStream(); }
+  }
+
+  function openStreamConsole() {
+    window.open('/stream-console', 'stream_console');
+  }
+
+  function toggleStreamSettings() {
+    const body = _streamEl('streamSettingsBody');
+    if (body) body.style.display = (body.style.display === 'none' || !body.style.display) ? 'block' : 'none';
+  }
+
+  function _initStreamPanel() {
+    const sel = _streamEl('streamDest');
+    if (sel) sel.addEventListener('change', function () { _setStreamDest(sel.value); });
+    _loadStreamConfig();
+    _pollStream();
+    setInterval(_pollStream, 5000);
+    audioLoadInputs(true);
+  }
+  _initStreamPanel();
+
+  // ── Audio input (AUX / USB) ──────────────────────────────────────────────
+  let _audioMonitoring = null;
+
+  function _audioMonBtn() {
+    const on = !!_audioMonitoring;
+    const btn = document.getElementById('audioMonBtn');
+    if (btn) btn.textContent = on ? '🔇 Monitor: ON' : '🔊 Monitor: OFF';
+  }
+
+  async function audioLoadInputs(rescan) {
+    const box = document.getElementById('audioInputChecks');
+    try {
+      const res = await fetch('/api/audio/inputs' + (rescan ? '?rescan=1' : ''));
+      const d = await res.json();
+      const devs = d.devices || [];
+      const actives = d.actives || (d.active ? [d.active] : []);
+      _audioMonitoring = d.monitoring || null;
+      _audioMonBtn();
+      if (!box) return;
+      box.innerHTML = '';
+      if (!devs.length) {
+        box.innerHTML = '<span style="font-size:11px;color:var(--muted);">No audio inputs found</span>';
+        return;
+      }
+      devs.forEach(function (name) {
+        const lab = document.createElement('label');
+        lab.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;color:var(--white);cursor:pointer;';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = name;
+        cb.className = 'audio-dev-check';
+        cb.style.accentColor = '#4caf82';
+        cb.checked = true;
+        lab.appendChild(cb);
+        lab.appendChild(document.createTextNode(name));
+        box.appendChild(lab);
+      });
+      // The list stays hidden: everything is always included. Persist when
+      // the device set differs from what the server has saved.
+      const saved = (actives || []).slice().sort().join('|');
+      const now = devs.slice().sort().join('|');
+      if (devs.length && saved !== now) audioSelect(true);
+    } catch (e) {
+      if (box && !box.children.length) box.innerHTML = '<span style="font-size:11px;color:var(--muted);">Unavailable</span>';
+    }
+  }
+
+  function _audioChecked() {
+    return Array.from(document.querySelectorAll('.audio-dev-check'))
+      .filter(function (cb) { return cb.checked; })
+      .map(function (cb) { return cb.value; });
+  }
+
+  async function audioSelect(silent) {
+    const devices = _audioChecked();
+    if (!devices.length) { if (!silent) toast('Check at least one audio input', 'error'); return; }
+    try {
+      const res = await fetch('/api/audio/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ devices }),
+      });
+      const d = await res.json();
+      if (d && d.status === 'ok') {
+        if (!silent) toast('Broadcast audio: ' + (d.audio_devices || []).join(' + '), 'ok');
+      }
+      else if (!silent) toast((d && d.message) || 'Failed to set audio', 'error');
+    } catch (e) { if (!silent) toast('Failed to set audio: ' + e, 'error'); }
+  }
+
+  async function audioMonitorToggle() {
+    const checked = _audioChecked();
+    const turningOn = !_audioMonitoring;
+    try {
+      const res = await fetch('/api/audio/monitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ on: turningOn, device: checked[0] || '' }),
+      });
+      const d = await res.json();
+      if (d && d.status === 'ok') {
+        _audioMonitoring = d.monitoring || null;
+        _audioMonBtn();
+        toast(turningOn ? 'Monitoring: ' + (_audioMonitoring || '') : 'Monitor off', 'ok');
+      } else toast((d && d.message) || 'Monitor failed', 'error');
+    } catch (e) { toast('Monitor failed: ' + e, 'error'); }
+  }
+
+  // ── Audio input level meter ────────────────────────────────────────────
+  // Small live bar bound to the SELECTED input device (that is what it
+  // reads). Polls the analyzer endpoint ~2/sec; green/yellow/red by level.
+  function _audioLevelColor(pct) {
+    if (pct >= 85) return '#d64545';
+    if (pct >= 60) return '#e8c146';
+    return '#2e9e5b';
+  }
+
+  async function audioPollLevel() {
+    const bar = document.getElementById('audioLevelBar');
+    const dbEl = document.getElementById('audioLevelDb');
+    if (!bar) return;
+    try {
+      const checked = _audioChecked();
+      const device = checked.length ? checked[0] : '';
+      const res = await fetch('/api/audio/level' + (device ? ('?device=' + encodeURIComponent(device)) : ''));
+      const d = await res.json();
+      if (!d || d.db === null || d.db === undefined || !d.live) {
+        bar.style.width = '0%';
+        if (dbEl) dbEl.textContent = '— dB';
+        return;
+      }
+      const pct = Math.max(0, Math.min(100, (d.db + 60) / 60 * 100));
+      // Always show a small visible sliver while live (even in silence),
+      // so the indicator light itself never disappears.
+      bar.style.width = Math.max(pct, 3).toFixed(0) + '%';
+      bar.style.background = _audioLevelColor(pct);
+      if (dbEl) dbEl.textContent = d.db.toFixed(0) + ' dB';
+    } catch (e) { /* keep last reading */ }
+  }
+  setInterval(audioPollLevel, 500);
 
   // ── Sample text test ───────────────────────────────────────────────────────
   const _SAMPLE_TEXT = {
@@ -7081,7 +7463,7 @@
     <div style="padding:1.2rem 1.4rem;flex:1;min-height:0;overflow-y:auto;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
         <span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Output channels &amp; resolution</span>
-        <button type="button" id="rpAddChannel" title="Add output channel" style="background:var(--gold);color:var(--bg);border:none;border-radius:4px;width:24px;height:24px;font-size:16px;line-height:1;cursor:pointer;font-weight:700;">+</button>
+        <button type="button" id="rpAddChannel" title="Add output channel" style="background:var(--accent);color:var(--bg);border:none;border-radius:4px;width:24px;height:24px;font-size:16px;line-height:1;cursor:pointer;font-weight:700;">+</button>
       </div>
       <div class="rp-ch-grid" id="rpChGrid"></div>
     </div>
@@ -7119,6 +7501,19 @@
       <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-gold" onclick="savePin()">Save PIN</button>
     </div>
+  </div>
+</div>
+
+<!-- ── Direct Output (network receiver) Modal ─────────────────────────────── -->
+<div id="netOutputModal" class="overlay-modal" onclick="closeNetOutput(event)">
+  <div class="modal-box" style="max-width:380px;width:90%;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;padding:1.4rem;text-align:center;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <span style="font-size:14px;font-weight:600;color:var(--white);">Direct Output (Receiver)</span>
+      <button class="hdr-icon-btn" style="width:28px;height:28px;" onclick="closeNetOutput()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Paste the IP below into the Stream Console → SOURCE → Direct app, then press Connect.</div>
+    <div id="net-ip" style="font-size:16px;font-weight:700;color:var(--accent-lt);word-break:break-all;margin-bottom:14px;"></div>
+    <button class="btn btn-outline" style="width:100%;" onclick="copyNetIp()">Copy IP</button>
   </div>
 </div>
 
@@ -7220,17 +7615,54 @@
   }
 
   // Logout confirm modal
+  // Direct Output (network receiver): show server IP:port for the Stream Console
+  let _netCur = '';
+  function openNetOutput() {
+    const modal = document.getElementById('netOutputModal');
+    modal.classList.add('open');
+    // Fetch the CURRENT address every time the modal opens (not the
+    // page-load value), so a network change is reflected immediately.
+    _setNetIp('{{ server_ip }}');
+    fetch('/api/server-ip').then(function(r){ return r.json(); }).then(function(d) {
+      if (d && d.ip) _setNetIp(d.ip);
+    }).catch(function(){});
+  }
+  function _setNetIp(ip) {
+    let port = (window.location.port || '5001');
+    _netCur = ip || '{{ server_ip }}';
+    let display = _netCur;
+    if (port && port !== '80' && port !== '443') display = _netCur + ':' + port;
+    document.getElementById('net-ip').textContent = display;
+  }
+  function closeNetOutput(e) {
+    if (e && e.target !== document.getElementById('netOutputModal')) return;
+    document.getElementById('netOutputModal').classList.remove('open');
+  }
+  function copyNetIp() {
+    const v = document.getElementById('net-ip').textContent;
+    navigator.clipboard.writeText(v).then(() => toast('IP copied', 'success'));
+  }
   // QR modal
-  let _qrGenerated = false;
   function openQrModal() {
     const modal = document.getElementById('qrModal');
     modal.classList.add('open');
-    if (!_qrGenerated) {
-      const url = 'http://{{ server_ip }}:5000/remote';
-      document.getElementById('qr-url').textContent = url;
-      new QRCode(document.getElementById('qr-code'), { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
-      _qrGenerated = true;
-    }
+    // Regenerate on EVERY open with the current address (never a stale
+    // page-load IP), so the mobile remote can connect after a network change.
+    _renderQrModal('{{ server_ip }}');
+    fetch('/api/server-ip').then(function(r){ return r.json(); }).then(function(d) {
+      if (d && d.ip) _renderQrModal(d.ip);
+    }).catch(function(){});
+  }
+  function _renderQrModal(ip) {
+    // Use the port serving THIS console (never a hardcoded one): the old
+    // ':5000' belongs to another service on this machine, so the QR could
+    // never connect. Omit the port for default http/https ports.
+    var port = window.location.port;
+    const url = 'http://' + ip + (port ? ':' + port : '') + '/remote';
+    document.getElementById('qr-url').textContent = url;
+    const box = document.getElementById('qr-code');
+    box.innerHTML = '';
+    new QRCode(box, { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
   }
   function closeQrModal(e) {
     if (e && e.target !== document.getElementById('qrModal')) return;
@@ -7240,7 +7672,7 @@
     const url = 'http://{{ server_ip }}:5000/remote';
     navigator.clipboard.writeText(url).then(() => toast('Link copied', 'success'));
   }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('qrModal').classList.remove('open'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.getElementById('qrModal').classList.remove('open'); document.getElementById('netOutputModal').classList.remove('open'); } });
 
   function confirmLogout() {
     document.getElementById('logoutModal').classList.add('open');
@@ -7277,7 +7709,7 @@
     if (document.getElementById('buildToast')) return;
     var t = document.createElement('div');
     t.id = 'buildToast';
-    t.setAttribute('style', 'position:fixed;z-index:99999;top:14px;left:50%;transform:translateX(-50%);background:#0c1526;border:1px solid #c9a84c;color:#e8ecf3;padding:10px 18px;border-radius:10px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);white-space:nowrap');
+    t.setAttribute('style', 'position:fixed;z-index:99999;top:14px;left:50%;transform:translateX(-50%);background:#0c1526;border:1px solid #2DD4BF;color:#e8ecf3;padding:10px 18px;border-radius:10px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.5);white-space:nowrap');
     t.innerHTML = 'May bagong update ang server. <a href="#" id="buildToastReload" style="color:#ffd76a;font-weight:600">I-reload ngayon</a>';
     document.body.appendChild(t);
     document.getElementById('buildToastReload').addEventListener('click', function (e) { e.preventDefault(); location.reload(); });
@@ -7297,9 +7729,5 @@
 })();
 </script>
 
-<!-- Custom Output shortcut (lower-right) -->
-<button id="btnCustomOutput" onclick="window.open('/custom','ecb_custom')"
-        title="Open Custom Output (live stream + studio controls)"
-        style="position:fixed;bottom:22px;right:18px;z-index:9998;height:46px;padding:0 18px;border-radius:24px;border:1px solid var(--gold);background:var(--gold);color:var(--bg);font-weight:700;font-size:13px;letter-spacing:.05em;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.5);">&#9881; Custom Output</button>
 </body>
 </html>

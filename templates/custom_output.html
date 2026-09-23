@@ -46,7 +46,7 @@
     #text.blank {
       font-size: clamp(1rem, 2vw, 2rem);
       opacity: 0.2;
-      color: #d4a843;
+      color: #14B8A6;
       letter-spacing: 0.1em;
       font-style: italic;
     }
@@ -79,7 +79,7 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       background: rgba(0,0,0,0.65);
-      color: #d4a843;
+      color: #14B8A6;
       padding: 2px 7px;
       border-radius: 4px;
       line-height: 1.4;
@@ -104,7 +104,7 @@
       box-shadow: 0 4px 18px rgba(0,0,0,.45);
     }
     #controls-btn:hover { background: rgba(0,0,0,.9); }
-    #controls-btn.open { background: #d4a843; color: #111923; border-color: #d4a843; }
+    #controls-btn.open { background: #14B8A6; color: #111923; border-color: #14B8A6; }
     #controls-panel {
       position: fixed; top: 0; right: 0; bottom: 0; width: 305px; z-index: 99990;
       background: rgba(12,16,24,0.97);
@@ -125,13 +125,13 @@
     .cp-st { color: #45c58a; } .cp-st.bad { color: #f06a5f; }
     .cp-btn { border: 1px solid #344252; background: #1f2733; color: #e8edf3; padding: 9px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
     .cp-btn:hover { background: #2a3545; }
-    .cp-btn.gold { background: #d8ad4c; color: #111923; border-color: #d8ad4c; }
+    .cp-btn.gold { background: #2DD4BF; color: #111923; border-color: #2DD4BF; }
     .cp-btn.red { background: #57252b; border-color: #87404a; }
     .cp-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .cp-btns.one { grid-template-columns: 1fr; }
     .cp-dest { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
     .cp-dest button { border: 1px solid #344252; background: #1f2733; color: #91a0b2; padding: 8px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; }
-    .cp-dest button.active { background: #d8ad4c; color: #111923; border-color: #d8ad4c; }
+    .cp-dest button.active { background: #2DD4BF; color: #111923; border-color: #2DD4BF; }
     .cp-field { display: grid; gap: 4px; margin-bottom: 8px; }
     .cp-field input { width: 100%; padding: 8px 9px; border: 1px solid #344252; border-radius: 6px; background: #10151d; color: #e8edf3; font: inherit; font-size: 12px; }
     .cp-field label { color: #91a0b2; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
@@ -217,8 +217,14 @@
   // The Live panel pushes media:live with pip_* settings; the server relays the
   // whole payload verbatim to this channel room. Show/hide a small live box in a
   // corner while the full-screen custom text keeps its spot.
+  //
+  // The PiP shows the BROADCAST OUTPUT (the server-rendered projection feed),
+  // served locally by the projection_feed on port 5004 — not the raw camera
+  // input and not a desktop monitor grab. The feed only exists while a real
+  // broadcast is running, so the box stays black/blank otherwise.
   const pipBox = document.getElementById('pip-box');
   const pipImg = document.getElementById('pip-img');
+  const PIP_FEED = 'http://' + window.location.hostname + ':5004/projection/feed.mjpeg';
 
   socket.on('media:live', (data) => {
     const cfg = data || {};
@@ -229,8 +235,8 @@
     }
     if (!pipBox || !pipImg) return;
     const on   = cfg.pip_enable === true;
-    const idx  = cfg.source_index;
-    if (!on || idx === undefined || idx === null || idx === '') {
+    window._pipActive = on;
+    if (!on) {
       pipImg.src = '';
       pipBox.classList.remove('visible');
       return;
@@ -243,7 +249,7 @@
     pipBox.classList.add('corner-' + corner);
     pipBox.classList.add('size-' + size);
     pipBox.classList.add('visible');
-    pipImg.src = 'http://' + window.location.hostname + ':5002/live/feed/' + encodeURIComponent(idx) + '.mjpeg';
+    pipImg.src = PIP_FEED;
   });
 
   // Live stop on this channel → blank the PiP again.
@@ -291,6 +297,14 @@
 </div>
 <button onclick="toggleControls()" id="controls-btn" title="Toggle Studio controls">&#9881; Controls</button>
 <script>
+  if (new URLSearchParams(location.search).get('preview') === '1') {
+    var _cpb = document.getElementById('controls-btn');
+    if (_cpb) _cpb.style.display = 'none';
+    var _co = document.getElementById('output-close');
+    if (_co) _co.style.display = 'none';
+  }
+</script>
+<script>
   // Show or hide the mirrored main projection (ch1) feed. Triggered by the
   // "Show feed"/"Hide feed" button on the operator console via a media:live
   // command carrying { mirror: 'on' | 'off' } that the server relays verbatim.
@@ -315,7 +329,12 @@
         body: JSON.stringify({ channel: CHANNEL })
       }).catch(function(){});
     } catch(e){}
-    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+    setTimeout(function(){
+      try { window.close(); } catch(e){}
+      setTimeout(function(){
+        try { window.top.location.replace('about:blank'); } catch(e){}
+      }, 120);
+    }, 60);
   }
 </script>
 <!-- Auto-reload when the server ships a new build (stale tabs self-heal). -->
@@ -401,6 +420,7 @@
   const destBtns = { facebook: $('cpDestFb'), youtube: $('cpDestYt') };
   let curDest = 'facebook';
   let bcState = 'idle';
+  window._pipActive = false;
 
   function setDest(d) {
     curDest = (d === 'youtube') ? 'youtube' : 'facebook';
@@ -420,6 +440,22 @@
     if (live) { $('cpBcastPill').textContent = '● LIVE · ' + dest; $('cpBcastPill').className = 'cp-pill live'; }
     else if (connecting) { $('cpBcastPill').textContent = 'CONNECTING…'; $('cpBcastPill').className = 'cp-pill connecting'; }
     else { $('cpBcastPill').textContent = 'OFFLINE'; $('cpBcastPill').className = 'cp-pill idle'; }
+    // Keep the PiP box in sync with the broadcast state: only show the
+    // projection feed while a broadcast is actually pushing, and blank the box
+    // as soon as it stops so a stale last frame never lingers.
+    if (pipBox && _pipActive) {
+      if (live) {
+        if (!pipImg.dataset.feed || pipImg.dataset.feed !== PIP_FEED) {
+          pipImg.dataset.feed = PIP_FEED;
+          pipImg.src = PIP_FEED;
+        }
+        pipBox.classList.add('visible');
+      } else {
+        pipImg.removeAttribute('data-feed');
+        pipImg.src = '';
+        pipBox.classList.remove('visible');
+      }
+    }
   }
 
   async function loadBroadcast() {

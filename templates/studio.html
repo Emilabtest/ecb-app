@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ECB Worship Studio</title>
+  <title>LIGHT WORSHIP STUDIO</title>
   <style>
-    :root { --bg:#10151d; --panel:#19212c; --panel2:#222d3a; --line:#344252; --text:#e8edf3; --muted:#91a0b2; --gold:#d8ad4c; --red:#f06a5f; --green:#45c58a; }
+    :root { --bg:#10151d; --panel:#19212c; --panel2:#222d3a; --line:#344252; --text:#e8edf3; --muted:#91a0b2; --accent:#2DD4BF; --red:#f06a5f; --green:#45c58a; }
     * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font:14px Inter,Segoe UI,Arial,sans-serif; }
     .app { min-height:100vh; display:grid; grid-template-rows:58px 1fr 54px; }
     header { display:flex; align-items:center; justify-content:space-between; padding:0 20px; border-bottom:1px solid var(--line); background:#131a23; }
-    .brand { display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:1.8px; } .mark { display:grid; place-items:center; width:30px; height:30px; border-radius:8px; background:var(--gold); }
-    .brand small { display:block; font-size:9px; color:var(--gold); letter-spacing:2px; margin-top:2px; }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:1.8px; } .mark { display:grid; place-items:center; width:30px; height:30px; border-radius:8px; background:var(--accent); }
+    .brand small { display:block; font-size:9px; color:var(--accent); letter-spacing:2px; margin-top:2px; }
     .session { display:flex; align-items:center; gap:14px; color:var(--muted); font-size:12px; }
     .on-air { color:#fff; background:#4a1f25; border:1px solid #88434b; border-radius:5px; padding:7px 10px; font-weight:800; }
     .on-air.live    { background:#1f4a2a; border-color:#2f7a44; }
@@ -20,40 +20,40 @@
     .label { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:1.4px; font-weight:800; margin-bottom:10px; }
     .search { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:6px; color:var(--text); background:#111821; margin-bottom:13px; }
     .playlist { display:grid; gap:7px; } .item { padding:11px; border-radius:6px; color:#c8d2dd; cursor:pointer; } .item:hover { background:#1d2633; }
-    .item.active { background:var(--panel2); color:white; border-left:3px solid var(--gold); } .item small { display:block; color:var(--muted); margin-top:4px; }
+    .item.active { background:var(--panel2); color:white; border-left:3px solid var(--accent); } .item small { display:block; color:var(--muted); margin-top:4px; }
     .main { padding:16px; min-width:0; display:grid; grid-template-rows:1fr 190px; gap:16px; }
     .outputs { display:grid; grid-template-columns:1fr 1fr; gap:13px; min-height:0; } .screen { display:flex; flex-direction:column; gap:8px; min-width:0; }
     .screen-head { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:1px; font-weight:800; } .live-tag { color:var(--green); }
     .stage { flex:1; min-height:240px; border:1px solid var(--line); border-radius:7px; background:linear-gradient(145deg,#263a4e,#0d1722); position:relative; overflow:hidden; display:grid; place-items:center; }
-    .stage.program { background:linear-gradient(145deg,#12233a,#05090e); border-color:#6e454a; } .stage:after { content:""; position:absolute; inset:16% 13%; border:1px solid #ffffff22; border-radius:50%; box-shadow:0 0 55px #d8ad4c22; }
-    .stage-content { position:relative; z-index:1; text-align:center; padding:18px; max-width:85%; } .stage-content .cross { color:var(--gold); font-size:30px; }
+    .stage.program { background:linear-gradient(145deg,#12233a,#05090e); border-color:#6e454a; } .stage:after { content:""; position:absolute; inset:16% 13%; border:1px solid #ffffff22; border-radius:50%; box-shadow:0 0 55px #2DD4BF22; }
+    .stage-content { position:relative; z-index:1; text-align:center; padding:18px; max-width:85%; } .stage-content .cross { color:var(--accent); font-size:30px; }
     .stage-content h2 { font-size:24px; margin:12px 0 8px; } .stage-content p { color:#d0dae5; margin:0; font-size:13px; }
-    .stage-content .type-tag { display:inline-block; border:1px solid var(--line); border-radius:20px; padding:3px 10px; font-size:11px; color:var(--gold); letter-spacing:1px; text-transform:uppercase; }
+    .stage-content .type-tag { display:inline-block; border:1px solid var(--line); border-radius:20px; padding:3px 10px; font-size:11px; color:var(--accent); letter-spacing:1px; text-transform:uppercase; }
     .program .stage-content h2 { font-size:29px; } .program .stage-content p { color:#e2c77c; }
     .stage.blackout .stage-content h2 { color:#d09b9b; }
     .slides { display:grid; grid-auto-flow:column; grid-auto-columns:150px; gap:10px; overflow-x:auto; }
     .slide { border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#111923; cursor:pointer; }
-    .slide.selected { border:2px solid var(--gold); } .slide.live { border-color:var(--green); }
+    .slide.selected { border:2px solid var(--accent); } .slide.live { border-color:var(--green); }
     .slide-preview { height:105px; display:grid; place-items:center; text-align:center; padding:8px; background:linear-gradient(135deg,#28455e,#101c29); color:#fff; font-size:11px; word-break:break-word; overflow:hidden; }
     .slide-name { display:block; padding:7px 8px; color:var(--muted); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .slide-name b { color:var(--gold); font-weight:700; }
+    .slide-name b { color:var(--accent); font-weight:700; }
     .right section { padding-bottom:18px; margin-bottom:18px; border-bottom:1px solid var(--line); } .right section:last-child { border:0; }
     .control { display:grid; gap:8px; } .control-row { display:flex; justify-content:space-between; color:#c9d3de; padding:8px 0; }
     .status { color:var(--green); } .status.bad { color:var(--red); }
     .toggle { width:35px; height:18px; border-radius:20px; background:#2a3340; position:relative; cursor:pointer; transition:background .15s; } .toggle:after { content:""; width:14px; height:14px; position:absolute; left:2px; top:2px; background:#c8d2dd; border-radius:50%; transition:left .15s, background .15s; }
     .toggle.on { background:var(--green); } .toggle.on:after { left:19px; background:#fff; }
     .button { border:1px solid var(--line); background:var(--panel2); color:var(--text); padding:10px; border-radius:6px; font-weight:700; cursor:pointer; }
-    .button:hover { background:#2a3545; } .button.gold { background:var(--gold); color:#111923; border-color:var(--gold); } .button.red { background:#57252b; border-color:#87404a; } .button.red:hover { background:#6b2d35; }
+    .button:hover { background:#2a3545; } .button.gold { background:var(--accent); color:#111923; border-color:var(--accent); } .button.red { background:#57252b; border-color:#87404a; } .button.red:hover { background:#6b2d35; }
     .buttons { display:grid; grid-template-columns:1fr 1fr; gap:8px; } .buttons.one { grid-template-columns:1fr; }
     .right { overflow-y:auto; }
     .bcast-monitor { position:relative; border:1px solid var(--line); border-radius:7px; overflow:hidden; background:#000; margin-bottom:10px; }
     .bcast-monitor iframe { display:block; width:100%; height:112px; border:0; background:#000; }
-    .bcast-monitor .cam-tag { position:absolute; top:6px; left:8px; font-size:9px; letter-spacing:.12em; background:rgba(0,0,0,.62); color:var(--gold); padding:2px 6px; border-radius:4px; }
+    .bcast-monitor .cam-tag { position:absolute; top:6px; left:8px; font-size:9px; letter-spacing:.12em; background:rgba(0,0,0,.62); color:var(--accent); padding:2px 6px; border-radius:4px; }
     .bcast-monitor .rec-tag { position:absolute; top:6px; right:8px; font-size:9px; letter-spacing:.12em; background:rgba(0,0,0,.62); color:var(--red); padding:2px 6px; border-radius:4px; display:none; }
     .bcast-monitor .rec-tag.on { display:block; }
     .dest { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:10px; }
     .dest-btn { border:1px solid var(--line); background:var(--panel2); color:var(--muted); padding:9px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer; text-align:center; }
-    .dest-btn.active { background:var(--gold); color:#111923; border-color:var(--gold); }
+    .dest-btn.active { background:var(--accent); color:#111923; border-color:var(--accent); }
     .field { display:grid; gap:4px; margin-bottom:9px; }
     .field input { width:100%; padding:8px 9px; border:1px solid var(--line); border-radius:6px; background:#111821; color:var(--text); font:inherit; }
     .field label { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:1px; font-weight:800; }
@@ -74,7 +74,7 @@
 <body>
   <div class="app">
     <header>
-      <div class="brand"><div class="mark"><img src="/static/ecb-worship-icon.svg" alt="" style="width:26px;height:26px"></div><div>ECB WORSHIP<small>STUDIO</small></div></div>
+      <div class="brand"><div class="mark"><img src="/static/ecb-worship-icon.svg" alt="" style="width:26px;height:26px"></div><div>LIGHT WORSHIP<small>STUDIO</small></div></div>
       <div class="session"><span id="sessionName">Saturday Worship Service</span><span class="on-air standby" id="onAir">STANDBY</span></div>
     </header>
     <div class="workspace">
@@ -155,7 +155,7 @@
     <footer>
       <span class="statusline" id="systemStatus">● Systems starting…</span>
       <span>Shortcuts: <span class="key">Space</span> Go live &nbsp; <span class="key">B</span> Blackout &nbsp; <span class="key">← →</span> Slides</span>
-      <span>ECB Worship Studio v1.0</span>
+      <span>LIGHT WORSHIP STUDIO v1.0</span>
     </footer>
   </div>
   <div id="toast"></div>

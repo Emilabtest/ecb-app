@@ -10,6 +10,16 @@ import os
 import sys
 import glob
 
+# Make hard native crashes (access violations in cv2/comtypes/DirectShow)
+# dump a Python traceback to the same log file instead of the process silently
+# dying. Without this a server that segfaults shows "can't reach this page"
+# with no clue in dev5010.log.
+try:
+    import faulthandler as _fh
+    _fh.enable()
+except Exception:
+    pass
+
 if getattr(sys, 'frozen', False):
     # The windowed build has no attached console: sys.stdout / sys.stderr are
     # None, and the first logging emit (basicConfig uses stderr, flushed on
@@ -111,16 +121,16 @@ if '--stream' in sys.argv:
 
 _ACT_HTML = r'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ECB Worship App &mdash; Device Activation</title>
+<title>LIGHT WORSHIP APP &mdash; Device Activation</title>
 <style>
-  :root{--gold:#d4af37;--bg:#0f1117;--card:#181b24;--line:#2a2f3d;--txt:#e8e6e3;--muted:#9aa0ae}
+  :root{--accent:#14B8A6;--bg:#0f1117;--card:#181b24;--line:#2a2f3d;--txt:#e8e6e3;--muted:#9aa0ae}
   *{box-sizing:border-box} body{margin:0;font-family:Segoe UI,system-ui,sans-serif;background:var(--bg);color:var(--txt);display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:34px 38px;max-width:580px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.45)}
   h1{font-size:1.35rem;margin:0 0 6px} p{color:var(--muted);font-size:.92rem;line-height:1.55;margin:6px 0;font-weight:400}
-  .hwid{background:#0b0e14;border:1px dashed var(--line);border-radius:8px;padding:12px 14px;font-family:Consolas,monospace;font-size:.8rem;word-break:break-all;color:var(--gold);user-select:all;margin-top:4px}
+  .hwid{background:#0b0e14;border:1px dashed var(--line);border-radius:8px;padding:12px 14px;font-family:Consolas,monospace;font-size:.8rem;word-break:break-all;color:var(--accent);user-select:all;margin-top:4px}
   label{display:block;font-size:.8rem;color:var(--muted);margin:18px 0 6px}
   input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#0b0e14;color:var(--txt);font-family:Consolas,monospace;font-size:.85rem}
-  button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:8px;background:var(--gold);color:#151207;font-weight:700;font-size:.95rem;cursor:pointer}
+  button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:8px;background:var(--accent);color:#151207;font-weight:700;font-size:.95rem;cursor:pointer}
   button:disabled{opacity:.5;cursor:wait}
   .msg{border-radius:8px;padding:10px 12px;margin-top:16px;font-size:.85rem;display:none}
   .msg.err{background:#3a1b1f;color:#ffb4a8;display:block} .msg.ok{background:#14321f;color:#a8f0c3;display:block}
@@ -128,10 +138,10 @@ _ACT_HTML = r'''<!doctype html>
   .row button{flex:1;margin-top:0;background:#1e2430;color:#e8e6e3;border:1px solid var(--line)}
   .divider{text-align:center;color:var(--muted);margin:18px 0 2px;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase}
   .hint{color:var(--muted);font-size:.78rem;margin-top:6px}
-  code{color:var(--gold)}
+  code{color:var(--accent)}
 </style></head><body><div class="card">
-  <h1>ECB Worship App is not activated</h1>
-  <p>This copy needs a license key for <b>this PC</b>. Send your Hardware ID below to your ECB Worship App provider,
+  <h1>LIGHT WORSHIP APP is not activated</h1>
+  <p>This copy needs a license key for <b>this PC</b>. Send your Hardware ID below to your LIGHT WORSHIP APP provider,
      paste the license key you receive, then press <b>Activate device</b>.</p>
   <label>Hardware ID &mdash; send this to your provider</label>
   <div class="hwid">{{ hwid }}</div>
@@ -520,6 +530,10 @@ def wire_license_gate():
 # to the real (non-green) threading/time modules. See live_input docstring.
 import live_input
 
+# Same for audio_input: its level-reader thread does blocking pipe reads and
+# must be a real OS thread, or it stalls the whole eventlet hub.
+import audio_input
+
 import eventlet
 eventlet.monkey_patch()
 
@@ -593,6 +607,24 @@ live_input.init_app(app)
 # Register the Bible verse search endpoints (additive; app.pyc untouched).
 import bible
 bible.init_app(app)
+
+# Register the Stream Console page route (additive; app.pyc untouched).
+import stream_console_routes
+stream_console_routes.init_app(app)
+
+# Register the Screen Config endpoints (additive; app.pyc untouched).
+import screen_config_routes
+screen_config_routes.init_app(app)
+
+# Register the USB/AUX audio input endpoints (additive; app.pyc untouched).
+# (Module imported pre-monkey_patch above; init here where app exists.)
+audio_input.init_app(app)
+
+# Register the real ffmpeg broadcast encoder (additive; app.pyc untouched).
+# Overrides the compiled SIMULATED api_broadcast_{start,stop,status} with a real
+# ffmpeg gdigrab encoder pushing the projection monitor output to RTMP.
+import broadcast_encoder
+broadcast_encoder.init_app(app)
 
 
 def _spawn_stream_child():

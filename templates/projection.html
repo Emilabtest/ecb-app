@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ECB Worship App — {{ channel }}</title>
+  <title>LIGHT WORSHIP APP — {{ channel }}</title>
   <style id="themeVars">
-    /* Default theme (Navy/Gold) — inline so it works without the static server
+    /* Default theme (Navy/Teal) — inline so it works without the static server
        serving individual theme CSS files. Each theme sets the same variables. */
     :root {
       --proj-bg: #0b1533; --proj-dark: #071024; --proj-white: #f4f6ff;
-      --proj-off-white: #dde3f5; --proj-gold: #d4af37; --proj-gold-lt: #e8cd6a;
+      --proj-off-white: #dde3f5; --proj-gold: #14B8A6; --proj-gold-lt: #2DD4BF;
       --proj-muted: #8a94b5; --font-body: "Segoe UI", Arial, sans-serif;
       --font-heading: "Segoe UI", Arial, sans-serif;
     }
@@ -424,6 +424,8 @@
        media keeps playing, nothing is torn down. background is #custom-bg, not
        a .proj-layer, so it stays visible under the mask. */
     body.layers-off .proj-layer { display: none !important; }
+    /* The PiP live box is content too — hide it under Master OFF as well. */
+    body.layers-off #pip-box { display: none !important; }
 
     /* Reuse existing per-type slide styling inside the layer slots. */
     .proj-layer .slide-template {
@@ -450,6 +452,67 @@
     #layer-message.has-backdrop #slide .slide-header {
       text-shadow: 0 2px 6px rgba(0,0,0,0.85), 0 0 2px rgba(0,0,0,0.9);
     }
+
+    /* ── Picture-in-Picture live box ──
+       Content stays full-screen; the live camera mounts in a small fixed-size
+       box in a corner when the operator pushes media:live with pip_enable.
+       Config (on/off, corner, size) rides along that media:live data, relayed
+       verbatim by the server — same contract as custom_output.html. */
+    #pip-box {
+      position: absolute;
+      z-index: 100;
+      display: none;
+      background: #000;
+      border: 2px solid rgba(255,255,255,0.85);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.55);
+      line-height: 0;
+    }
+    #pip-box.visible { display: block; }
+    #pip-box img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    /* ── Remote screen-share overlay ──
+       Full-screen live image from a /share presenting PC, shown only after
+       the operator explicitly selects that presenter for this channel
+       (live:start), fed frame-by-frame (live:frame), torn down on
+       live:stop. Sits above the slide layers but below the PiP box, and is
+       hidden whenever anything else takes the screen. */
+    #live-remote-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      background: #000;
+    }
+    #live-remote-wrap.visible { display: block; }
+    #live-remote-wrap img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    #pip-box .pip-live-tag {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.65);
+      color: #14B8A6;
+      padding: 2px 7px;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+    #pip-box.corner-tr { top: 18px; right: 18px; }
+    #pip-box.corner-tl { top: 18px; left: 18px; }
+    #pip-box.corner-br { bottom: 18px; right: 18px; }
+    #pip-box.corner-bl { bottom: 18px; left: 18px; }
+    #pip-box.size-sm { width: 26vw; max-width: 360px; aspect-ratio: 16 / 9; }
+    #pip-box.size-md { width: 36vw; max-width: 500px; aspect-ratio: 16 / 9; }
+    #pip-box.size-lg { width: 48vw; max-width: 680px; aspect-ratio: 16 / 9; }
 
   </style>
 </head>
@@ -478,6 +541,17 @@
 <!-- Layer 5: announcement -->
 <div id="layer-announcement" class="proj-layer layer-announcement"></div>
 
+<!-- Picture-in-Picture live box (hidden until a media:live pip push arrives) -->
+<div id="pip-box" class="corner-tr size-md">
+  <span class="pip-live-tag">LIVE</span>
+  <img id="pip-img" alt="">
+</div>
+
+<!-- Remote screen-share overlay (hidden until the operator selects a /share presenter for this channel) -->
+<div id="live-remote-wrap">
+  <img id="live-remote-img" alt="">
+</div>
+
 <div id="waiting" class="visible">
   <div class="waiting-dot"></div>
   <div class="waiting-text">Waiting for content…</div>
@@ -497,6 +571,11 @@
 </script>
 <script>
   const CHANNEL = '{{ channel }}';
+  // Broadcast-only PiP: the headless broadcast render loads this page as
+  // /ch1?broadcast=1 and mounts the PiP live box there. The projector, the
+  // output window and the operator-monitor preview (plain /ch1) keep their
+  // clean full-screen content -- PiP never appears on them.
+  const IS_BROADCAST = location.search.indexOf('broadcast=1') !== -1;
   const socket  = io({
     transports: ['websocket', 'polling'],
     reconnection: true,
@@ -538,13 +617,25 @@
     if (_restoring) return;
     renderState(data);
   });
-  socket.on('slide:blank',  function (data) { renderState(data); });
+  socket.on('slide:blank',  function (data) { _hidePip(); renderState(data); });
   socket.on('slide:edit',   function (data) { renderState(data); });
   socket.on('announcement', function (data) { renderState(data); });
 
   socket.on('media:image',  function (data) { renderState(data); });
   socket.on('media:video',  function (data) { renderState(data); });
-  socket.on('media:live',   function (data) { renderState(data); });
+  socket.on('media:live',   function (data) { handleLive(data); });
+  socket.on('pip:set',      function (data) { handlePip(data); });
+
+  // Remote screen-share from a /share presenting PC (see the share bridge in
+  // live_input.py). Shown only after the operator selects the presenter for
+  // this channel. Separate listeners on purpose: existing content handlers
+  // below are untouched; the overlay simply hides whenever anything else
+  // takes the screen.
+  socket.on('live:start',   function (data) { _remoteShow(data); });
+  socket.on('live:frame',   function (data) { _remoteFrame(data); });
+  socket.on('live:stop',    function ()     { _remoteHide(); });
+  socket.on('slide:show',   function ()     { _remoteHide(); });
+  socket.on('slide:blank',  function ()     { _remoteHide(); });
 
   socket.on('timer:show',   function (data) { renderTimer(data); });
   socket.on('timer:start',  function (data) { startTimer(data); });
@@ -953,6 +1044,7 @@
     _hideLayer('video');
     _hideLayer('image');
     _hideLayer('announcement');
+    _hidePip();
     document.getElementById('waiting').classList.remove('visible');
     _updateMessageBackdrop();
   }
@@ -1223,6 +1315,103 @@
       });
   }
 
+  // ── Live dispatch: full-screen OR picture-in-picture (PiP) ─────────────────
+  // The operator console's Live panel sends pip_enable / pip_corner / pip_size
+  // along with the live push. When pip_enable is true, keep the current
+  // full-screen content and mount the live camera feed in a small corner box
+  // (this is what the broadcast headless render /ch1 captures). When it is
+  // false/absent, fall back to the existing full-screen live render.
+  function _hidePip() {
+    const box = document.getElementById('pip-box');
+    const img = document.getElementById('pip-img');
+    if (!box || !img) return;
+    box.classList.remove('visible');
+    img.removeAttribute('src');
+  }
+
+  function _mountPip(data) {
+    const box = document.getElementById('pip-box');
+    const img = document.getElementById('pip-img');
+    if (!box || !img) return;
+    const corner = ['tr', 'tl', 'br', 'bl'].indexOf(data.pip_corner) >= 0 ? data.pip_corner : 'tr';
+    const size   = ['sm', 'md', 'lg'].indexOf(data.pip_size) >= 0 ? data.pip_size : 'md';
+    box.classList.remove('corner-tr', 'corner-tl', 'corner-br', 'corner-bl');
+    box.classList.remove('size-sm', 'size-md', 'size-lg');
+    box.classList.add('corner-' + corner, 'size-' + size);
+    img.src = 'http://' + window.location.hostname + ':5002/live/feed/' + encodeURIComponent(data.source_index) + '.mjpeg';
+    box.classList.add('visible');
+    // A live box is now showing — drop the "Waiting for content…" overlay.
+    document.getElementById('waiting').classList.remove('visible');
+  }
+
+  function handleLive(data) {
+    const cfg = (data && data.data) || data || {};
+    // Operator's custom-output feed toggle (mirror on/off) targets the custom
+    // output channel, never this projection — ignore it if it ever lands here.
+    if (cfg.mirror === 'on' || cfg.mirror === 'off') { return; }
+    const srcIdx = cfg.source_index;
+    const srcGiven = srcIdx !== undefined && srcIdx !== null && srcIdx !== '';
+    if (cfg.pip_enable === true && srcGiven) {
+      // PiP mode is BROADCAST-ONLY (see IS_BROADCAST above): the broadcast
+      // render mounts the small live box overlay on top of the full-screen
+      // content, while every other screen keeps its clean full-screen view.
+      if (!IS_BROADCAST) { return; }
+      _mountPip(cfg);
+      return;
+    }
+    // Full-screen live (or fallback path) — tear the box down.
+    _hidePip();
+    renderState(data);
+  }
+
+  // Dedicated PiP overlay command (pip:set {show, source_index, pip_corner,
+  // pip_size}). Independent of any content push: it only mounts or tears down
+  // the small live box and never touches the full-screen content underneath,
+  // so lyrics/slides keep showing while the box is up. Broadcast-only, like
+  // the media:live PiP path above — operator/projector screens stay clean.
+  function handlePip(data) {
+    const cfg = (data && data.data) || data || {};
+    if (!IS_BROADCAST) { _hidePip(); return; }
+    const srcIdx = cfg.source_index;
+    const srcGiven = srcIdx !== undefined && srcIdx !== null && srcIdx !== '';
+    if (cfg.show === true && srcGiven) {
+      _mountPip(cfg);
+      return;
+    }
+    _hidePip();
+  }
+
+  // Remote screen-share overlay (live:start / live:frame / live:stop from a
+  // /share presenting PC, via the share bridge). Full-screen base64 JPEG
+  // frames; shown only while the operator has this presenter selected.
+  var _remoteImgEl = null;
+  function _remoteImg() {
+    if (!_remoteImgEl) _remoteImgEl = document.getElementById('live-remote-img');
+    return _remoteImgEl;
+  }
+  function _remoteShow(data) {
+    var wrap = document.getElementById('live-remote-wrap');
+    if (!wrap) return;
+    document.getElementById('waiting').classList.remove('visible');
+    wrap.classList.add('visible');
+  }
+  function _remoteFrame(data) {
+    var img = _remoteImg();
+    if (!img || !data || !data.data) return;
+    img.src = 'data:image/jpeg;base64,' + data.data;
+    var wrap = document.getElementById('live-remote-wrap');
+    if (wrap && !wrap.classList.contains('visible')) {
+      document.getElementById('waiting').classList.remove('visible');
+      wrap.classList.add('visible');
+    }
+  }
+  function _remoteHide() {
+    var wrap = document.getElementById('live-remote-wrap');
+    if (wrap) wrap.classList.remove('visible');
+    var img = _remoteImg();
+    if (img) img.removeAttribute('src');
+  }
+
   // ── Timer ──────────────────────────────────────────────────────────────────
   function renderTimer(data) {
     setSlideType('timer');
@@ -1413,7 +1602,12 @@
         body: JSON.stringify({ channel: CHANNEL })
       }).catch(function(){});
     } catch(e){}
-    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+    setTimeout(function(){
+      try { window.close(); } catch(e){}
+      setTimeout(function(){
+        try { window.top.location.replace('about:blank'); } catch(e){}
+      }, 120);
+    }, 60);
   }
 </script>
 <!-- Auto-reload when the server ships a new build (stale tabs self-heal). -->

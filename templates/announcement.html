@@ -46,7 +46,7 @@
     #text.blank {
       font-size: clamp(1rem, 2vw, 2rem);
       opacity: 0.25;
-      color: #c9a84c;
+      color: #2DD4BF;
       letter-spacing: 0.1em;
     }
   </style>
@@ -59,7 +59,7 @@
   {% if announcement %}
     <div id="text">{{ announcement }}</div>
   {% else %}
-    <div id="text" class="blank">ECB WORSHIP APP</div>
+    <div id="text" class="blank">LIGHT WORSHIP APP</div>
   {% endif %}
 </div>
 </div>
@@ -101,7 +101,7 @@
   });
 
   socket.on('announcement:blank', () => {
-    textEl.textContent = 'ECB WORSHIP APP';
+    textEl.textContent = 'LIGHT WORSHIP APP';
     textEl.classList.add('blank');
     _applyFont({});
   });
@@ -166,7 +166,12 @@
         body: JSON.stringify({ channel: CHANNEL })
       }).catch(function(){});
     } catch(e){}
-    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+    setTimeout(function(){
+      try { window.close(); } catch(e){}
+      setTimeout(function(){
+        try { window.top.location.replace('about:blank'); } catch(e){}
+      }, 120);
+    }, 60);
   }
 </script>
 <!-- Auto-reload when the server ships a new build (stale tabs self-heal). -->

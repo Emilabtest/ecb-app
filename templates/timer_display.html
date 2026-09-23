@@ -40,7 +40,7 @@
     #item-title {
       font-size: clamp(1.2rem, 8vw, 8rem);
       letter-spacing: 0.05em;
-      color: #c9a84c;
+      color: #2DD4BF;
       margin-bottom: 2vh;
     }
 
@@ -217,7 +217,12 @@
         body: JSON.stringify({ channel: CHANNEL })
       }).catch(function(){});
     } catch(e){}
-    setTimeout(function(){ try { window.close(); } catch(e){} }, 60);
+    setTimeout(function(){
+      try { window.close(); } catch(e){}
+      setTimeout(function(){
+        try { window.top.location.replace('about:blank'); } catch(e){}
+      }, 120);
+    }, 60);
   }
 </script>
 <!-- Auto-reload when the server ships a new build (stale tabs self-heal). -->

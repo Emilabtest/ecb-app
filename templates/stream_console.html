@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stream Console — {{ channel }}</title>
+  <script src="/static/socket.io.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #141a23;
+      --card: #1c2531;
+      --border: #2a3648;
+      --text: #e8edf3;
+      --muted: #91a0b2;
+      --accent: #14B8A6;
+      --accent-lt: #2DD4BF;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .sc-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .sc-brand {
+      font-family: 'Cormorant Garamond', 'Georgia', serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .sc-brand span { color: var(--accent); }
+    .sc-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .sc-channel-badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .sc-spacer { flex: 1; }
+    .sc-link {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .sc-link:hover { background: #243044; }
+    .sc-link.ghost { background: transparent; }
+    #scConnPill {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+    }
+    #scConnPill.bad  { background: #4a2025; color: #f06a5f; }
+    #scConnPill.good { background: #123a2b; color: #45c58a; }
+
+    .sc-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 18px;
+      height: calc(100vh - 57px);
+      padding: 18px;
+    }
+
+    .sc-mv {
+      display: grid;
+      grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr);
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      height: 100%;
+      min-height: 0;
+    }
+    .mv-tile {
+      position: relative;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .mv-program { grid-column: 1; grid-row: 1 / span 3; }
+    .mv-order   { grid-column: 2; grid-row: 1; }
+    .mv-timer   { grid-column: 2; grid-row: 2; }
+    .mv-annc    { grid-column: 2; grid-row: 3; }
+    .mv-tile iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .mv-tag {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 5;
+      background: rgba(0,0,0,0.72);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 4px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .mv-program .mv-tag {
+      background: rgba(20,184,166,0.92);
+      border-color: rgba(255,255,255,0.3);
+      color: #08201c;
+      font-weight: 800;
+    }
+
+    .sc-side {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .cp-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      font-weight: 800;
+      margin: 14px 0 9px;
+    }
+    .cp-label:first-child { margin-top: 4px; }
+    .cp-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 14px 12px;
+    }
+    .cp-row { display: flex; justify-content: space-between; align-items: center; color: #c9d3de; padding: 7px 0; }
+    .cp-st { color: #45c58a; } .cp-st.bad { color: #f06a5f; }
+    .cp-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 9px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .cp-btn:hover { background: #243044; }
+    .cp-btn.gold { background: var(--accent-lt); color: #111923; border-color: var(--accent-lt); }
+    .cp-btn.red { background: #57252b; border-color: #87404a; }
+    .cp-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cp-btns.one { grid-template-columns: 1fr; }
+    .cp-dest { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
+    .cp-dest button { border: 1px solid var(--border); background: var(--card); color: var(--muted); padding: 8px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; }
+    .cp-dest button.active { background: var(--accent-lt); color: #111923; border-color: var(--accent-lt); }
+    .cp-field { display: grid; gap: 4px; margin-bottom: 8px; }
+    .cp-field input {
+      width: 100%;
+      padding: 8px 9px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #10151d;
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+    }
+    .cp-field label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+    .cp-brow { display: flex; gap: 8px; align-items: center; }
+    .cp-brow .cp-btn { flex: 1; }
+    #cpBcastGo.live { background: #57252b; border-color: #87404a; }
+    .cp-pill { border-radius: 20px; padding: 3px 10px; font-size: 10px; font-weight: 800; letter-spacing: .1em; white-space: nowrap; }
+    .cp-pill.idle { background: #3a3f4d; color: #cfd6e0; }
+    .cp-pill.connecting { background: #4a3d1f; color: #e8c06a; }
+    .cp-pill.live { background: #1f4a2a; color: #7fe0a8; }
+    .cp-note { color: var(--muted); font-size: 10px; line-height: 1.5; margin-top: 9px; }
+
+    #scToast {
+      position: fixed;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a3340;
+      border: 1px solid #344252;
+      color: #e8edf3;
+      padding: 9px 16px;
+      border-radius: 6px;
+      z-index: 99999;
+      font-size: 12px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header class="sc-header">
+  <div class="sc-brand">LIGHT <span>WORSHIP</span> APP</div>
+  <div class="sc-title">Stream Console</div>
+  <span class="sc-channel-badge">CH{{ channel }}</span>
+  <div class="sc-spacer"></div>
+  <span id="scConnPill" class="bad">Offline</span>
+  <button class="sc-link ghost" onclick="window.open('/custom','ecb_custom')">Custom Output</button>
+  <button class="sc-link" onclick="window.open('/','ecb_console')">Open Console</button>
+</header>
+
+<div class="sc-body">
+  <div class="sc-mv">
+  <div class="mv-tile mv-program">
+    <span class="mv-tag">Program · Custom Output</span>
+    <iframe src="/custom?preview=1" allow="autoplay; fullscreen"></iframe>
+  </div>
+  <div class="mv-tile mv-order">
+    <span class="mv-tag">CH2 · Order of Service</span>
+    <iframe src="/ch2" allow="autoplay; fullscreen"></iframe>
+  </div>
+  <div class="mv-tile mv-timer">
+    <span class="mv-tag">CH3 · Timer</span>
+    <iframe src="/ch3" allow="autoplay; fullscreen"></iframe>
+  </div>
+  <div class="mv-tile mv-annc">
+    <span class="mv-tag">CH4 · Announcement</span>
+    <iframe src="/ch4" allow="autoplay; fullscreen"></iframe>
+  </div>
+</div>
+
+  <div class="sc-side">
+    <div class="cp-section">
+      <div class="cp-label">Live controls</div>
+      <div class="cp-btns">
+        <button class="cp-btn gold" id="cpGoLive">&#9654; Go live</button>
+        <button class="cp-btn red" id="cpBlackout">Blackout</button>
+      </div>
+    </div>
+
+    <div class="cp-section">
+      <div class="cp-label">Broadcast · Facebook / YouTube</div>
+      <div class="cp-dest">
+        <button class="active" data-dest="facebook" id="cpDestFb">Facebook</button>
+        <button data-dest="youtube" id="cpDestYt">YouTube</button>
+      </div>
+      <div class="cp-field"><label>Broadcast title</label><input id="cpBcastTitle" type="text" placeholder="e.g. Saturday Worship Service"></div>
+      <div class="cp-field"><label>RTMP server URL</label><input id="cpBcastRtmp" type="text" placeholder="rtmps://live-api-s.facebook.com:443/rtmp"></div>
+      <div class="cp-field"><label>Stream key</label><input id="cpBcastKey" type="password" placeholder="Paste stream key from the platform"></div>
+      <div class="cp-brow">
+        <button class="cp-btn gold" id="cpBcastGo">&#9654; Start broadcast</button>
+        <span class="cp-pill idle" id="cpBcastPill">OFFLINE</span>
+      </div>
+      <div class="cp-note">TEST MODE &mdash; simulated broadcast status pa lang. RTMP + stream key ay para sa real push (OBS / ffmpeg) mamaya.</div>
+    </div>
+
+    <div class="cp-section">
+      <div class="cp-label">Stream status</div>
+      <div class="cp-row"><span>Connection</span><b id="cpConn" class="cp-st bad">Offline</b></div>
+      <div class="cp-row"><span>Source</span><b class="cp-st">Custom Output (CH{{ channel }})</b></div>
+      <div class="cp-row"><span>Audio</span><b class="cp-st">Connected</b></div>
+    </div>
+
+    <div class="cp-section">
+      <div class="cp-label">Current slide</div>
+      <div class="cp-row"><span>Title</span><b id="cpCurTitle">&mdash;</b></div>
+      <div class="cp-row"><span>Slot</span><b id="cpCurType">&mdash;</b></div>
+    </div>
+  </div>
+</div>
+
+<div id="scToast"></div>
+
+<script>
+  const CHANNEL = "ch1";
+  const socket = io({ transports: ['websocket', 'polling'] });
+</script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const CH = "{{ channel }}";
+
+  function toast(msg) {
+    var el = $('scToast');
+    el.style.display = 'block';
+    el.textContent = msg;
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.style.display = 'none'; }, 2200);
+  }
+
+  // ── Broadcast (custom output -> Facebook / YouTube) ────────────────────────
+  const RTMP_DEFAULTS = {
+    facebook: 'rtmps://live-api-s.facebook.com:443/rtmp',
+    youtube:  'rtmp://a.rtmp.youtube.com/live2',
+  };
+  const destBtns = { facebook: $('cpDestFb'), youtube: $('cpDestYt') };
+  let curDest = 'facebook';
+  let bcState = 'idle';
+
+  function setDest(d) {
+    curDest = (d === 'youtube') ? 'youtube' : 'facebook';
+    Object.keys(destBtns).forEach(function (k) { destBtns[k].classList.toggle('active', k === curDest); });
+    var rtmpEl = $('cpBcastRtmp');
+    var v = (rtmpEl.value || '').trim();
+    if (!v || v === RTMP_DEFAULTS.facebook || v === RTMP_DEFAULTS.youtube) rtmpEl.value = RTMP_DEFAULTS[curDest];
+  }
+
+  function paintBroadcast(s) {
+    bcState = s.state || 'idle';
+    var live = bcState === 'live';
+    var connecting = bcState === 'connecting';
+    $('cpBcastGo').textContent = live ? '■ Stop broadcast' : '▶ Start broadcast';
+    $('cpBcastGo').classList.toggle('live', live);
+    var dest = (s.destination === 'youtube') ? 'YouTube' : 'Facebook';
+    if (live) { $('cpBcastPill').textContent = '● LIVE · ' + dest; $('cpBcastPill').className = 'cp-pill live'; }
+    else if (connecting) { $('cpBcastPill').textContent = 'CONNECTING…'; $('cpBcastPill').className = 'cp-pill connecting'; }
+    else { $('cpBcastPill').textContent = 'OFFLINE'; $('cpBcastPill').className = 'cp-pill idle'; }
+  }
+
+  async function loadBroadcast() {
+    try {
+      const r = await fetch('/api/broadcast/config');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const c = await r.json();
+      setDest(c.destination);
+      $('cpBcastTitle').value = c.title || '';
+      $('cpBcastRtmp').value = c.rtmp_url || RTMP_DEFAULTS[curDest];
+      if (c.stream_key_set) {
+        $('cpBcastKey').placeholder = 'Key saved (ends …' + (c.key_tail || '') + ') — leave blank to keep';
+      }
+    } catch (e) { toast('Broadcast config: ' + e.message); }
+  }
+
+  async function saveBroadcast() {
+    try {
+      const payload = {
+        destination: curDest,
+        title: $('cpBcastTitle').value || '',
+        rtmp_url: $('cpBcastRtmp').value || '',
+        stream_key: $('cpBcastKey').value || '',
+      };
+      const r = await fetch('/api/broadcast/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if ($('cpBcastKey').value) {
+        $('cpBcastKey').value = '';
+        $('cpBcastKey').placeholder = 'Key saved — leave blank to keep';
+      }
+      return true;
+    } catch (e) { toast('Save failed: ' + e.message); return false; }
+  }
+
+  async function pollBroadcast() {
+    try {
+      const r = await fetch('/api/broadcast/status?t=' + Date.now());
+      if (!r.ok) return;
+      paintBroadcast(await r.json());
+    } catch (e) {}
+  }
+
+  async function toggleBroadcast() {
+    if (bcState === 'live') {
+      try { await fetch('/api/broadcast/stop', { method: 'POST' }); } catch (e) {}
+      pollBroadcast();
+      return;
+    }
+    if (!(await saveBroadcast())) return;
+    $('cpBcastPill').textContent = 'CONNECTING…';
+    $('cpBcastPill').className = 'cp-pill connecting';
+    try {
+      const r = await fetch('/api/broadcast/start', { method: 'POST' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      toast('Broadcast started (simulated)');
+      setTimeout(pollBroadcast, 1200);
+    } catch (e) { toast('Broadcast start failed: ' + e.message); pollBroadcast(); }
+  }
+
+  // ── Go live / blackout (push the active slide to CH1) ─────────────────────
+  const T_NAME = { participant: 'Participant', song: 'Song', bible: 'Scripture', media: 'Media', content: 'Content', live: 'Live' };
+
+  function sdForItem(item, programId) {
+    const base = { channel: 'ch1', theme_id: 'default', item_id: item.item_id, stanza_idx: null };
+    if (item.type === 'media') {
+      if (!item.url) return null;
+      const isVideo = item.media_type === 'video';
+      return {
+        event: isVideo ? 'media:video' : 'media:image',
+        sd: Object.assign({}, base, { type: isVideo ? 'video' : 'image', url: item.url, autoplay: true, loop: !!item.loop, mute: !!item.mute }),
+      };
+    }
+    const title = item.title || '';
+    let part = '';
+    if (item.type === 'song' && item.hymn_number) part = 'Hymn ' + item.hymn_number;
+    else if (item.type === 'bible') part = item.bible_ref || 'Scripture';
+    else part = item.part || '';
+    return { event: 'slide:show', sd: Object.assign({}, base, { type: 'text', title: title, part: part }) };
+  }
+
+  async function goLive() {
+    try {
+      const act = await fetch('/api/active-item').then(function (r) { return r.json(); }).then(function (j) { return j.item; });
+      if (!act || !act.item_id) { toast('No active slide yet — push one from the console first'); return; }
+      const prog = await fetch('/api/program').then(function (r) { return r.json(); });
+      let item = null;
+      (prog.service_programs || []).forEach(function (sp) {
+        if (sp.id !== act.program_id) return;
+        (sp.items || []).forEach(function (it) { if (!item && it.item_id === act.item_id) item = it; });
+      });
+      if (!item) { toast('Active slide not found in program'); return; }
+      const r = sdForItem(item, act.program_id);
+      if (!r) { toast('Media has no file url — add it in the console'); return; }
+      socket.emit(r.event, r.sd);
+      refreshActiveSlide();
+      toast('Go live: ' + (item.title || T_NAME[item.type] || item.type));
+    } catch (e) { toast('Go live failed: ' + e.message); }
+  }
+
+  function blackout() {
+    socket.emit('slide:blank', { channel: 'ch1', type: 'blank' });
+    toast('Blackout on CH1');
+  }
+
+  async function refreshActiveSlide() {
+    try {
+      const j = await fetch('/api/active-item').then(function (r) { return r.json(); });
+      const it = j && j.item;
+      $('cpCurTitle').textContent = (it && it.title) || '—';
+      $('cpCurType').textContent = (it && it.participant) ? it.participant : ((it && it.slot) ? it.slot : '—');
+    } catch (e) {}
+  }
+
+  // ── Wire up ────────────────────────────────────────────────────────────────
+  $('cpGoLive').onclick = goLive;
+  $('cpBlackout').onclick = blackout;
+  $('cpDestFb').onclick = function () { setDest('facebook'); saveBroadcast(); };
+  $('cpDestYt').onclick = function () { setDest('youtube'); saveBroadcast(); };
+  $('cpBcastGo').onclick = toggleBroadcast;
+  socket.on('connect', function () {
+    $('cpConn').textContent = 'Online';
+    $('cpConn').className = 'cp-st';
+    $('scConnPill').textContent = 'ONLINE';
+    $('scConnPill').className = 'good';
+  });
+  socket.on('disconnect', function () {
+    $('cpConn').textContent = 'Offline';
+    $('cpConn').className = 'cp-st bad';
+    $('scConnPill').textContent = 'Offline';
+    $('scConnPill').className = 'bad';
+  });
+
+  loadBroadcast();
+  refreshActiveSlide();
+  pollBroadcast();
+  setInterval(pollBroadcast, 5000);
+  setInterval(refreshActiveSlide, 8000);
+})();
+</script>
+</body>
+</html>

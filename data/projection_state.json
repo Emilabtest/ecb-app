@@ -6,7 +6,7 @@
       "title": "Opening Prayer",
       "part": "Opening Prayer",
       "channel": "ch1",
-      "theme_id": "default",
+      "theme_id": "custom",
       "item_id": "sp-001",
       "stanza_idx": null,
       "font_size": "lg",
@@ -16,6 +16,6 @@
       "text_italic": false,
       "part_font_size": "md"
     },
-    "theme_id": "default"
+    "theme_id": "custom"
   }
 }

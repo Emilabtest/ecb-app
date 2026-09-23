@@ -1,0 +1,830 @@
+[
+  {
+    "saved_at": "2026-09-23T14:30:37.193050",
+    "church": "",
+    "date": "",
+    "service_programs": [
+      {
+        "id": "program",
+        "name": "Program",
+        "items": [
+          {
+            "type": "participant",
+            "title": "Opening Prayer",
+            "part": "Opening Prayer",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "song",
+            "title": "Abide With Me, 'Tis Eventide",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "hymn_number": "46",
+            "lyrics_key": "en-46",
+            "manual_lyrics": "Abide with me, 'tis eventide!\nThe day is past and gone;\nThe shadows of the evening fall;\nThe night is coming on!\nWithin my heart a welcome guest,\nWithin my home abide;\n\nAbide with me, 'tis eventide!\nThy walk today with me\nHas made my heart within me burn,\nAs I communed with Thee.\nThy earnest words have filled my soul\nAnd kept me near Thy side;\n\nAbide with me, 'tis eventide!\nAnd lone will be the night,\nIf I cannot commune with Thee,\nNor find in Thee my light.\nThe darkness of the world, I fear,\nWould in my home abide;\n\nO Savior, stay this night with me;\nBehold, 'tis eventide!\nO Savior, stay this night with me;\nBehold, 'tis eventide.",
+            "item_id": "sp-002",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          },
+          {
+            "type": "participant",
+            "title": "Welcome",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-003",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "participant",
+            "title": "Video",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-004",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "content",
+            "title": "Announcements",
+            "content": "",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-005",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "bible",
+            "title": "Deuteronomy 24:5-18",
+            "bible_ref": "Deuteronomy 24:5-18",
+            "bible_lang": "en",
+            "bible_text": "24:5 When a man hath taken a new wife, he shall not go out to war, neither shall he be charged with any business: but he shall be free at home one year, and shall cheer up his wife which he hath taken.\n\n24:6 No man shall take the nether or the upper millstone to pledge: for he taketh a man's life to pledge.\n\n24:7 If a man be found stealing any of his brethren of the children of Israel, and maketh merchandise of him, or selleth him; then that thief shall die; and thou shalt put evil away from among you.\n\n24:8 Take heed in the plague of leprosy, that thou observe diligently, and do according to all that the priests the Levites shall teach you: as I commanded them, so ye shall observe to do.\n\n24:9 Remember what the Lord thy God did unto Miriam by the way, after that ye were come forth out of Egypt.\n\n24:10 When thou dost lend thy brother any thing, thou shalt not go into his house to fetch his pledge.\n\n24:11 Thou shalt stand abroad, and the man to whom thou dost lend shall bring out the pledge abroad unto thee.\n\n24:12 And if the man be poor, thou shalt not sleep with his pledge:\n\n24:13 In any case thou shalt deliver him the pledge again when the sun goeth down, that he may sleep in his own raiment, and bless thee: and it shall be righteousness unto thee before the Lord thy God.\n\n24:14 Thou shalt not oppress an hired servant that is poor and needy, whether he be of thy brethren, or of thy strangers that are in thy land within thy gates:\n\n24:15 At his day thou shalt give him his hire, neither shall the sun go down upon it; for he is poor, and setteth his heart upon it: lest he cry against thee unto the Lord, and it be sin unto thee.\n\n24:16 The fathers shall not be put to death for the children, neither shall the children be put to death for the fathers: every man shall be put to death for his own sin.\n\n24:17 Thou shalt not pervert the judgment of the stranger, nor of the fatherless; nor take a widow's raiment to pledge:\n\n24:18 But thou shalt remember that thou wast a bondman in Egypt, and the Lord thy God redeemed thee thence: therefore I command thee to do this thing.",
+            "item_id": "sp-006",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "video",
+            "title": "WIN_20250407_14_01_48_Pro",
+            "url": "/media/videos/Hymn_No_More_Night_with_Lyrics_Parkwood_SDA_Church_1080p_h264.mp4",
+            "media_type": "video",
+            "autoplay": true,
+            "loop": false,
+            "mute": false,
+            "item_id": "program-007",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          }
+        ]
+      },
+      {
+        "id": "sabbath",
+        "name": "sabbath",
+        "items": []
+      },
+      {
+        "id": "divine",
+        "name": "divine",
+        "items": [
+          {
+            "type": "song",
+            "title": "",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "divine-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "saved_at": "2026-09-22T09:00:20.631859",
+    "church": "",
+    "date": "",
+    "service_programs": [
+      {
+        "id": "program",
+        "name": "Program",
+        "items": [
+          {
+            "type": "participant",
+            "title": "Opening Prayer",
+            "part": "Opening Prayer",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "song",
+            "title": "Abide With Me, 'Tis Eventide",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "hymn_number": "46",
+            "lyrics_key": "en-46",
+            "manual_lyrics": "Abide with me, 'tis eventide!\nThe day is past and gone;\nThe shadows of the evening fall;\nThe night is coming on!\nWithin my heart a welcome guest,\nWithin my home abide;\n\nAbide with me, 'tis eventide!\nThy walk today with me\nHas made my heart within me burn,\nAs I communed with Thee.\nThy earnest words have filled my soul\nAnd kept me near Thy side;\n\nAbide with me, 'tis eventide!\nAnd lone will be the night,\nIf I cannot commune with Thee,\nNor find in Thee my light.\nThe darkness of the world, I fear,\nWould in my home abide;\n\nO Savior, stay this night with me;\nBehold, 'tis eventide!\nO Savior, stay this night with me;\nBehold, 'tis eventide.",
+            "item_id": "sp-002",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          },
+          {
+            "type": "participant",
+            "title": "Welcome",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-003",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "participant",
+            "title": "Video",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-004",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "content",
+            "title": "Announcements",
+            "content": "",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-005",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "bible",
+            "title": "Deuteronomy 24:5-18",
+            "bible_ref": "Deuteronomy 24:5-18",
+            "bible_lang": "en",
+            "bible_text": "24:5 When a man hath taken a new wife, he shall not go out to war, neither shall he be charged with any business: but he shall be free at home one year, and shall cheer up his wife which he hath taken.\n\n24:6 No man shall take the nether or the upper millstone to pledge: for he taketh a man's life to pledge.\n\n24:7 If a man be found stealing any of his brethren of the children of Israel, and maketh merchandise of him, or selleth him; then that thief shall die; and thou shalt put evil away from among you.\n\n24:8 Take heed in the plague of leprosy, that thou observe diligently, and do according to all that the priests the Levites shall teach you: as I commanded them, so ye shall observe to do.\n\n24:9 Remember what the Lord thy God did unto Miriam by the way, after that ye were come forth out of Egypt.\n\n24:10 When thou dost lend thy brother any thing, thou shalt not go into his house to fetch his pledge.\n\n24:11 Thou shalt stand abroad, and the man to whom thou dost lend shall bring out the pledge abroad unto thee.\n\n24:12 And if the man be poor, thou shalt not sleep with his pledge:\n\n24:13 In any case thou shalt deliver him the pledge again when the sun goeth down, that he may sleep in his own raiment, and bless thee: and it shall be righteousness unto thee before the Lord thy God.\n\n24:14 Thou shalt not oppress an hired servant that is poor and needy, whether he be of thy brethren, or of thy strangers that are in thy land within thy gates:\n\n24:15 At his day thou shalt give him his hire, neither shall the sun go down upon it; for he is poor, and setteth his heart upon it: lest he cry against thee unto the Lord, and it be sin unto thee.\n\n24:16 The fathers shall not be put to death for the children, neither shall the children be put to death for the fathers: every man shall be put to death for his own sin.\n\n24:17 Thou shalt not pervert the judgment of the stranger, nor of the fatherless; nor take a widow's raiment to pledge:\n\n24:18 But thou shalt remember that thou wast a bondman in Egypt, and the Lord thy God redeemed thee thence: therefore I command thee to do this thing.",
+            "item_id": "sp-006",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "video",
+            "title": "WIN_20250407_14_01_48_Pro",
+            "url": "/media/videos/Hymn_No_More_Night_with_Lyrics_Parkwood_SDA_Church_1080p_h264.mp4",
+            "media_type": "video",
+            "autoplay": true,
+            "loop": false,
+            "mute": false,
+            "item_id": "program-007",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          }
+        ]
+      },
+      {
+        "id": "sabbath",
+        "name": "sabbath",
+        "items": []
+      },
+      {
+        "id": "divine",
+        "name": "divine",
+        "items": [
+          {
+            "type": "song",
+            "title": "",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "divine-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "saved_at": "2026-09-22T09:00:11.592028",
+    "church": "",
+    "date": "",
+    "service_programs": [
+      {
+        "id": "program",
+        "name": "Program",
+        "items": [
+          {
+            "type": "participant",
+            "title": "Opening Prayer",
+            "part": "Opening Prayer",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "song",
+            "title": "Abide With Me, 'Tis Eventide",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "hymn_number": "46",
+            "lyrics_key": "en-46",
+            "manual_lyrics": "Abide with me, 'tis eventide!\nThe day is past and gone;\nThe shadows of the evening fall;\nThe night is coming on!\nWithin my heart a welcome guest,\nWithin my home abide;\n\nAbide with me, 'tis eventide!\nThy walk today with me\nHas made my heart within me burn,\nAs I communed with Thee.\nThy earnest words have filled my soul\nAnd kept me near Thy side;\n\nAbide with me, 'tis eventide!\nAnd lone will be the night,\nIf I cannot commune with Thee,\nNor find in Thee my light.\nThe darkness of the world, I fear,\nWould in my home abide;\n\nO Savior, stay this night with me;\nBehold, 'tis eventide!\nO Savior, stay this night with me;\nBehold, 'tis eventide.",
+            "item_id": "sp-002",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          },
+          {
+            "type": "participant",
+            "title": "Welcome",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-003",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "participant",
+            "title": "Video",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-004",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "content",
+            "title": "Announcements",
+            "content": "",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-005",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "bible",
+            "title": "Deuteronomy 24:5-18",
+            "bible_ref": "Deuteronomy 24:5-18",
+            "bible_lang": "en",
+            "bible_text": "24:5 When a man hath taken a new wife, he shall not go out to war, neither shall he be charged with any business: but he shall be free at home one year, and shall cheer up his wife which he hath taken.\n\n24:6 No man shall take the nether or the upper millstone to pledge: for he taketh a man's life to pledge.\n\n24:7 If a man be found stealing any of his brethren of the children of Israel, and maketh merchandise of him, or selleth him; then that thief shall die; and thou shalt put evil away from among you.\n\n24:8 Take heed in the plague of leprosy, that thou observe diligently, and do according to all that the priests the Levites shall teach you: as I commanded them, so ye shall observe to do.\n\n24:9 Remember what the Lord thy God did unto Miriam by the way, after that ye were come forth out of Egypt.\n\n24:10 When thou dost lend thy brother any thing, thou shalt not go into his house to fetch his pledge.\n\n24:11 Thou shalt stand abroad, and the man to whom thou dost lend shall bring out the pledge abroad unto thee.\n\n24:12 And if the man be poor, thou shalt not sleep with his pledge:\n\n24:13 In any case thou shalt deliver him the pledge again when the sun goeth down, that he may sleep in his own raiment, and bless thee: and it shall be righteousness unto thee before the Lord thy God.\n\n24:14 Thou shalt not oppress an hired servant that is poor and needy, whether he be of thy brethren, or of thy strangers that are in thy land within thy gates:\n\n24:15 At his day thou shalt give him his hire, neither shall the sun go down upon it; for he is poor, and setteth his heart upon it: lest he cry against thee unto the Lord, and it be sin unto thee.\n\n24:16 The fathers shall not be put to death for the children, neither shall the children be put to death for the fathers: every man shall be put to death for his own sin.\n\n24:17 Thou shalt not pervert the judgment of the stranger, nor of the fatherless; nor take a widow's raiment to pledge:\n\n24:18 But thou shalt remember that thou wast a bondman in Egypt, and the Lord thy God redeemed thee thence: therefore I command thee to do this thing.",
+            "item_id": "sp-006",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "video",
+            "title": "WIN_20250407_14_01_48_Pro",
+            "url": "/media/videos/Hymn_No_More_Night_with_Lyrics_Parkwood_SDA_Church_1080p_h264.mp4",
+            "media_type": "video",
+            "autoplay": true,
+            "loop": false,
+            "mute": false,
+            "item_id": "program-007",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          }
+        ]
+      },
+      {
+        "id": "sabbath",
+        "name": "sabbath",
+        "items": []
+      },
+      {
+        "id": "divine",
+        "name": "divine",
+        "items": [
+          {
+            "type": "song",
+            "title": "",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "divine-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "saved_at": "2026-09-22T09:00:10.785349",
+    "church": "",
+    "date": "",
+    "service_programs": [
+      {
+        "id": "program",
+        "name": "Program",
+        "items": [
+          {
+            "type": "participant",
+            "title": "Opening Prayer",
+            "part": "Opening Prayer",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "song",
+            "title": "Abide With Me, 'Tis Eventide",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "hymn_number": "46",
+            "lyrics_key": "en-46",
+            "manual_lyrics": "Abide with me, 'tis eventide!\nThe day is past and gone;\nThe shadows of the evening fall;\nThe night is coming on!\nWithin my heart a welcome guest,\nWithin my home abide;\n\nAbide with me, 'tis eventide!\nThy walk today with me\nHas made my heart within me burn,\nAs I communed with Thee.\nThy earnest words have filled my soul\nAnd kept me near Thy side;\n\nAbide with me, 'tis eventide!\nAnd lone will be the night,\nIf I cannot commune with Thee,\nNor find in Thee my light.\nThe darkness of the world, I fear,\nWould in my home abide;\n\nO Savior, stay this night with me;\nBehold, 'tis eventide!\nO Savior, stay this night with me;\nBehold, 'tis eventide.",
+            "item_id": "sp-002",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          },
+          {
+            "type": "participant",
+            "title": "Welcome",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-003",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "participant",
+            "title": "Video",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-004",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "content",
+            "title": "Announcements",
+            "content": "",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-005",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "bible",
+            "title": "Deuteronomy 24:5-18",
+            "bible_ref": "Deuteronomy 24:5-18",
+            "bible_lang": "en",
+            "bible_text": "24:5 When a man hath taken a new wife, he shall not go out to war, neither shall he be charged with any business: but he shall be free at home one year, and shall cheer up his wife which he hath taken.\n\n24:6 No man shall take the nether or the upper millstone to pledge: for he taketh a man's life to pledge.\n\n24:7 If a man be found stealing any of his brethren of the children of Israel, and maketh merchandise of him, or selleth him; then that thief shall die; and thou shalt put evil away from among you.\n\n24:8 Take heed in the plague of leprosy, that thou observe diligently, and do according to all that the priests the Levites shall teach you: as I commanded them, so ye shall observe to do.\n\n24:9 Remember what the Lord thy God did unto Miriam by the way, after that ye were come forth out of Egypt.\n\n24:10 When thou dost lend thy brother any thing, thou shalt not go into his house to fetch his pledge.\n\n24:11 Thou shalt stand abroad, and the man to whom thou dost lend shall bring out the pledge abroad unto thee.\n\n24:12 And if the man be poor, thou shalt not sleep with his pledge:\n\n24:13 In any case thou shalt deliver him the pledge again when the sun goeth down, that he may sleep in his own raiment, and bless thee: and it shall be righteousness unto thee before the Lord thy God.\n\n24:14 Thou shalt not oppress an hired servant that is poor and needy, whether he be of thy brethren, or of thy strangers that are in thy land within thy gates:\n\n24:15 At his day thou shalt give him his hire, neither shall the sun go down upon it; for he is poor, and setteth his heart upon it: lest he cry against thee unto the Lord, and it be sin unto thee.\n\n24:16 The fathers shall not be put to death for the children, neither shall the children be put to death for the fathers: every man shall be put to death for his own sin.\n\n24:17 Thou shalt not pervert the judgment of the stranger, nor of the fatherless; nor take a widow's raiment to pledge:\n\n24:18 But thou shalt remember that thou wast a bondman in Egypt, and the Lord thy God redeemed thee thence: therefore I command thee to do this thing.",
+            "item_id": "sp-006",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "video",
+            "title": "WIN_20250407_14_01_48_Pro",
+            "url": "/media/videos/WIN_20250407_14_01_48_Pro.mp4",
+            "media_type": "video",
+            "autoplay": true,
+            "loop": false,
+            "mute": false,
+            "item_id": "program-007",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          }
+        ]
+      },
+      {
+        "id": "sabbath",
+        "name": "sabbath",
+        "items": []
+      },
+      {
+        "id": "divine",
+        "name": "divine",
+        "items": [
+          {
+            "type": "song",
+            "title": "",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "divine-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "saved_at": "2026-09-22T08:59:56.132180",
+    "church": "",
+    "date": "",
+    "service_programs": [
+      {
+        "id": "program",
+        "name": "Program",
+        "items": [
+          {
+            "type": "participant",
+            "title": "Opening Prayer",
+            "part": "Opening Prayer",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "song",
+            "title": "Abide With Me, 'Tis Eventide",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "hymn_number": "46",
+            "lyrics_key": "en-46",
+            "manual_lyrics": "Abide with me, 'tis eventide!\nThe day is past and gone;\nThe shadows of the evening fall;\nThe night is coming on!\nWithin my heart a welcome guest,\nWithin my home abide;\n\nAbide with me, 'tis eventide!\nThy walk today with me\nHas made my heart within me burn,\nAs I communed with Thee.\nThy earnest words have filled my soul\nAnd kept me near Thy side;\n\nAbide with me, 'tis eventide!\nAnd lone will be the night,\nIf I cannot commune with Thee,\nNor find in Thee my light.\nThe darkness of the world, I fear,\nWould in my home abide;\n\nO Savior, stay this night with me;\nBehold, 'tis eventide!\nO Savior, stay this night with me;\nBehold, 'tis eventide.",
+            "item_id": "sp-002",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          },
+          {
+            "type": "participant",
+            "title": "Welcome",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-003",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "participant",
+            "title": "Video",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-004",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "content",
+            "title": "Announcements",
+            "content": "",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-005",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "bible",
+            "title": "Deuteronomy 24:5-18",
+            "bible_ref": "Deuteronomy 24:5-18",
+            "bible_lang": "en",
+            "bible_text": "24:5 When a man hath taken a new wife, he shall not go out to war, neither shall he be charged with any business: but he shall be free at home one year, and shall cheer up his wife which he hath taken.\n\n24:6 No man shall take the nether or the upper millstone to pledge: for he taketh a man's life to pledge.\n\n24:7 If a man be found stealing any of his brethren of the children of Israel, and maketh merchandise of him, or selleth him; then that thief shall die; and thou shalt put evil away from among you.\n\n24:8 Take heed in the plague of leprosy, that thou observe diligently, and do according to all that the priests the Levites shall teach you: as I commanded them, so ye shall observe to do.\n\n24:9 Remember what the Lord thy God did unto Miriam by the way, after that ye were come forth out of Egypt.\n\n24:10 When thou dost lend thy brother any thing, thou shalt not go into his house to fetch his pledge.\n\n24:11 Thou shalt stand abroad, and the man to whom thou dost lend shall bring out the pledge abroad unto thee.\n\n24:12 And if the man be poor, thou shalt not sleep with his pledge:\n\n24:13 In any case thou shalt deliver him the pledge again when the sun goeth down, that he may sleep in his own raiment, and bless thee: and it shall be righteousness unto thee before the Lord thy God.\n\n24:14 Thou shalt not oppress an hired servant that is poor and needy, whether he be of thy brethren, or of thy strangers that are in thy land within thy gates:\n\n24:15 At his day thou shalt give him his hire, neither shall the sun go down upon it; for he is poor, and setteth his heart upon it: lest he cry against thee unto the Lord, and it be sin unto thee.\n\n24:16 The fathers shall not be put to death for the children, neither shall the children be put to death for the fathers: every man shall be put to death for his own sin.\n\n24:17 Thou shalt not pervert the judgment of the stranger, nor of the fatherless; nor take a widow's raiment to pledge:\n\n24:18 But thou shalt remember that thou wast a bondman in Egypt, and the Lord thy God redeemed thee thence: therefore I command thee to do this thing.",
+            "item_id": "sp-006",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "video",
+            "title": "WIN_20250407_14_01_48_Pro",
+            "url": "/media/videos/WIN_20250407_14_01_48_Pro.mp4",
+            "media_type": "video",
+            "autoplay": true,
+            "loop": false,
+            "mute": false,
+            "item_id": "program-007",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          }
+        ]
+      },
+      {
+        "id": "sabbath",
+        "name": "sabbath",
+        "items": []
+      },
+      {
+        "id": "divine",
+        "name": "divine",
+        "items": [
+          {
+            "type": "song",
+            "title": "",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "divine-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "saved_at": "2026-09-22T08:55:59.798061",
+    "church": "",
+    "date": "",
+    "service_programs": [
+      {
+        "id": "program",
+        "name": "Program",
+        "items": [
+          {
+            "type": "participant",
+            "title": "Opening Prayer",
+            "part": "Opening Prayer",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "song",
+            "title": "Abide With Me, 'Tis Eventide",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "hymn_number": "46",
+            "lyrics_key": "en-46",
+            "manual_lyrics": "Abide with me, 'tis eventide!\nThe day is past and gone;\nThe shadows of the evening fall;\nThe night is coming on!\nWithin my heart a welcome guest,\nWithin my home abide;\n\nAbide with me, 'tis eventide!\nThy walk today with me\nHas made my heart within me burn,\nAs I communed with Thee.\nThy earnest words have filled my soul\nAnd kept me near Thy side;\n\nAbide with me, 'tis eventide!\nAnd lone will be the night,\nIf I cannot commune with Thee,\nNor find in Thee my light.\nThe darkness of the world, I fear,\nWould in my home abide;\n\nO Savior, stay this night with me;\nBehold, 'tis eventide!\nO Savior, stay this night with me;\nBehold, 'tis eventide.",
+            "item_id": "sp-002",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          },
+          {
+            "type": "participant",
+            "title": "Welcome",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-003",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "participant",
+            "title": "Video",
+            "part": "",
+            "participant": "",
+            "font_size": "lg",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-004",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "content",
+            "title": "Announcements",
+            "content": "",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "sp-005",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "bible",
+            "title": "Deuteronomy 24:5-18",
+            "bible_ref": "Deuteronomy 24:5-18",
+            "bible_lang": "en",
+            "bible_text": "24:5 When a man hath taken a new wife, he shall not go out to war, neither shall he be charged with any business: but he shall be free at home one year, and shall cheer up his wife which he hath taken.\n\n24:6 No man shall take the nether or the upper millstone to pledge: for he taketh a man's life to pledge.\n\n24:7 If a man be found stealing any of his brethren of the children of Israel, and maketh merchandise of him, or selleth him; then that thief shall die; and thou shalt put evil away from among you.\n\n24:8 Take heed in the plague of leprosy, that thou observe diligently, and do according to all that the priests the Levites shall teach you: as I commanded them, so ye shall observe to do.\n\n24:9 Remember what the Lord thy God did unto Miriam by the way, after that ye were come forth out of Egypt.\n\n24:10 When thou dost lend thy brother any thing, thou shalt not go into his house to fetch his pledge.\n\n24:11 Thou shalt stand abroad, and the man to whom thou dost lend shall bring out the pledge abroad unto thee.\n\n24:12 And if the man be poor, thou shalt not sleep with his pledge:\n\n24:13 In any case thou shalt deliver him the pledge again when the sun goeth down, that he may sleep in his own raiment, and bless thee: and it shall be righteousness unto thee before the Lord thy God.\n\n24:14 Thou shalt not oppress an hired servant that is poor and needy, whether he be of thy brethren, or of thy strangers that are in thy land within thy gates:\n\n24:15 At his day thou shalt give him his hire, neither shall the sun go down upon it; for he is poor, and setteth his heart upon it: lest he cry against thee unto the Lord, and it be sin unto thee.\n\n24:16 The fathers shall not be put to death for the children, neither shall the children be put to death for the fathers: every man shall be put to death for his own sin.\n\n24:17 Thou shalt not pervert the judgment of the stranger, nor of the fatherless; nor take a widow's raiment to pledge:\n\n24:18 But thou shalt remember that thou wast a bondman in Egypt, and the Lord thy God redeemed thee thence: therefore I command thee to do this thing.",
+            "item_id": "sp-006",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          },
+          {
+            "type": "video",
+            "title": "",
+            "url": "/media/videos/WIN_20250407_14_01_48_Pro.mp4",
+            "media_type": "video",
+            "autoplay": true,
+            "loop": false,
+            "mute": false,
+            "item_id": "program-007",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 5
+          }
+        ]
+      },
+      {
+        "id": "sabbath",
+        "name": "sabbath",
+        "items": []
+      },
+      {
+        "id": "divine",
+        "name": "divine",
+        "items": [
+          {
+            "type": "song",
+            "title": "",
+            "hymn_lang": "en",
+            "font_size": "md",
+            "text_align": "center",
+            "font_family": "default",
+            "text_bold": false,
+            "text_italic": false,
+            "item_id": "divine-001",
+            "timed": true,
+            "enabled": true,
+            "allotted_minutes": 4
+          }
+        ]
+      }
+    ]
+  }
+]

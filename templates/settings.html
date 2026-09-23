@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ECB Worship App — Settings</title>
+  <title>LIGHT WORSHIP APP — Settings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -12,7 +12,7 @@
       --surface: #2a2e3a;
       --card:    #2f3340;
       --border:  #3a3f4d;
-      --gold:    #d4a843;
+      --accent:    #14B8A6;
       --white:   #f2f4f8;
       --muted:   #9aa0ae;
       --success: #4caf82;
@@ -103,7 +103,7 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    input:focus { border-color: var(--gold); }
+    input:focus { border-color: var(--accent); }
 
     /* ── Buttons ── */
     .btn {
@@ -121,7 +121,7 @@
     }
     .btn:disabled { opacity: 0.45; cursor: default; }
     .btn:not(:disabled):hover { opacity: 0.85; }
-    .btn-gold { background: var(--gold); color: #1b1e27; }
+    .btn-gold { background: var(--accent); color: #1b1e27; }
     .btn-outline {
       background: transparent;
       border: 1px solid var(--border);
@@ -218,7 +218,7 @@
           <span id="video-dir-usage-text"></span>
         </div>
         <div style="width:100%;height:6px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;">
-          <div id="video-dir-usage-fill" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width .3s ease;"></div>
+          <div id="video-dir-usage-fill" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width .3s ease;"></div>
         </div>
       </div>
 
@@ -298,7 +298,7 @@
 <!-- ── Update Confirm Modal ─────────────────────────────────────────────── -->
 <div id="update-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:100; align-items:center; justify-content:center;">
   <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.75rem; max-width:400px; width:90%; margin:1rem;">
-    <p style="font-size:1rem; font-weight:500; margin-bottom:0.4rem; color:var(--white);" id="update-modal-title">Update ECB Worship App</p>
+    <p style="font-size:1rem; font-weight:500; margin-bottom:0.4rem; color:var(--white);" id="update-modal-title">Update LIGHT WORSHIP APP</p>
     <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem;" id="update-modal-body"></p>
 
     <div class="field">
@@ -448,7 +448,7 @@
   function showUpdateModal() {
     if (!_updateTargetTag) return;
     document.getElementById('update-modal-body').textContent =
-      `This will update ECB Worship App to ${_updateTargetTag} and restart the service. The app will be briefly unavailable.`;
+      `This will update LIGHT WORSHIP APP to ${_updateTargetTag} and restart the service. The app will be briefly unavailable.`;
     document.getElementById('update-pin').value = '';
     document.getElementById('update-modal-msg').className = 'msg';
     document.getElementById('update-modal').style.display = 'flex';
@@ -616,7 +616,7 @@
         usageText.textContent = `${usage.used_label} of ${usage.budget_label} used`;
         usageFill.style.width = Math.min(100, Math.max(0, usage.percent || 0)) + '%';
       }
-      usageFill.style.background = usage.full ? 'var(--error)' : (usage.warn ? 'var(--warn)' : 'var(--gold)');
+      usageFill.style.background = usage.full ? 'var(--error)' : (usage.warn ? 'var(--warn)' : 'var(--accent)');
     }
 
     const imagesBudget = usage.images
@@ -643,7 +643,7 @@
     const rows = [];
     rows.push(`
       <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
-        <input type="radio" name="video-dir-choice" value="internal" ${status.location === 'internal' ? 'checked' : ''} style="accent-color:var(--gold);">
+        <input type="radio" name="video-dir-choice" value="internal" ${status.location === 'internal' ? 'checked' : ''} style="accent-color:var(--accent);">
         Internal (default)
       </label>`);
     if (!_videoDirTargets.length) {
@@ -653,7 +653,7 @@
       const isCurrent = status.location === 'external' && status.path && status.path.startsWith(t.path);
       rows.push(`
         <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
-          <input type="radio" name="video-dir-choice" value="${i}" ${isCurrent ? 'checked' : ''} style="accent-color:var(--gold);">
+          <input type="radio" name="video-dir-choice" value="${i}" ${isCurrent ? 'checked' : ''} style="accent-color:var(--accent);">
           ${t.label} &nbsp;<span style="color:var(--muted);font-size:0.78rem;">(${t.free_label} free${t.fat32 ? ' · FAT32' : ''})</span>
         </label>`);
     });
@@ -700,11 +700,11 @@
       const plural = n === 1 ? '' : 's';
       opts.innerHTML = `
         <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
-          <input type="radio" name="video-dir-move" value="leave" checked style="accent-color:var(--gold);">
+          <input type="radio" name="video-dir-move" value="leave" checked style="accent-color:var(--accent);">
           Leave them
         </label>
         <label style="display:flex; align-items:center; gap:0.7rem; cursor:pointer; color:var(--white); font-size:0.88rem; padding:0.5rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
-          <input type="radio" name="video-dir-move" value="move" style="accent-color:var(--gold);" ${n === 0 ? 'disabled' : ''}>
+          <input type="radio" name="video-dir-move" value="move" style="accent-color:var(--accent);" ${n === 0 ? 'disabled' : ''}>
           Move existing ${n} video${plural} (${_fmtBytesVD(totalBytes)}) to ${targetLabel}
         </label>`;
       document.getElementById('video-dir-modal-leave-note').textContent =

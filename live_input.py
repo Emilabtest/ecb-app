@@ -138,6 +138,11 @@ def _read_frame(fn, timeout=3.0):
 
 _probe_cache = {}  # index -> (w, h) once resolved; (0,0) means "no device here"
 _probe_lock = _native_threading.Lock()
+# Last failed-probe time per index. A wedged device (e.g. a mid-unplug webcam
+# whose open+read hangs for 10+s) must NOT be re-probed on every pass, or
+# each rescan stalls via GIL starvation -- retry at most once a minute.
+_probe_fail_at = {}  # index -> monotonic time of last failed probe
+_PROBE_RETRY_SECS = 60.0
 
 
 def _probe_resolution_cached(index):
@@ -371,17 +376,289 @@ def describe_sources(scan=MAX_SOURCE_SCAN, rescan=False):
     ``rescan=True`` clears the per-index probe cache first so a device plugged
     in *after* the first scan (e.g. a USB webcam / USB HDMI capture card) is
     discovered instead of being masked by a stale "no device here" result.
+
+    Scan range: the DirectShow enumerator (pygrabber names) is authoritative for
+    how many capture devices exist, and cv2's DSHOW indices come from the SAME
+    system video-input enumerator, so they are contiguous 0..N-1. Probing the
+    full ``scan`` range would churn through empty slots; on a machine with an
+    offline/busy capture card each ghost open can block for PROBE_TIMEOUT, which
+    stalls the eventlet hub and makes the whole server unreachable. When names
+    are known we therefore probe only 0..len(names)-1.
+
+    IMPORTANT: this must only be called from the single scan worker thread
+    (``_run_source_scan``). It runs the enumeration AND every probe on the
+    current thread -- never ``_read_frame`` -- because a `FilterGraph`/COM
+    object used from a different thread than the one that created it is a
+    native access violation that crashes the whole process, and abandoning
+    ``_read_frame`` threads leaves live DSHOW handles behind for the same
+    crash. The scan worker is a plain OS thread, so blocking cv2/COM calls
+    cannot stall the eventlet hub.
     """
     if rescan:
         _invalidate_probe_cache()
+        _invalidate_dshow_names()
     names = _dshow_device_names()
+    if names:
+        scan = min(scan, len(names))
     out = []
     for i in range(scan):
-        w, h = _probe_resolution(i)
+        w, h = _probe_resolution_sync(i)
         if w and h:
             name = names[i] if 0 <= i < len(names) else None
             out.append({"index": i, "w": w, "h": h, "name": name})
     return out
+
+
+# Clean DirectShow enumeration + resolution probing is *expensive* (each probe
+# opens the device, asks for one frame, then closes it) and, critically, probes
+# cannot be run concurrently: two threads probing the SAME DirectShow device
+# at the same time (e.g. the console page AND the live-panel poller both
+# calling /api/live/sources) can crash the process natively in
+# VideoCapture()/release. Probes therefore run at most ONE at a time on a
+# dedicated background thread. Enumerating device NAMES, however, never opens
+# a device, so the names scan may run concurrently with probing -- and it is
+# this decoupling that keeps detection fast (~0.2s) even while a slow probe
+# pass is still running. Request handlers hand out the cached result,
+# refreshing on demand.
+_sources_cache = None            # list of dicts or None until first scan
+_sources_cache_at = 0.0          # monotonic timestamp of the cached result
+_sources_scan_running = False    # tier-2 probe pass in flight?
+_names_scan_running = False      # tier-1 names scan in flight?
+_sources_cache_lock = _native_threading.Lock()
+_sources_scan_lock = _native_threading.Lock()
+_names_scan_lock = _native_threading.Lock()
+
+
+# Fallback resolution published by the fast scan tier before per-device
+# probes finish (real values refresh the cache moments later on tier 2).
+_DEFAULT_W, _DEFAULT_H = 640, 480
+
+
+def _run_source_scan(rescan):
+    """TIER 2: probe each device's real resolution and refresh the cache.
+
+    Runs on the single serialized probe worker (see ``_scan_worker``), chained
+    automatically after every tier-1 names publish. It refines the fast list
+    tier 1 published -- same device names, exact resolutions -- so the next
+    list call picks up precise values. The publish is guarded by the names
+    generation: if a NEWER names scan invalidated the list while these probes
+    were running, this stale pass stays out of the cache instead of
+    overwriting fresher data.
+
+    Speed comes from publishing early (tier 1), NOT from riskier concurrent
+    opens: probing stays strictly single-threaded and same-thread (see
+    ``describe_sources``), because concurrent DirectShow opens are what
+    crashed the process natively before.
+    """
+    global _sources_cache, _sources_cache_at
+    try:
+        names = _dshow_device_names()
+        gen = _dshow_names_gen
+        with _sources_cache_lock:
+            prev = {s.get("index"): s for s in (_sources_cache or [])}
+        out = []
+        scan = min(MAX_SOURCE_SCAN, len(names)) if names else MAX_SOURCE_SCAN
+        for i in range(scan):
+            # Skip devices already resolved earlier in this process -- only
+            # never-seen indices pay for a fresh open+read. Previously-failing
+            # indices retry at most once a minute: a wedged device (open+read
+            # hanging 10+s) must not stall every pass via GIL starvation.
+            # Skipped failures keep their last-known listing so the device
+            # neither vanishes from the UI nor triggers a slow re-probe.
+            with _probe_lock:
+                known = _probe_cache.get(i)
+            if known and known != (0, 0):
+                w, h = known
+            elif known == (0, 0):
+                with _probe_lock:
+                    last_fail = _probe_fail_at.get(i, 0.0)
+                if _native_monotonic() - last_fail < _PROBE_RETRY_SECS:
+                    p = prev.get(i, {})
+                    out.append({"index": i,
+                                "w": p.get("w") or _DEFAULT_W,
+                                "h": p.get("h") or _DEFAULT_H,
+                                "name": names[i] if 0 <= i < len(names) else None})
+                    continue
+                w, h = _probe_resolution_sync(i)
+                with _probe_lock:
+                    if w and h:
+                        _probe_cache[i] = (w, h)
+                        _probe_fail_at.pop(i, None)
+                    else:
+                        _probe_cache[i] = (0, 0)
+                        _probe_fail_at[i] = _native_monotonic()
+                # Breathe between device opens so the eventlet hub stays
+                # responsive while a real probe pass runs.
+                _native_sleep(0.05)
+            else:
+                w, h = _probe_resolution_sync(i)
+                with _probe_lock:
+                    _probe_cache[i] = (w, h) if (w and h) else (0, 0)
+                    if w and h:
+                        _probe_fail_at.pop(i, None)
+                    else:
+                        _probe_fail_at[i] = _native_monotonic()
+                # Breathe between device opens so the eventlet hub stays
+                # responsive while a real probe pass runs.
+                _native_sleep(0.05)
+            if w and h:
+                name = names[i] if 0 <= i < len(names) else None
+                out.append({"index": i, "w": w, "h": h, "name": name})
+        with _sources_cache_lock:
+            if gen == _dshow_names_gen:
+                _sources_cache = out
+                _sources_cache_at = _native_monotonic()
+    except Exception:  # noqa: BLE001 - a failed scan must not poison the cache
+        with _sources_cache_lock:
+            if _sources_cache is None:
+                _sources_cache = []
+            _sources_cache_at = _native_monotonic()
+
+
+def _names_worker(rescan):
+    """TIER 1: enumerate device names and publish the list IMMEDIATELY.
+
+    Fast (~0.2s) because it never opens a device -- only the DirectShow
+    enumerator runs. Publishes with last-known or default resolutions, stamps
+    the cache (waking any rescan waiter), then chains the tier-2 probe pass
+    for exact resolutions. Safe to run concurrently with tier-2 probes: no
+    device handles are touched here.
+    """
+    global _names_scan_running, _sources_cache, _sources_cache_at
+    try:
+        if rescan:
+            # Names ONLY -- never clear the probe cache here. A device keeps
+            # its measured resolution for the process lifetime (see
+            # ``_probe_resolution_cached``), so repeat rescans re-probe
+            # nothing and stay fast; only never-seen indices pay a probe.
+            with _dshow_names_lock:
+                old_names = list(_dshow_names or [])
+            _invalidate_dshow_names()
+        else:
+            old_names = None
+        names = _dshow_device_names()
+        if old_names is not None and set(names) != set(old_names):
+            # Plug/unplug change: fail-gated devices get one fresh probe
+            # attempt instead of waiting out the retry window.
+            with _probe_lock:
+                _probe_fail_at.clear()
+        with _sources_cache_lock:
+            prev = {s.get("index"): s for s in (_sources_cache or [])}
+            _sources_cache = [{"index": i,
+                               "w": prev.get(i, {}).get("w") or _DEFAULT_W,
+                               "h": prev.get(i, {}).get("h") or _DEFAULT_H,
+                               "name": n} for i, n in enumerate(names)]
+            _sources_cache_at = _native_monotonic()
+    except Exception:  # noqa: BLE001 - never let a scan kill the server
+        with _sources_cache_lock:
+            if _sources_cache is None:
+                _sources_cache = []
+                _sources_cache_at = _native_monotonic()
+    finally:
+        with _names_scan_lock:
+            _names_scan_running = False
+    # Chain the refinement pass (no-op if probes are already running).
+    try:
+        _begin_background_scan(rescan)
+    except Exception:
+        pass
+
+
+def _begin_names_scan(rescan):
+    """Start a tier-1 names scan on a background thread. False if one runs."""
+    started = False
+    with _names_scan_lock:
+        global _names_scan_running
+        if _names_scan_running:
+            return False
+        _names_scan_running = True
+        started = True
+    if started:
+        t = _native_threading.Thread(
+            target=_names_worker,
+            args=(rescan,),
+            name="live-sources-names",
+            daemon=True,
+        )
+        t.start()
+    return started
+
+
+def get_live_sources(rescan=False, max_wait=12.0):
+    """Return the cached capture-source list, scanning on a background thread.
+
+    Request handlers call this *without blocking the eventlet hub*. The first
+    call triggers a background scan (the handler returns immediately with
+    whatever is cached -- or [] on first boot) and the background thread fills
+    the cache; subsequent calls reuse the cached result. ``rescan=True`` forces
+    one fresh scan (still serialized + on the background thread) and waits up to
+    ``max_wait`` for the refreshed result so an operator pressing the re-scan
+    button sees the newly-plugged device. The hub keeps serving every other
+    request while that wait happens because the scan runs on a native thread.
+    """
+    with _sources_cache_lock:
+        if _sources_cache is not None and not rescan:
+            return [dict(s) for s in _sources_cache]
+    if not rescan:
+        _begin_names_scan(rescan)
+        with _sources_cache_lock:
+            return [dict(s) for s in _sources_cache] if _sources_cache else []
+    # rescan=True: run a fresh TIER-1 names scan and wait for THAT result --
+    # not the stale cache. Tier 1 never opens a device (~0.2s), so detection
+    # stays fast even while a tier-2 probe pass is still running; the probe
+    # pass it chains refines resolutions moments later. The cache timestamp
+    # advances on every tier-1 publish, so waiting for it to move past the
+    # pre-scan value guarantees the operator sees newly-plugged devices.
+    deadline = _native_monotonic() + max_wait
+    with _sources_cache_lock:
+        before = _sources_cache_at
+    if not _begin_names_scan(rescan):
+        # A names scan is already running: just wait for its publish.
+        pass
+    while _native_monotonic() < deadline:
+        with _sources_cache_lock:
+            if _sources_cache is not None and _sources_cache_at > before:
+                return [dict(s) for s in _sources_cache]
+        # Green yield (not a native block): the hub keeps serving every other
+        # request while this rescan waits for the background thread.
+        _sleep(0.05)
+    with _sources_cache_lock:
+        return [dict(s) for s in _sources_cache] if _sources_cache else []
+
+
+def _begin_background_scan(rescan):
+    """Start /wake a single background scanner thread. Returns False if busy."""
+    started = False
+    with _sources_scan_lock:
+        global _sources_scan_running
+        if _sources_scan_running:
+            return False
+        _sources_scan_running = True
+        started = True
+    if started:
+        t = _native_threading.Thread(
+            target=_scan_worker,
+            args=(rescan,),
+            name="live-sources-scan",
+            daemon=True,
+        )
+        t.start()
+    return started
+
+
+def _scan_worker(rescan):
+    global _sources_scan_running
+    try:
+        _run_source_scan(rescan)
+    except Exception:  # noqa: BLE001 - never let a scan kill the server
+        with _sources_cache_lock:
+            if _sources_cache is None:
+                _sources_cache = []
+            _sources_cache_at = _native_monotonic()
+        pass
+    finally:
+        with _sources_scan_lock:
+            _sources_scan_running = False
 
 
 def _invalidate_probe_cache():
@@ -390,30 +667,54 @@ def _invalidate_probe_cache():
         _probe_cache.clear()
 
 
+def _invalidate_dshow_names():
+    """Forget the cached DirectShow names so a rescan sees newly-plugged devices."""
+    global _dshow_names, _dshow_names_gen
+    with _dshow_names_lock:
+        _dshow_names = None
+        # Bump the generation so an older tier-2 probe pass finishing late
+        # will not overwrite the fresher tier-1 list it publishes into.
+        _dshow_names_gen += 1
+
+
 _dshow_names = None
 _dshow_names_lock = _native_threading.Lock()
+_dshow_names_gen = 0
+
+
+def _enumerate_dshow_names():
+    """DirectShow device names via pygrabber, run ENTIRELY on the current thread.
+
+    No ``_read_frame`` here: constructing the FilterGraph and calling
+    ``get_input_devices`` on the SAME thread is what keeps the COM apartment
+    consistent. No explicit CoInitialize is done -- pygrabber/comtypes manage
+    their own apartment and forcing STA from here made the enumeration come back
+    empty on non-main threads. The scan worker that calls this is a plain OS
+    thread, so this never blocks the eventlet hub.
+    """
+    try:
+        from pygrabber.dshow_graph import FilterGraph
+        _fg = FilterGraph()
+        return [str(n) for n in (_fg.get_input_devices() or [])]
+    except Exception:
+        return []
 
 
 def _dshow_device_names():
-    """DirectShow disTransaction names in enumerator order, or [] when unavailable.
+    """DirectShow device names in enumerator order, or [] when unavailable.
 
     cv2's DSHOW indices come from the SAME system video-input enumerator as
     DirectShow, so ``names[i]`` corresponds to source index ``i``. This lets the
     operator pick a USB webcam / USB HDMI capture card by *name* instead of a
     blind number. The list is resolved lazily (the PyGrabber/comtypes import is
-    guarded so the module still works in environments without it) and cached.
+    guarded so the module still works in environments without it), enumerated on
+    the calling (scan-worker) thread, and cached.
     """
     global _dshow_names
     if _dshow_names is None:
         with _dshow_names_lock:
             if _dshow_names is None:
-                try:
-                    from pygrabber.dshow_graph import FilterGraph
-                    _dshow_names = _read_frame(
-                        FilterGraph().get_input_devices, timeout=5.0
-                    ) or []
-                except Exception:
-                    _dshow_names = []
+                _dshow_names = _enumerate_dshow_names()
     return list(_dshow_names)
 
 
@@ -425,6 +726,41 @@ def _probe_resolution(index):
     handler; see ``_read_frame`` / ``_probe_resolution_cached``.
     """
     return _probe_resolution_cached(index)
+
+
+def _probe_resolution_sync(index):
+    """SYNCHRONOUS resolution probe, safe ONLY inside the scan worker thread.
+
+    The scan worker is a plain OS thread (never the eventlet hub), so blocking
+    cv2 calls here cannot stall the server. Running the open+read+release fully
+    on this one thread means no `_read_frame` daemon threads are abandoned with
+    live DSHOW handles -- which is what natively crashed the process before.
+    """
+    from cv2 import VideoCapture, CAP_DSHOW, CAP_ANY  # noqa: F401
+    cap = None
+    try:
+        for backend in (CAP_DSHOW, CAP_ANY):
+            try:
+                cap = VideoCapture(index, backend)
+            except Exception:
+                cap = None
+            if cap is not None and cap.isOpened():
+                break
+            if cap is not None:
+                cap.release()
+                cap = None
+        if cap is None or not cap.isOpened():
+            return (0, 0)
+        ok, frame = cap.read()
+        if ok and frame is not None:
+            return (int(frame.shape[1]), int(frame.shape[0]))
+        return (0, 0)
+    finally:
+        if cap is not None:
+            try:
+                cap.release()
+            except Exception:
+                pass
 
 
 def _drop_unused(index):
@@ -490,6 +826,15 @@ def init_app(app):
     from flask_socketio import emit, disconnect as _sio_disconnect
     from flask import session
 
+    # Warm the capture-source cache in the background before the first operator
+    # opens the console, so the very first /api/live/sources response lists the
+    # devices instead of "No sources found" (the scan legitimately takes a few
+    # seconds; get_live_sources hands out the cached list immediately).
+    try:
+        _begin_names_scan(rescan=False)
+    except Exception:
+        pass
+
     # After ANY projection-aspect is saved, rebroadcast the new aspect to EVERY
     # channel room so every open output window (operator monitor + separate
     # projectors/TVs) updates live â€” even channels that weren't the one edited.
@@ -542,23 +887,160 @@ def init_app(app):
     except Exception:
         pass
 
+    # Relay operator ``media:live`` pushes (console Live panel, program-list
+    # live items, custom-output feed toggle) to the target channel room. The
+    # original app has NO ``media:live`` socket handler, so without this relay
+    # the push is silently dropped by the server and neither the projection
+    # PiP box nor the custom-output feed ever appears. The payload is relayed
+    # VERBATIM so the pip_enable / pip_corner / pip_size / source_index /
+    # mirror fields the pages already understand keep working. No persistent
+    # state is stored: projection deliberately never restores a live/blank
+    # command on reload (an infinite MJPEG stream there would exhaust the
+    # server workers), so live stays an explicit operator action only.
+    try:
+        from app import socketio as _sio_live
+        _live_channels = ("ch1", "ch2", "ch3", "ch4", "ch5")
+
+        @_sio_live.on("media:live")
+        def _on_media_live(data):
+            try:
+                ldata = data if isinstance(data, dict) else {}
+                if not session.get("operator"):
+                    _sio_disconnect()
+                    return
+                ch = ldata.get("channel") or "ch1"
+                if ch not in _live_channels:
+                    return
+                _sio_live.emit("media:live", ldata, room=ch)
+                # The /custom output page is hardcoded to the ch1 room (see
+                # custom_output_route in app.py), while the console addresses
+                # it by its assigned channel (ch5). Mirror commands must also
+                # reach ch1 or the custom page never shows the feed. The
+                # projection page explicitly ignores mirror payloads, so this
+                # extra copy changes nothing there.
+                if ch != "ch1" and ldata.get("mirror") in ("on", "off"):
+                    _sio_live.emit("media:live", ldata, room="ch1")
+            except Exception:
+                pass
+
+        # Dedicated PiP overlay command, independent of any content push.
+        # Payload: {channel, show: bool, source_index, pip_corner, pip_size}.
+        # Relayed verbatim to the channel room; the projection page mounts or
+        # tears down the small live box without touching the full-screen
+        # content underneath (and only on the broadcast render -- see
+        # IS_BROADCAST / handlePip in templates/projection.html).
+        @_sio_live.on("pip:set")
+        def _on_pip_set(data):
+            try:
+                ldata = data if isinstance(data, dict) else {}
+                if not session.get("operator"):
+                    _sio_disconnect()
+                    return
+                ch = ldata.get("channel") or "ch1"
+                if ch not in _live_channels:
+                    return
+                _sio_live.emit("pip:set", ldata, room=ch)
+            except Exception:
+                pass
+
+        # Theme changes from the console dropdown (theme:apply {channel,
+        # theme_id, custom_bg}). The original app has NO ``theme:apply``
+        # socket handler, so without this relay the push is silently dropped
+        # and the projection background never updates until the next content
+        # push. Relayed verbatim to the channel room; the projection page
+        # already applies it without disturbing on-screen content.
+        @_sio_live.on("theme:apply")
+        def _on_theme_apply(data):
+            try:
+                ldata = data if isinstance(data, dict) else {}
+                if not session.get("operator"):
+                    _sio_disconnect()
+                    return
+                ch = ldata.get("channel") or "ch1"
+                if ch not in _live_channels:
+                    return
+                _sio_live.emit("theme:apply", ldata, room=ch)
+            except Exception:
+                pass
+
+        # Screen-share bridge (share.html sender protocol). The /share page
+        # emits ``share:register`` (expects an ack with source_id),
+        # ``share:frame`` and ``share:close``, but the original app only
+        # speaks the older ``live:*`` protocol -- so without this bridge the
+        # sender never registers (no ack) and its frames are dropped, and the
+        # receiver never sees anything. These handlers wire the share
+        # protocol into the SAME live core (sources registry, per-channel
+        # selection, frame relay) that ``live:select`` / ``live:stop`` and
+        # the projection ``live:start`` / ``live:frame`` listeners already
+        # use -- no core logic duplicated, no existing handler touched.
+        import app as _app_share
+        from flask import request as _share_request
+
+        @_sio_live.on("share:register")
+        def _on_share_register(data):
+            try:
+                d = data if isinstance(data, dict) else {}
+                name = (str(d.get("name") or "Presenter")).strip()[:40] or "Presenter"
+                try:
+                    w = int(d.get("w") or 0)
+                except (TypeError, ValueError):
+                    w = 0
+                try:
+                    h = int(d.get("h") or 0)
+                except (TypeError, ValueError):
+                    h = 0
+                sid = _share_request.sid
+                _app_share._live_sources[sid] = {"name": name, "w": w, "h": h}
+                _app_share._live_broadcast_sources()
+                return {"source_id": sid, "name": name}
+            except Exception:
+                return {"source_id": None, "name": ""}
+
+        @_sio_live.on("share:frame")
+        def _on_share_frame(data):
+            try:
+                d = data if isinstance(data, dict) else {}
+                b64 = d.get("frame")
+                sid = _share_request.sid
+                if not b64 or sid not in _app_share._live_sources:
+                    return
+                _app_share._live_last_frame[sid] = b64
+                sel = _app_share._live_selected
+                if not sel:
+                    return
+                try:
+                    w = int(d.get("w") or 0)
+                except (TypeError, ValueError):
+                    w = 0
+                try:
+                    h = int(d.get("h") or 0)
+                except (TypeError, ValueError):
+                    h = 0
+                payload = {"sid": sid, "data": b64, "w": w, "h": h}
+                for ch, s in list(sel.items()):
+                    if s == sid:
+                        _sio_live.emit("live:frame", payload, room=ch)
+            except Exception:
+                pass
+
+        @_sio_live.on("share:close")
+        def _on_share_close(data):
+            try:
+                _app_share._live_remove_source(_share_request.sid)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     @app.route("/api/live/sources", methods=["GET"])
     def _api_live_sources():
         from flask import request as _req
         rescan = bool(_req.args.get("rescan", ""))
-        # A rescanned enumeration re-probes EVERY device index + enumerates
-        # DirectShow, which can take many seconds (especially with an offline or
-        # busy capture card). Running the whole call on a detatched native thread
-        # with a deadline means the eventlet hub never blocks on it; if it doesn't
-        # finish in time we fall back to the already-cached list rather than hang.
-        if rescan:
-            def _job():
-                return describe_sources(rescan=True)
-            fresh = _read_frame(_job, timeout=FRAME_TIMEOUT + 3.0)
-            if fresh is None:
-                fresh = describe_sources(rescan=False)
-            return jsonify({"sources": fresh})
-        return jsonify({"sources": describe_sources(rescan=False)})
+        # Enumeration + probing never runs on the eventlet hub: it happens on a
+        # single, serialized background thread and is cached (see
+        # ``get_live_sources``). This keeps the hub responsive and prevents two
+        # concurrent DirectShow probes from crashing the process natively.
+        return jsonify({"sources": get_live_sources(rescan=rescan)})
 
     @app.route("/live/feed/<int:index>.mjpeg", methods=["GET"])
     def _live_feed(index):
