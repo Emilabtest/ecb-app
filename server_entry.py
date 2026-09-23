@@ -673,9 +673,52 @@ def _clean_tmp():
             continue
 
 
+def _reconcile_update_lock():
+    """Self-heal a stale update lock. The server creates data/update/lock when
+    an update starts; older updater.exe builds never released it, so any later
+    update is rejected with 'update already in progress'. On boot, drop the
+    lock when no update can legitimately be in flight: a terminal status
+    (success/error), a stale 'applying' status, or an orphaned lock file."""
+    import json as _json
+    import time as _time
+    _STALE_SECS = 3600
+    try:
+        _lock = os.path.join('data', 'update', 'lock')
+        if not os.path.exists(_lock):
+            return
+        _now = _time.time()
+        _status_path = os.path.join('data', 'update', 'status.json')
+        try:
+            with open(_status_path) as _f:
+                _st = _json.load(_f)
+        except (OSError, ValueError):
+            _st = {}
+        _state = (_st.get('status') or '')
+        if _state in ('success', 'error'):
+            os.unlink(_lock)
+            return
+        if _state == 'applying':
+            try:
+                _age = _now - float(_st.get('ts', 0))
+            except (TypeError, ValueError):
+                _age = _STALE_SECS + 1
+            if _age > _STALE_SECS:
+                os.unlink(_lock)
+            return
+        try:
+            _lock_age = _now - os.path.getmtime(_lock)
+        except OSError:
+            return
+        if _lock_age > _STALE_SECS:
+            os.unlink(_lock)
+    except OSError:
+        pass
+
+
 if __name__ == '__main__':
     _ensure_dirs()
     _clean_tmp()
+    _reconcile_update_lock()
     # Allow an alternate port (LEITURGIA_PORT) for dev/test without clobbering
     # the live server on 5001.
     import os as _os

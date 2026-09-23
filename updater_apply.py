@@ -143,6 +143,7 @@ def apply_update(install_dir, stage_dir, manifest_path):
         'target_version': manifest['version'],
         'ts': time.time(),
     })
+    _clear_lock(install_dir)
 
     # Step 6: relaunch the app.
     launcher = os.path.join(install_dir, 'Leiturgia.exe')
@@ -157,6 +158,17 @@ def _write_status(install_dir, payload):
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, 'status.json'), 'w') as f:
         json.dump(payload, f)
+
+
+def _clear_lock(install_dir):
+    """Remove the update lock file. The server creates data/update/lock when an
+    update starts; the applier must release it once the apply finishes (success
+    or failure), otherwise every later update is blocked with
+    'update already in progress'."""
+    try:
+        os.unlink(os.path.join(install_dir, 'data', 'update', 'lock'))
+    except OSError:
+        pass
 
 
 def main():
@@ -178,6 +190,7 @@ def main():
             'message': str(e),
             'ts': time.time(),
         })
+        _clear_lock(install_dir)
         sys.exit(1)
 
 
