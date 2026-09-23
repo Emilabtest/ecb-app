@@ -1917,6 +1917,17 @@ def api_update_start():
             'ts': time.time(),
             'note': 'Application will restart when finished.',
         })
+        # The applier's first step is `taskkill /T` on the Leiturgia processes,
+        # which kills the whole process tree — including the applier itself
+        # while it is still our child (DETACHED_PROCESS does not protect from
+        # /T). To survive, the applier must be orphaned: this server exits a
+        # few seconds after responding, so the applier is reparented and the
+        # tree-kill can no longer reach it.
+        import threading as _th
+        def _exit_for_update():
+            time.sleep(5)
+            os._exit(0)
+        _th.Thread(target=_exit_for_update, daemon=True).start()
         return jsonify({'status': 'started', 'target_version': info['latest']}), 202
     except FileExistsError:
         try:
