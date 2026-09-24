@@ -10,6 +10,8 @@ data/broadcast.json
 build/
 dist/
 stage_*/
+installer/stage/
+installer/installer_out/
 recovery_build/
 __pycache__/
 *.py[cod]
