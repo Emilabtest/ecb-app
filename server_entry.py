@@ -503,19 +503,19 @@ def wire_license_gate():
                 return jsonify(paid=False, message='backend status check failed')
             if _jb.get('paid'):
                 if _sess.get('hwid') == _lic_state.get('hwid'):
-                    try:
-                        with open('license.dat', 'w') as f:
-                            f.write(make_licence(_lic_state['hwid']))
-                    except RuntimeError:
-                        # Paid, but this machine holds no owner private key, so
-                        # it cannot self-issue. The owner issues the key.
-                        return jsonify(paid=True, activated=False,
-                                       message='Payment confirmed. Send this HWID to the owner to receive your license key.',
-                                       hwid=_lic_state.get('hwid'))
-                    except OSError as e:
-                        return jsonify(paid=False, message='write failed: %s' % e)
-                    _lic_state['ok'] = True
-                    return jsonify(paid=True, activated=True)
+                    _lic = (_jb.get('license') or '').strip()
+                    if _lic:
+                        try:
+                            with open('license.dat', 'w') as f:
+                                f.write(_lic)
+                        except OSError as e:
+                            return jsonify(paid=False, message='write failed: %s' % e)
+                        _lic_state['ok'] = True
+                        return jsonify(paid=True, activated=True)
+                    # Backend paid but returned no license (private key missing).
+                    return jsonify(paid=True, activated=False,
+                                   message='Payment confirmed. Send this HWID to the owner to receive your license key.',
+                                   hwid=_lic_state.get('hwid'))
                 return jsonify(paid=False, message='hardware mismatch')
             return jsonify(paid=False, status=_jb.get('status'))
         if not _secret:
