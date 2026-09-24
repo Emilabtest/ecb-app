@@ -88,6 +88,8 @@ def _ensure_config():
         'owner_email': '',
         'paymongo_secret': '',
         'paymongo_publishable': '',
+        'paymongo_backend': '',
+        'paymongo_backend_token': '',
         'license_price_peso': 500,
         'log_level': 'INFO',
         'media_video_budget_gb': 2,
@@ -199,9 +201,15 @@ _ACT_HTML = r'''<!doctype html>
           var d2=await r2.json();
           if(d2.paid){
             clearInterval(poll);
-            document.getElementById('done').style.display='block';
-            msg.className='msg ok'; msg.textContent='Payment received. Activating…';
-            setTimeout(function(){ location.href='/login'; }, 2000);
+            if(d2.activated === false){
+              msg.className='msg ok';
+              msg.textContent='Payment confirmed. Send your Hardware ID (above) to your provider to receive your license key.';
+              btn.disabled=false; btn.textContent='Pay &amp; Activate';
+            } else {
+              document.getElementById('done').style.display='block';
+              msg.className='msg ok'; msg.textContent='Payment received. Activating…';
+              setTimeout(function(){ location.href='/login'; }, 2000);
+            }
           } else if(n>200){
             clearInterval(poll);
             msg.className='msg err'; msg.textContent='Payment has not arrived yet. If already paid, click Pay &amp; Activate again.';
