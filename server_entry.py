@@ -554,10 +554,16 @@ def _fix_asset_paths(app_obj):
     sta = _resolve('static')
     if tpl and os.path.isdir(tpl):
         from flask import send_from_directory
-        app_obj.jinja_loader.searchpath = [_MEIPASS or HERE, tpl]
-        # Also keep the package-relative search path so pymod-relative refs work.
-        if _MEIPASS and os.path.exists(os.path.join(_MEIPASS, tpl)):
-            app_obj.jinja_loader.searchpath.append(os.path.join(_MEIPASS, tpl))
+        # Bundle first: the packaged templates are always in sync with the
+        # running code. The on-disk folder is only a fallback (dev layout /
+        # legacy installs) so a stale install dir can never shadow a fresh
+        # build again.
+        _bundled_tpl = os.path.join(_MEIPASS, 'templates') if _MEIPASS else None
+        _search = []
+        if _bundled_tpl and os.path.isdir(_bundled_tpl) and _bundled_tpl != tpl:
+            _search.append(_bundled_tpl)
+        _search.append(tpl)
+        app_obj.jinja_loader.searchpath = _search
         app_obj.template_folder = tpl
     if sta and os.path.isdir(sta):
         app_obj.static_folder = sta
