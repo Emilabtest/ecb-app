@@ -627,6 +627,44 @@ import broadcast_encoder
 broadcast_encoder.init_app(app)
 
 
+def _install_update_selfexit(flask_app):
+    """Wrap the compiled api_update_start so the applier survives its own
+    first step. The applier begins with `taskkill /T` on the Leiturgia
+    processes, which kills the whole process tree — including the applier
+    itself while it is still a child of this server (DETACHED_PROCESS does
+    not protect from /T; proven by test). After a successful spawn (202),
+    this server exits a few seconds later so the applier is orphaned and
+    the tree-kill can no longer reach it. Delegates everything else to the
+    original view, so update behavior is otherwise unchanged."""
+    try:
+        _orig = flask_app.view_functions.get('api_update_start')
+        if not _orig:
+            return
+        import threading as _th
+        import time as _t
+
+        def _wrapped(*_a, **_k):
+            _r = _orig(*_a, **_k)
+            try:
+                _code = _r[1] if isinstance(_r, tuple) else getattr(_r, 'status_code', None)
+            except Exception:
+                _code = None
+            if _code == 202:
+                def _bye():
+                    _t.sleep(5)
+                    os._exit(0)
+                _th.Thread(target=_bye, daemon=True).start()
+            return _r
+
+        _wrapped.__name__ = 'api_update_start'
+        flask_app.view_functions['api_update_start'] = _wrapped
+    except Exception:
+        pass
+
+
+_install_update_selfexit(app)
+
+
 def _spawn_stream_child():
     """Launch the dedicated live-stream daemon as a SEPARATE process.
 
