@@ -316,6 +316,26 @@ def _prepare_lyrics(items):
 
 
 # ── Auth ─────────────────────────────────────────────────────────────────────
+def _verify_pin(pin, cfg):
+    """Check a PIN against the config. Production configs store only
+    ``pin_hash`` (sha256); dev/legacy configs may carry plaintext ``pin``."""
+    pin = str(pin or '').strip()
+    if not pin:
+        return False
+    try:
+        import hashlib as _hl
+        if cfg.get('pin_hash') and _hl.sha256(pin.encode()).hexdigest() == cfg['pin_hash']:
+            return True
+    except Exception:
+        pass
+    try:
+        if 'pin' in cfg and pin == str(cfg['pin']):
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def operator_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -335,7 +355,7 @@ def login():
         pin  = str(data.get('pin') or '').strip()
         with open('config.json') as f:
             cfg = json.load(f)
-        if pin == str(cfg['pin']):
+        if _verify_pin(pin, cfg):
             session.permanent = True
             session['operator'] = True
             return jsonify({'status': 'ok'})
@@ -1648,7 +1668,9 @@ def api_settings_pin():
         return jsonify({'status': 'error', 'message': 'PIN must be 4–6 digits'}), 400
     with open('config.json') as f:
         cfg = json.load(f)
-    cfg['pin'] = pin
+    import hashlib as _hl
+    cfg['pin_hash'] = _hl.sha256(pin.encode()).hexdigest()
+    cfg.pop('pin', None)
     atomic_write_json('config.json', cfg)
     return jsonify({'status': 'ok'})
 
