@@ -266,7 +266,7 @@ def wire_license_gate():
     unlocked in-process."""
     import hashlib as _hl
     import hmac as _hm
-    from licensing import get_hardware_id, make_licence
+    from licensing import get_hardware_id, make_licence, rsa_verify
     from flask import request, jsonify, Response
 
     _lic_state['hwid'] = get_hardware_id()
@@ -379,8 +379,9 @@ def wire_license_gate():
             return jsonify(ok=False, message='Could not read this PC hardware ID.')
         if not key:
             return jsonify(ok=False, message='Enter a license key.')
-        expected = make_licence(_lic_state['hwid'])
-        if not _hm.compare_digest(key, expected):
+        # Public-key verify: the pasted key is an RSA signature over this HWID.
+        # No private key needed, so activation works on any machine.
+        if not rsa_verify(_lic_state['hwid'], key):
             return jsonify(ok=False, message='License key is not valid for this PC.')
         try:
             with open('license.dat', 'w') as f:
@@ -497,6 +498,12 @@ def wire_license_gate():
                     try:
                         with open('license.dat', 'w') as f:
                             f.write(make_licence(_lic_state['hwid']))
+                    except RuntimeError:
+                        # Paid, but this machine holds no owner private key, so
+                        # it cannot self-issue. The owner issues the key.
+                        return jsonify(paid=True, activated=False,
+                                       message='Payment confirmed. Send this HWID to the owner to receive your license key.',
+                                       hwid=_lic_state.get('hwid'))
                     except OSError as e:
                         return jsonify(paid=False, message='write failed: %s' % e)
                     _lic_state['ok'] = True
@@ -518,6 +525,12 @@ def wire_license_gate():
                 try:
                     with open('license.dat', 'w') as f:
                         f.write(make_licence(_lic_state['hwid']))
+                except RuntimeError:
+                    # Paid, but this machine holds no owner private key, so
+                    # it cannot self-issue. The owner issues the key.
+                    return jsonify(paid=True, activated=False,
+                                   message='Payment confirmed. Send this HWID to the owner to receive your license key.',
+                                   hwid=_lic_state.get('hwid'))
                 except OSError as e:
                     return jsonify(paid=False, message='write failed: %s' % e)
                 _lic_state['ok'] = True

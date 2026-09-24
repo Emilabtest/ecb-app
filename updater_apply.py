@@ -23,8 +23,7 @@ import shutil
 import subprocess
 import sys
 import time
-from licensing import _SECRET_KEY
-from updater import canonical, _copy_tree
+from updater import canonical, _copy_tree, verify
 
 
 def _log(msg):
@@ -55,12 +54,6 @@ def _stop_all():
             capture_output=True, timeout=15,
         )
     _wait_processes_gone(['Leiturgia.exe', 'LeiturgiaServer.exe'], timeout=30)
-
-
-def verify(files, version, signature):
-    import hmac
-    expected = hmac.new(_SECRET_KEY, canonical(files, version).encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(signature, expected)
 
 
 def _read_manifest(path):

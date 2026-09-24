@@ -2,11 +2,12 @@
 """
 updater.py — secure, signed application updates for the Windows build.
 
-Two roles, both keyed by the owner's secret (shared with licensing.py):
+Two roles, both keyed by the owner's RSA-2048 keypair (public key embedded via
+licensing.py, private key only on the owner's machine):
 
   OWNER  (run directly, e.g. `python updater.py build <version> <dry-dir> <stage-dir>`)
          Produces a ready-to-upload bundle folder: the listed files plus a
-         signed `update.json` manifest (HMAC-SHA256 over a canonical list of
+         signed `update.json` manifest (RSA signature over a canonical list of
          {path,size,sha256}). Only the owner can create a valid manifest, so a
          target machine will refuse any not-owned bundle.
 
@@ -20,7 +21,7 @@ update.json layout:
       "version": "1.1.0",
       "schema": 1,
       "files": [ {"path": "LeiturgiaServer.exe", "size": 123, "sha256": "..."}, ... ],
-      "signature": "<hex hmac over canonical string>"
+      "signature": "<hex RSA signature over canonical string>"
     }
 
 Canonical string (both sides must build identically):
@@ -28,11 +29,10 @@ Canonical string (both sides must build identically):
 The files list must be sorted by path.
 """
 import hashlib
-import hmac
 import json
 import os
 
-from licensing import _SECRET_KEY
+from licensing import rsa_sign, rsa_verify
 
 MANIFEST_NAME = "update.json"
 SCHEMA = 1
@@ -77,12 +77,13 @@ def canonical(files, version):
 
 
 def sign(files, version):
-    return hmac.new(_SECRET_KEY, canonical(files, version).encode(), hashlib.sha256).hexdigest()
+    """Owner side: RSA-sign the canonical manifest string (needs private key)."""
+    return rsa_sign(canonical(files, version).encode())
 
 
 def verify(files, version, signature):
-    expected = hmac.new(_SECRET_KEY, canonical(files, version).encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(signature, expected)
+    """Client side: verify the manifest signature with the embedded public key."""
+    return rsa_verify(canonical(files, version).encode(), signature)
 
 
 # --------------------------------------------------------------------------- #
