@@ -84,7 +84,7 @@ def _ensure_config():
         'cloud_url': '',
         'cloud_token': '',
         'enable_self_update': True,
-        'update_url': 'https://github.com/Emilabtest/ecb-app/releases/latest/download',
+        'update_url': 'https://github.com/projectlabtest/ecb-app/releases/latest/download',
         'owner_email': '',
         'paymongo_secret': '',
         'paymongo_publishable': '',
